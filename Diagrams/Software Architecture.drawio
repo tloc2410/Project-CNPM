@@ -1,0 +1,104 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Trang-1" id="QiegMiyCOl62MiF6L9eg">
+    <mxGraphModel dx="3248" dy="1340" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <UserObject label="" mermaidData="{&#xa;  &quot;data&quot;: &quot;%%{init: {&#39;theme&#39;: &#39;neutral&#39;}}%%\nflowchart TB\n    subgraph Tier1 [\&quot;1. Presentation Tier (Client UI)\&quot;]\n        CustomerUI[\&quot;&lt;b&gt;Customer UI&lt;/b&gt;&lt;br/&gt;Search Car, RentalCart, Order\&quot;]\n        AdminUI[\&quot;&lt;b&gt;Admin UI&lt;/b&gt;&lt;br/&gt;Manage Car, User, Order\&quot;]\n    end\n\n    subgraph Tier2 [\&quot;2. Business Logic Tier (Backend Application)\&quot;]\n        UserMod[\&quot;&lt;b&gt;User Module&lt;/b&gt;&lt;br/&gt;User, Customer, Admin\&quot;]\n        CarMod[\&quot;&lt;b&gt;Car Module&lt;/b&gt;&lt;br/&gt;Car, CarType\&quot;]\n        CartMod[\&quot;&lt;b&gt;Cart Module&lt;/b&gt;&lt;br/&gt;RentalCart, CartItem\&quot;]\n        OrderMod[\&quot;&lt;b&gt;Order Module&lt;/b&gt;&lt;br/&gt;Order, OrderItem, Payment, Delivery\&quot;]\n    end\n\n    subgraph Tier3 [\&quot;3. Data Tier (Database)\&quot;]\n        DB[(\&quot;&lt;b&gt;Car Rental Database&lt;/b&gt;&lt;br/&gt;MySQL / SQL Server\&quot;)]\n    end\n\n    Tier1 &lt;--&gt;|\&quot;HTTP / REST API\&quot;| Tier2\n    Tier2 &lt;--&gt;|\&quot;Read / Write Data\&quot;| Tier3&quot;,&#xa;  &quot;config&quot;: null,&#xa;  &quot;version&quot;: &quot;12&quot;&#xa;}" id="755dXdvozQBDv7wjqBdY-221">
+          <mxCell connectable="0" parent="1" style="group;transparentBounds=1;editIcon=1;lockedGroup=0;groupPadding=10;" vertex="1">
+            <mxGeometry as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="3. Data Tier (Database)" mermaidId="n:Tier3" mermaidBaseStyle="html=1;whiteSpace=nowrap;strokeWidth=1;verticalAlign=top;fillColor=#ffffff;strokeColor=#bbbbbb;fontColor=#333333;fontFamily=Trebuchet MS,Verdana,Arial,sans-serif;fontSize=16;shadow=1;shadowColor=#000000;shadowOffsetX=4;shadowOffsetY=4;shadowBlur=0;shadowOpacity=6;" mermaidBaseValue="3. Data Tier (Database)" id="755dXdvozQBDv7wjqBdY-222">
+          <mxCell parent="755dXdvozQBDv7wjqBdY-221" style="html=1;whiteSpace=nowrap;strokeWidth=1;verticalAlign=top;fillColor=#ffffff;strokeColor=#bbbbbb;fontColor=#333333;fontFamily=Trebuchet MS,Verdana,Arial,sans-serif;fontSize=16;shadow=1;shadowColor=#000000;shadowOffsetX=4;shadowOffsetY=4;shadowBlur=0;shadowOpacity=6;" vertex="1">
+            <mxGeometry height="236" width="192" x="110" y="780" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="&lt;b&gt;MySQL&lt;/b&gt;&lt;div&gt;&lt;b&gt;Users, Cars, Order,OrderItem&lt;/b&gt;&lt;/div&gt;" mermaidId="n:DB" mermaidBaseStyle="html=1;shape=cylinder3;boundedLbl=1;backgroundOutline=1;size=10;strokeWidth=1;whiteSpace=wrap;fillColor=#eeeeee;strokeColor=#999999;fontColor=#333333;fontFamily=Trebuchet MS,Verdana,Arial,sans-serif;fontSize=16;shadow=1;shadowColor=#000000;shadowOffsetX=4;shadowOffsetY=4;shadowBlur=0;shadowOpacity=6;" mermaidBaseValue="&lt;b&gt;Car Rental Database&lt;/b&gt;&#xa;MySQL / SQL Server" id="755dXdvozQBDv7wjqBdY-223">
+          <mxCell parent="755dXdvozQBDv7wjqBdY-222" style="html=1;shape=cylinder3;boundedLbl=1;backgroundOutline=1;size=10;strokeWidth=1;whiteSpace=wrap;fillColor=#eeeeee;strokeColor=#999999;fontColor=#333333;fontFamily=Trebuchet MS,Verdana,Arial,sans-serif;fontSize=16;shadow=1;shadowColor=#000000;shadowOffsetX=4;shadowOffsetY=4;shadowBlur=0;shadowOpacity=6;labelWidth=120;" vertex="1">
+            <mxGeometry height="161" width="144" x="24" y="51" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="2. Business Logic Tier (Backend Application)" mermaidId="n:Tier2" mermaidBaseStyle="html=1;whiteSpace=nowrap;strokeWidth=1;verticalAlign=top;fillColor=#ffffff;strokeColor=#bbbbbb;fontColor=#333333;fontFamily=Trebuchet MS,Verdana,Arial,sans-serif;fontSize=16;shadow=1;shadowColor=#000000;shadowOffsetX=4;shadowOffsetY=4;shadowBlur=0;shadowOpacity=6;" mermaidBaseValue="2. Business Logic Tier (Backend Application)" id="755dXdvozQBDv7wjqBdY-224">
+          <mxCell parent="755dXdvozQBDv7wjqBdY-221" style="html=1;whiteSpace=nowrap;strokeWidth=1;verticalAlign=top;fillColor=#ffffff;strokeColor=#bbbbbb;fontColor=#333333;fontFamily=Trebuchet MS,Verdana,Arial,sans-serif;fontSize=16;shadow=1;shadowColor=#000000;shadowOffsetX=4;shadowOffsetY=4;shadowBlur=0;shadowOpacity=6;" vertex="1">
+            <mxGeometry height="250" width="680" x="110" y="450" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="&lt;b&gt;User Module&lt;/b&gt;&#xa;User, Customer, Admin" mermaidId="n:UserMod" mermaidBaseStyle="html=1;whiteSpace=wrap;strokeWidth=1;fillColor=#eeeeee;strokeColor=#999999;fontColor=#333333;fontFamily=Trebuchet MS,Verdana,Arial,sans-serif;fontSize=16;shadow=1;shadowColor=#000000;shadowOffsetX=4;shadowOffsetY=4;shadowBlur=0;shadowOpacity=6;" mermaidBaseValue="&lt;b&gt;User Module&lt;/b&gt;&#xa;User, Customer, Admin" id="755dXdvozQBDv7wjqBdY-225">
+          <mxCell parent="755dXdvozQBDv7wjqBdY-224" style="html=1;whiteSpace=wrap;strokeWidth=1;fillColor=#eeeeee;strokeColor=#999999;fontColor=#333333;fontFamily=Trebuchet MS,Verdana,Arial,sans-serif;fontSize=16;shadow=1;shadowColor=#000000;shadowOffsetX=4;shadowOffsetY=4;shadowBlur=0;shadowOpacity=6;labelWidth=120;" vertex="1">
+            <mxGeometry height="123.45679012345677" width="128.23821339950376" x="190.66997518610424" y="52.46484165324744" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <mxCell id="w8mwG-i2-6-C9PD6tGKX-4" edge="1" parent="755dXdvozQBDv7wjqBdY-224" source="755dXdvozQBDv7wjqBdY-226" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.25;exitY=1;exitDx=0;exitDy=0;defaultLabelBackgroundColor=page;entryX=0.75;entryY=1;entryDx=0;entryDy=0;" target="755dXdvozQBDv7wjqBdY-227">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <UserObject label="&lt;b&gt;Car Module&lt;/b&gt;&#xa;Car, CarType" mermaidId="n:CarMod" mermaidBaseStyle="html=1;whiteSpace=wrap;strokeWidth=1;fillColor=#eeeeee;strokeColor=#999999;fontColor=#333333;fontFamily=Trebuchet MS,Verdana,Arial,sans-serif;fontSize=16;shadow=1;shadowColor=#000000;shadowOffsetX=4;shadowOffsetY=4;shadowBlur=0;shadowOpacity=6;" mermaidBaseValue="&lt;b&gt;Car Module&lt;/b&gt;&#xa;Car, CarType" id="755dXdvozQBDv7wjqBdY-226">
+          <mxCell parent="755dXdvozQBDv7wjqBdY-224" style="html=1;whiteSpace=wrap;strokeWidth=1;fillColor=#eeeeee;strokeColor=#999999;fontColor=#333333;fontFamily=Trebuchet MS,Verdana,Arial,sans-serif;fontSize=16;shadow=1;shadowColor=#000000;shadowOffsetX=4;shadowOffsetY=4;shadowBlur=0;shadowOpacity=6;labelWidth=120;" vertex="1">
+            <mxGeometry height="99.79423868312756" width="128.23821339950376" x="361.0918114143921" y="52.473564143854" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="&lt;b&gt;Cart Module&lt;/b&gt;&#xa;RentalCart, CartItem" mermaidId="n:CartMod" mermaidBaseStyle="html=1;whiteSpace=wrap;strokeWidth=1;fillColor=#eeeeee;strokeColor=#999999;fontColor=#333333;fontFamily=Trebuchet MS,Verdana,Arial,sans-serif;fontSize=16;shadow=1;shadowColor=#000000;shadowOffsetX=4;shadowOffsetY=4;shadowBlur=0;shadowOpacity=6;" mermaidBaseValue="&lt;b&gt;Cart Module&lt;/b&gt;&#xa;RentalCart, CartItem" id="755dXdvozQBDv7wjqBdY-227">
+          <mxCell parent="755dXdvozQBDv7wjqBdY-224" style="html=1;whiteSpace=wrap;strokeWidth=1;fillColor=#eeeeee;strokeColor=#999999;fontColor=#333333;fontFamily=Trebuchet MS,Verdana,Arial,sans-serif;fontSize=16;shadow=1;shadowColor=#000000;shadowOffsetX=4;shadowOffsetY=4;shadowBlur=0;shadowOpacity=6;labelWidth=120;" vertex="1">
+            <mxGeometry height="123.45679012345677" width="128.23821339950376" x="19.99813895781638" y="52.46484165324744" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="1. Presentation Tier (Client UI)" mermaidId="n:Tier1" mermaidBaseStyle="html=1;whiteSpace=nowrap;strokeWidth=1;verticalAlign=top;fillColor=#ffffff;strokeColor=#bbbbbb;fontColor=#333333;fontFamily=Trebuchet MS,Verdana,Arial,sans-serif;fontSize=16;shadow=1;shadowColor=#000000;shadowOffsetX=4;shadowOffsetY=4;shadowBlur=0;shadowOpacity=6;" mermaidBaseValue="1. Presentation Tier (Client UI)" id="755dXdvozQBDv7wjqBdY-229">
+          <mxCell parent="755dXdvozQBDv7wjqBdY-221" style="html=1;whiteSpace=nowrap;strokeWidth=1;verticalAlign=top;fillColor=#ffffff;strokeColor=#bbbbbb;fontColor=#333333;fontFamily=Trebuchet MS,Verdana,Arial,sans-serif;fontSize=16;shadow=1;shadowColor=#000000;shadowOffsetX=4;shadowOffsetY=4;shadowBlur=0;shadowOpacity=6;" vertex="1">
+            <mxGeometry height="219" width="402" x="249" y="90" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="&lt;b&gt;Customer UI&lt;/b&gt;&lt;br&gt;Search Car, RentalCart, Order, Login, Sign up" mermaidId="n:CustomerUI" mermaidBaseStyle="html=1;whiteSpace=wrap;strokeWidth=1;fillColor=#eeeeee;strokeColor=#999999;fontColor=#333333;fontFamily=Trebuchet MS,Verdana,Arial,sans-serif;fontSize=16;shadow=1;shadowColor=#000000;shadowOffsetX=4;shadowOffsetY=4;shadowBlur=0;shadowOpacity=6;" mermaidBaseValue="&lt;b&gt;Customer UI&lt;/b&gt;&#xa;Search Car, RentalCart, Order" id="755dXdvozQBDv7wjqBdY-230">
+          <mxCell parent="755dXdvozQBDv7wjqBdY-229" style="html=1;whiteSpace=wrap;strokeWidth=1;fillColor=#eeeeee;strokeColor=#999999;fontColor=#333333;fontFamily=Trebuchet MS,Verdana,Arial,sans-serif;fontSize=16;shadow=1;shadowColor=#000000;shadowOffsetX=4;shadowOffsetY=4;shadowBlur=0;shadowOpacity=6;labelWidth=120;" vertex="1">
+            <mxGeometry height="144" width="152" x="24" y="51" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="&lt;b&gt;Admin UI&lt;/b&gt;&#xa;Manage Car, User, Order" mermaidId="n:AdminUI" mermaidBaseStyle="html=1;whiteSpace=wrap;strokeWidth=1;fillColor=#eeeeee;strokeColor=#999999;fontColor=#333333;fontFamily=Trebuchet MS,Verdana,Arial,sans-serif;fontSize=16;shadow=1;shadowColor=#000000;shadowOffsetX=4;shadowOffsetY=4;shadowBlur=0;shadowOpacity=6;" mermaidBaseValue="&lt;b&gt;Admin UI&lt;/b&gt;&#xa;Manage Car, User, Order" id="755dXdvozQBDv7wjqBdY-231">
+          <mxCell parent="755dXdvozQBDv7wjqBdY-229" style="html=1;whiteSpace=wrap;strokeWidth=1;fillColor=#eeeeee;strokeColor=#999999;fontColor=#333333;fontFamily=Trebuchet MS,Verdana,Arial,sans-serif;fontSize=16;shadow=1;shadowColor=#000000;shadowOffsetX=4;shadowOffsetY=4;shadowBlur=0;shadowOpacity=6;labelWidth=120;" vertex="1">
+            <mxGeometry height="120" width="152" x="226" y="63" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="HTTP / REST API" mermaidId="e:Tier1-&gt;Tier2#0" mermaidBaseStyle="edgeStyle=orthogonalEdgeStyle;rounded=1;curved=0;startArrow=block;startSize=8;endArrow=block;endSize=8;jumpStyle=arc;jumpSize=12;strokeColor=#333333;html=1;fontSize=16;labelBackgroundColor=light-dark(#E8E8E88D,#2a2a2a8D);fontFamily=Trebuchet MS,Verdana,Arial,sans-serif;fontColor=#333333;exitX=0.5;exitY=1;entryX=0.5;entryY=0;targetPerimeterSpacing=4;sourcePerimeterSpacing=4;" mermaidBaseValue="HTTP / REST API" id="755dXdvozQBDv7wjqBdY-232">
+          <mxCell edge="1" parent="755dXdvozQBDv7wjqBdY-221" source="755dXdvozQBDv7wjqBdY-229" style="edgeStyle=orthogonalEdgeStyle;rounded=1;curved=0;startArrow=block;startSize=8;endArrow=block;endSize=8;jumpStyle=arc;jumpSize=12;strokeColor=#333333;html=1;fontSize=16;labelBackgroundColor=light-dark(#E8E8E88D,#2a2a2a8D);fontFamily=Trebuchet MS,Verdana,Arial,sans-serif;fontColor=#333333;exitX=0.5;exitY=1;entryX=0.5;entryY=0;targetPerimeterSpacing=4;sourcePerimeterSpacing=4;" target="755dXdvozQBDv7wjqBdY-224">
+            <mxGeometry relative="1" as="geometry">
+              <Array as="points" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="Read / Write Data" mermaidId="e:Tier2-&gt;Tier3#0" mermaidBaseStyle="edgeStyle=orthogonalEdgeStyle;rounded=1;curved=0;startArrow=block;startSize=8;endArrow=block;endSize=8;jumpStyle=arc;jumpSize=12;strokeColor=#333333;html=1;fontSize=16;labelBackgroundColor=light-dark(#E8E8E88D,#2a2a2a8D);fontFamily=Trebuchet MS,Verdana,Arial,sans-serif;fontColor=#333333;exitX=0.5;exitY=1;entryX=0.5;entryY=0;targetPerimeterSpacing=4;sourcePerimeterSpacing=4;" mermaidBaseValue="Read / Write Data" id="755dXdvozQBDv7wjqBdY-233">
+          <mxCell edge="1" parent="755dXdvozQBDv7wjqBdY-221" source="755dXdvozQBDv7wjqBdY-224" style="rounded=1;curved=0;startArrow=block;startSize=8;endArrow=block;endSize=8;jumpStyle=arc;jumpSize=12;strokeColor=#333333;html=1;fontSize=16;labelBackgroundColor=light-dark(#E8E8E88D,#2a2a2a8D);fontFamily=Trebuchet MS,Verdana,Arial,sans-serif;fontColor=#333333;exitX=0.145;exitY=1.007;entryX=0.5;entryY=0;targetPerimeterSpacing=4;sourcePerimeterSpacing=4;exitDx=0;exitDy=0;exitPerimeter=0;" target="755dXdvozQBDv7wjqBdY-222">
+            <mxGeometry relative="1" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <mxCell id="w8mwG-i2-6-C9PD6tGKX-2" edge="1" parent="755dXdvozQBDv7wjqBdY-221" source="755dXdvozQBDv7wjqBdY-228" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;defaultLabelBackgroundColor=page;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" target="755dXdvozQBDv7wjqBdY-226">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <UserObject label="&lt;b&gt;Order Module&lt;/b&gt;&#xa;Order, OrderItem, Payment, Delivery" mermaidId="n:OrderMod" mermaidBaseStyle="html=1;whiteSpace=wrap;strokeWidth=1;fillColor=#eeeeee;strokeColor=#999999;fontColor=#333333;fontFamily=Trebuchet MS,Verdana,Arial,sans-serif;fontSize=16;shadow=1;shadowColor=#000000;shadowOffsetX=4;shadowOffsetY=4;shadowBlur=0;shadowOpacity=6;" mermaidBaseValue="&lt;b&gt;Order Module&lt;/b&gt;&#xa;Order, OrderItem, Payment, Delivery" id="755dXdvozQBDv7wjqBdY-228">
+          <mxCell parent="755dXdvozQBDv7wjqBdY-221" style="html=1;whiteSpace=wrap;strokeWidth=1;fillColor=#eeeeee;strokeColor=#999999;fontColor=#333333;fontFamily=Trebuchet MS,Verdana,Arial,sans-serif;fontSize=16;shadow=1;shadowColor=#000000;shadowOffsetX=4;shadowOffsetY=4;shadowBlur=0;shadowOpacity=6;labelWidth=120;" vertex="1">
+            <mxGeometry height="159.01234567901233" width="128.23821339950376" x="642.0036476426799" y="485.4916049382716" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <mxCell id="w8mwG-i2-6-C9PD6tGKX-1" edge="1" parent="755dXdvozQBDv7wjqBdY-221" source="755dXdvozQBDv7wjqBdY-228" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.75;exitY=1;exitDx=0;exitDy=0;defaultLabelBackgroundColor=page;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" target="755dXdvozQBDv7wjqBdY-227">
+          <mxGeometry relative="1" x="0.0011" as="geometry">
+            <mxPoint x="674.06320125" y="680.0039509999999" as="sourcePoint" />
+            <mxPoint x="194.117245657568" y="661.4216317767043" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="w8mwG-i2-6-C9PD6tGKX-3" edge="1" parent="755dXdvozQBDv7wjqBdY-221" source="755dXdvozQBDv7wjqBdY-228" style="endArrow=classic;html=1;rounded=0;defaultLabelBackgroundColor=page;exitX=0.25;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;edgeStyle=orthogonalEdgeStyle;" target="755dXdvozQBDv7wjqBdY-225" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="480" y="680" as="sourcePoint" />
+            <mxPoint x="530" y="630" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="w8mwG-i2-6-C9PD6tGKX-6" parent="755dXdvozQBDv7wjqBdY-221" style="rounded=0;whiteSpace=wrap;html=1;" value="Paymemt gateway" vertex="1">
+          <mxGeometry height="60" width="120" x="440" y="800" as="geometry" />
+        </mxCell>
+        <mxCell id="w8mwG-i2-6-C9PD6tGKX-7" edge="1" parent="1" source="w8mwG-i2-6-C9PD6tGKX-6" style="endArrow=classic;startArrow=classic;html=1;rounded=0;defaultLabelBackgroundColor=page;exitX=0.5;exitY=0;exitDx=0;exitDy=0;" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="420" y="790" as="sourcePoint" />
+            <mxPoint x="500" y="700" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
