@@ -1,0 +1,4 @@
+-- Group 12 Car Rental
+-- Sample data placeholder.
+-- Add fake/demo records only after Database/schema.sql has been approved.
+-- Never add real customer data, passwords in plain text, card numbers, or CVV.
