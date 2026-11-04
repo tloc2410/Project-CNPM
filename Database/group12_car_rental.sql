@@ -1,6 +1,6 @@
-create database Gr12_car_rental;
+create database group12_car_rental;
 
-use Gr12_car_rental;
+use group12_car_rental;
 
 
 CREATE TABLE users (
