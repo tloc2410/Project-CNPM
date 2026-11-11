@@ -8,7 +8,7 @@ body {
   margin: 0px;
   min-height: 100%;
 }
-/* a blue color as a generic focus style */
+
 button:focus-visible {
   outline: 2px solid #4a90e2 !important;
   outline: -webkit-focus-ring-color auto 5px !important;
@@ -16,41 +16,38 @@ button:focus-visible {
 a {
   text-decoration: none;
 }
-/* @FONTWARNING[{"type": "restricted", "family": "Inter-Bold", "weight": "700", "style": "normal", "allowsCrossOrigin": false}] */
 
 @font-face {
   font-family: "Inter-Bold";
   src: local("Inter-Bold");
 }
-/* @FONTWARNING[{"type": "restricted", "family": "Inter-Regular", "weight": "400", "style": "normal", "allowsCrossOrigin": false}] */
 
 @font-face {
   font-family: "Inter-Regular";
   src: local("Inter-Regular");
 }
-/* @FONTWARNING[{"type": "restricted", "family": "Inter-SemiBold", "weight": "600", "style": "normal", "allowsCrossOrigin": false}] */
 
 @font-face {
   font-family: "Inter-SemiBold";
   src: local("Inter-SemiBold");
 }
-/* @FONTWARNING[{"type": "restricted", "family": "Inter-Medium", "weight": "500", "style": "normal", "allowsCrossOrigin": false}] */
 
 @font-face {
   font-family: "Inter-Medium";
   src: local("Inter-Medium");
 }
+/* LOGIN */
 .login {
   background-color: #f8fafc;
   width: 100%;
-  min-width: 1509px;
+  min-width: 0;
   min-height: 1105px;
   display: flex;
 }
 
 .login .html-body {
   display: flex;
-  width: 1509px;
+  width: 100%;
   height: 1105px;
   position: relative;
   align-items: center;
@@ -723,7 +720,7 @@ a {
     height: 18px;
     object-fit: contain;
 }
-/* Fix eye button */
+
 .login .button-toggle {
     position: absolute;
     right: 12px;
@@ -748,11 +745,10 @@ a {
     display: block;
 }
 
-/* Make password input the positioning reference */
 .login .container-wrapper {
     position: relative;
 }
-/* FIX GOOGLE & APPLE BUTTONS */
+
 .login .social-logins {
     display: flex;
     gap: 12px;
@@ -769,7 +765,6 @@ a {
     position: relative;
 }
 
-/* Reset vị trí icon do Anima tạo */
 .login .google-button .div-4,
 .login .apple-ID-button .div-4 {
     position: static !important;
@@ -840,4 +835,1548 @@ a {
 .login .overlay-shadow {
     background-color: #f0f3f9;
     border-radius: 12px;
+}
+
+@font-face {
+  font-family: "Plus Jakarta Sans-Bold";
+  src: local("Plus Jakarta Sans-Bold");
+}
+
+@font-face {
+  font-family: "Plus Jakarta Sans-Medium";
+  src: local("Plus Jakarta Sans-Medium");
+}
+
+@font-face {
+  font-family: "Plus Jakarta Sans-SemiBold";
+  src: local("Plus Jakarta Sans-SemiBold");
+}
+
+@font-face {
+  font-family: "Plus Jakarta Sans-Regular";
+  src: local("Plus Jakarta Sans-Regular");
+}
+/* SIGN UP */
+.sign-up {
+  background-color: #ffffff;
+  overflow: hidden;
+  width: 100%;
+  min-width: 0;
+  min-height: 1105px;
+  display: flex;
+}
+
+.sign-up .main-wrapper {
+  display: flex;
+  margin-top: 2px;
+  width: 100%;
+  height: 1105px;
+  position: relative;
+  align-items: center;
+  justify-content: center;
+  padding: 139.13px 16px 139.12px;
+  background:
+    linear-gradient(
+      0deg,
+      rgba(243, 244, 246, 1) 0%,
+      rgba(243, 244, 246, 1) 100%
+    ),
+    linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 1) 0%,
+      rgba(255, 255, 255, 1) 100%
+    );
+}
+
+.sign-up .main {
+  display: flex;
+  flex-direction: column;
+  max-width: 560px;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 40px;
+  position: relative;
+  flex: 1;
+  flex-grow: 1;
+  background-color: #ffffff;
+  border-radius: 24px;
+  border: 1px solid;
+  border-color: #f1f5f9;
+}
+
+.sign-up .div {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  background-color: #ffffff01;
+  border-radius: 24px;
+  box-shadow:
+    0px 8px 10px -6px #0000001a,
+    0px 20px 25px -5px #0000001a;
+}
+
+.sign-up .header-section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  position: relative;
+  align-self: stretch;
+  width: 100%;
+  flex: 0 0 auto;
+}
+
+.sign-up .container {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  position: relative;
+  align-self: stretch;
+  width: 100%;
+  flex: 0 0 auto;
+}
+
+.sign-up .text-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: fit-content;
+  margin-top: -1px;
+  font-family: "Plus Jakarta Sans-Bold", Helvetica;
+  font-weight: 700;
+  color: #0f172a;
+  font-size: 26px;
+  letter-spacing: -0.65px;
+  line-height: 32.5px;
+  white-space: nowrap;
+}
+
+.sign-up .paragraph {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 4px 0px 0px;
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.sign-up .already-have-an {
+  position: relative;
+  width: 122px;
+  margin-top: -1px;
+  font-family: "Plus Jakarta Sans-Medium", Helvetica;
+  font-weight: 500;
+  color: transparent;
+  font-size: 10px;
+  letter-spacing: 0;
+  line-height: 20px;
+}
+
+.sign-up .span {
+  color: #64748b;
+}
+
+.sign-up .text-wrapper-2 {
+  color: #1e293b;
+}
+
+.sign-up .text-wrapper-3 {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: fit-content;
+  margin-top: -1px;
+  font-family: "Plus Jakarta Sans-SemiBold", Helvetica;
+  font-weight: 600;
+  color: #f59e0b;
+  font-size: 14px;
+  letter-spacing: 0;
+  line-height: 20px;
+  white-space: nowrap;
+}
+
+.sign-up .div-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  position: relative;
+  align-self: stretch;
+  width: 100%;
+  flex: 0 0 auto;
+}
+
+.sign-up .p {
+  position: relative;
+  display: flex;
+  align-items: center;
+  align-self: stretch;
+  margin-top: -1px;
+  font-family: "Plus Jakarta Sans-Regular", Helvetica;
+  font-weight: 400;
+  color: #64748b;
+  font-size: 14px;
+  letter-spacing: 0;
+  line-height: 20px;
+}
+
+.sign-up .button {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px 16px 12px;
+  position: relative;
+  align-self: stretch;
+  width: 100%;
+  flex: 0 0 auto;
+  background-color: #f0f5fd;
+  border-radius: 12px;
+  border: 1px solid;
+  border-color: #e2e8f099;
+}
+
+.sign-up .div-2 {
+  position: relative;
+  width: 16px;
+  height: 16px;
+}
+
+.sign-up .vector {
+  position: absolute;
+  width: 50.00%;
+  height: 58.33%;
+  top: 41.67%;
+  left: 50.00%;
+}
+
+.sign-up .img {
+  position: absolute;
+  width: 90.92%;
+  height: 41.25%;
+  top: 58.75%;
+  left: 9.08%;
+}
+
+.sign-up .vector-2 {
+  position: absolute;
+  width: 95.83%;
+  height: 70.58%;
+  top: 29.42%;
+  left: 4.17%;
+}
+
+.sign-up .vector-3 {
+  position: absolute;
+  width: 90.92%;
+  height: 95.83%;
+  top: 4.17%;
+  left: 9.08%;
+}
+
+.sign-up .container-2 {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.sign-up .text-wrapper-4 {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  margin-top: -1px;
+  font-family: "Plus Jakarta Sans-SemiBold", Helvetica;
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 14px;
+  text-align: center;
+  letter-spacing: 0;
+  line-height: 20px;
+  white-space: nowrap;
+}
+
+.sign-up .divider {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 5.5px 0px 3px;
+  position: relative;
+  align-self: stretch;
+  width: 100%;
+  flex: 0 0 auto;
+}
+
+.sign-up .horizontal-divider-wrapper {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.sign-up .horizontal-divider {
+  position: relative;
+  flex: 1;
+  flex-grow: 1;
+  height: 1px;
+  border-top-width: 1px;
+  border-top-style: solid;
+  border-color: #f1f5f9;
+}
+
+.sign-up .background {
+  display: inline-flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 0px 12px;
+  position: relative;
+  flex: 0 0 auto;
+  background-color: #ffffff;
+}
+
+.sign-up .text-wrapper-5 {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  margin-top: -1px;
+  font-family: "Plus Jakarta Sans-Regular", Helvetica;
+  font-weight: 400;
+  color: #94a3b8;
+  font-size: 12px;
+  text-align: center;
+  letter-spacing: 0;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.sign-up .registration-form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+  position: relative;
+  align-self: stretch;
+  width: 100%;
+  flex: 0 0 auto;
+}
+
+.sign-up .div-3 {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 14px;
+  position: relative;
+  align-self: stretch;
+  width: 100%;
+  flex: 0 0 auto;
+}
+
+.sign-up .input-h-v-tn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 0px 0px 12px;
+  position: relative;
+  flex: 1;
+  flex-grow: 1;
+}
+
+.sign-up .div-4 {
+  position: relative;
+  align-self: stretch;
+  margin-top: -1px;
+  font-family: "Plus Jakarta Sans-SemiBold", Helvetica;
+  font-weight: 600;
+  color: transparent;
+  font-size: 12px;
+  letter-spacing: 0;
+  line-height: 16px;
+}
+
+.sign-up .text-wrapper-6 {
+  color: #334155;
+}
+
+.sign-up .text-wrapper-7 {
+  color: #f43f5e;
+}
+
+.sign-up .background-2 {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  position: relative;
+  align-self: stretch;
+  width: 100%;
+  flex: 0 0 auto;
+  background-color: #f0f5fd;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.sign-up .input {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 11px 12px 11px 40px;
+  position: relative;
+  align-self: stretch;
+  width: 100%;
+  flex: 0 0 auto;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.sign-up .container-3 {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  position: relative;
+  flex: 1;
+  flex-grow: 1;
+}
+
+.sign-up .text-wrapper-8 {
+  position: relative;
+  display: flex;
+  align-items: center;
+  align-self: stretch;
+  margin-top: -1px;
+  font-family: "Plus Jakarta Sans-Regular", Helvetica;
+  font-weight: 400;
+  color: #6b7280;
+  font-size: 14px;
+  letter-spacing: 0;
+  line-height: normal;
+}
+
+.sign-up .container-4 {
+  display: inline-flex;
+  height: 100%;
+  align-items: center;
+  padding: 0px 0px 0px 14px;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.sign-up .vector-4 {
+  position: absolute;
+  width: 83.33%;
+  height: 91.67%;
+  top: 8.33%;
+  left: 16.67%;
+}
+
+.sign-up .div-5 {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  position: relative;
+  flex: 1;
+  flex-grow: 1;
+}
+
+.sign-up .background-3 {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.42e-14px;
+  position: relative;
+  align-self: stretch;
+  width: 100%;
+  flex: 0 0 auto;
+  background-color: #f0f5fd;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.sign-up .paragraph-overlay {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 9.5px 19.83px 10.5px 12px;
+  position: relative;
+  align-self: stretch;
+  flex: 0 0 auto;
+  background-color: #e2e8f099;
+  border-right-width: 1px;
+  border-right-style: solid;
+  border-color: #e2e8f0;
+}
+
+.sign-up .text {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  margin-top: -1px;
+  font-family: "Plus Jakarta Sans-SemiBold", Helvetica;
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 12px;
+  text-align: center;
+  letter-spacing: 0;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.sign-up .text-2 {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  font-family: "Plus Jakarta Sans-SemiBold", Helvetica;
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 12px;
+  text-align: center;
+  letter-spacing: 0;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.sign-up .container-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 17px 12px;
+  position: relative;
+  flex: 1;
+  align-self: stretch;
+  flex-grow: 1;
+}
+
+.sign-up .row-a-ch-email {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  position: relative;
+  align-self: stretch;
+  width: 100%;
+  flex: 0 0 auto;
+}
+
+.sign-up .container-5 {
+  position: relative;
+  flex-grow: 1;
+  border: none;
+  background: none;
+  align-self: stretch;
+  margin-top: -1px;
+  font-family: "Plus Jakarta Sans-Regular", Helvetica;
+  font-weight: 400;
+  color: #6b7280;
+  font-size: 14px;
+  letter-spacing: 0;
+  line-height: normal;
+  padding: 0;
+}
+
+.sign-up .vector-5 {
+  position: absolute;
+  width: 91.67%;
+  height: 91.67%;
+  top: 8.33%;
+  left: 8.33%;
+}
+
+.sign-up .input-2 {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 11px 36px 11px 40px;
+  position: relative;
+  align-self: stretch;
+  width: 100%;
+  flex: 0 0 auto;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.sign-up .vector-6 {
+  position: absolute;
+  width: 87.50%;
+  height: 91.67%;
+  top: 8.33%;
+  left: 12.50%;
+}
+
+.sign-up .button-toggle {
+  display: inline-flex;
+  align-items: center;
+  padding: 12px 12px 12px 0px;
+  position: absolute;
+  height: 100%;
+  top: 0;
+  right: 0;
+}
+
+.sign-up .vector-7 {
+  position: absolute;
+  width: 66.67%;
+  height: 66.67%;
+  top: 33.33%;
+  left: 33.33%;
+}
+
+.sign-up .vector-8 {
+  position: absolute;
+  width: 93.93%;
+  height: 83.33%;
+  top: 16.67%;
+  left: 6.07%;
+}
+
+.sign-up .vector-9 {
+  position: absolute;
+  width: 91.67%;
+  height: 91.90%;
+  top: 8.10%;
+  left: 8.33%;
+}
+
+.sign-up .password-strength {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 12px;
+  position: relative;
+  align-self: stretch;
+  width: 100%;
+  flex: 0 0 auto;
+  background-color: #f0f5fd;
+  border-radius: 12px;
+  border: 1px solid;
+  border-color: #e2e8f080;
+}
+
+.sign-up .container-6 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  align-self: stretch;
+  width: 100%;
+  flex: 0 0 auto;
+}
+
+.sign-up .container-7 {
+  position: relative;
+  width: 99.63px;
+  height: 16.5px;
+}
+
+.sign-up .text-wrapper-9 {
+  position: absolute;
+  top: -1px;
+  left: 0;
+  height: 17px;
+  display: flex;
+  align-items: center;
+  font-family: "Plus Jakarta Sans-Medium", Helvetica;
+  font-weight: 500;
+  color: #475569;
+  font-size: 11px;
+  letter-spacing: 0;
+  line-height: 16.5px;
+  white-space: nowrap;
+}
+
+.sign-up .container-8 {
+  position: relative;
+  width: 85px;
+  height: 17px;
+}
+
+.sign-up .text-wrapper-10 {
+  position: absolute;
+  top: -1px;
+  left: 0;
+  height: 17px;
+  display: flex;
+  align-items: center;
+  font-family: "Plus Jakarta Sans-Regular", Helvetica;
+  font-weight: 400;
+  color: #64748b;
+  font-size: 11px;
+  letter-spacing: 0;
+  line-height: 16.5px;
+  white-space: nowrap;
+}
+
+.sign-up .indicator-bars {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 6px;
+  position: relative;
+  align-self: stretch;
+  width: 100%;
+  flex: 0 0 auto;
+}
+
+.sign-up .background-4 {
+  position: relative;
+  flex: 1;
+  flex-grow: 1;
+  height: 4px;
+  background-color: #cbd5e1;
+  border-radius: 9999px;
+}
+
+.sign-up .background-5 {
+  position: relative;
+  flex: 1;
+  flex-grow: 1;
+  height: 4px;
+  background-color: #e2e8f0;
+  border-radius: 9999px;
+}
+
+.sign-up .container-9 {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 2px 0px 0px;
+  position: relative;
+  align-self: stretch;
+  width: 100%;
+  flex: 0 0 auto;
+}
+
+.sign-up .text-wrapper-11 {
+  position: relative;
+  display: flex;
+  align-items: center;
+  align-self: stretch;
+  margin-top: -1px;
+  font-family: "Plus Jakarta Sans-Regular", Helvetica;
+  font-weight: 400;
+  color: #64748b;
+  font-size: 10px;
+  letter-spacing: 0;
+  line-height: 16.2px;
+}
+
+.sign-up .terms-conditions {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 4px 2px 8px;
+  position: relative;
+  align-self: stretch;
+  width: 100%;
+  flex: 0 0 auto;
+}
+
+.sign-up .input-margin {
+  display: flex;
+  flex-direction: column;
+  width: 16px;
+  height: 18px;
+  align-items: flex-start;
+  padding: 2px 0px 0px;
+  position: relative;
+}
+
+.sign-up .input-3 {
+  position: relative;
+  width: 16px;
+  height: 16px;
+  background-color: #ffffff;
+  border-radius: 4px;
+  border: 1px solid;
+  border-color: #cbd5e1;
+}
+
+.sign-up .text-wrapper-12 {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: fit-content;
+  margin-top: -1px;
+  font-family: "Plus Jakarta Sans-Regular", Helvetica;
+  font-weight: 400;
+  color: #475569;
+  font-size: 11px;
+  letter-spacing: 0;
+  line-height: 13.8px;
+  white-space: nowrap;
+}
+
+.sign-up .CTA-button-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 16px;
+  position: relative;
+  align-self: stretch;
+  width: 100%;
+  flex: 0 0 auto;
+  background-color: #f59e0b;
+  border-radius: 12px;
+}
+
+.sign-up .button-shadow {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  background-color: #ffffff01;
+  border-radius: 12px;
+  box-shadow:
+    0px 2px 4px -2px #0000001a,
+    0px 4px 6px -1px #0000001a;
+}
+
+.sign-up .text-wrapper-13 {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  margin-top: -1px;
+  font-family: "Plus Jakarta Sans-SemiBold", Helvetica;
+  font-weight: 600;
+  color: #ffffff;
+  font-size: 14px;
+  text-align: center;
+  letter-spacing: 0;
+  line-height: 20px;
+  white-space: nowrap;
+}
+
+.sign-up .vector-10 {
+  position: absolute;
+  width: 92.71%;
+  height: 84.38%;
+  top: 15.62%;
+  left: 7.29%;
+}
+
+.sign-up .security-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 4px 0px 0px;
+  position: relative;
+  align-self: stretch;
+  width: 100%;
+  flex: 0 0 auto;
+}
+
+.sign-up .SVG-shield-padlock {
+  position: relative;
+  width: 14px;
+  height: 14px;
+}
+
+.sign-up .vector-11 {
+  position: absolute;
+  width: 90.00%;
+  height: 90.28%;
+  top: 9.72%;
+  left: 10.00%;
+}
+
+.sign-up .container-10 {
+  position: relative;
+  width: 346.58px;
+  height: 16.5px;
+}
+
+.sign-up .text-wrapper-14 {
+  position: absolute;
+  top: -1px;
+  left: 0;
+  height: 17px;
+  display: flex;
+  align-items: center;
+  font-family: "Plus Jakarta Sans-Regular", Helvetica;
+  font-weight: 400;
+  color: #475569;
+  font-size: 11px;
+  letter-spacing: 0;
+  line-height: 16.5px;
+  white-space: nowrap;
+}
+
+.sign-up input[type="text"],
+.sign-up input[type="email"],
+.sign-up input[type="tel"],
+.sign-up input[type="password"],
+.sign-up input[type="date"] {
+  min-width: 0;
+  color: #1e293b;
+  font-family: "Plus Jakarta Sans-Regular", Helvetica, sans-serif;
+  font-size: 14px;
+}
+
+.sign-up input:not([type="checkbox"]):focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.sign-up input::placeholder {
+  color: #6b7280;
+  opacity: 1;
+}
+
+.sign-up input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: #f59e0b;
+  cursor: pointer;
+}
+
+.sign-up .button-toggle {
+  cursor: pointer;
+}
+
+.sign-up .button-toggle img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+.sign-up .text-wrapper-3 {
+    text-decoration: none;
+    cursor: pointer;
+}
+
+/*       FORGOT PASSWORD      */
+@font-face {
+  font-family: "Liberation Sans-Regular";
+  src: local("Liberation Sans-Regular");
+}
+/* @FONTWARNING[{"type": "restricted", "family": "Liberation Sans-Bold", "weight": "700", "style": "normal", "allowsCrossOrigin": false}] */
+
+@font-face {
+  font-family: "Liberation Sans-Bold";
+  src: local("Liberation Sans-Bold");
+}
+.forgot_password {
+  background-color: #f8fafc;
+  width: 100%;
+  min-width: 0;
+  min-height: 1105px;
+  display: flex;
+}
+
+.forgot_password .forgot_password-wrapper {
+  display: flex;
+  width: 100%;
+  height: 1105px;
+  position: relative;
+  align-items: center;
+  justify-content: center;
+  padding: 223.75px 32px;
+  background:
+    linear-gradient(
+      0deg,
+      rgba(244, 245, 248, 1) 0%,
+      rgba(244, 245, 248, 1) 100%
+    ),
+    linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 1) 0%,
+      rgba(255, 255, 255, 1) 100%
+    );
+}
+
+.forgot_password .main {
+  display: flex;
+  flex-direction: column;
+  max-width: 460px;
+  align-items: flex-start;
+  gap: 24px;
+  padding: 40px;
+  position: relative;
+  flex: 1;
+  flex-grow: 1;
+  background-color: #ffffff;
+  border-radius: 28px;
+}
+
+.forgot_password .div {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  background-color: #ffffff01;
+  border-radius: 28px;
+  box-shadow:
+    0px 20px 40px -15px #00000008,
+    0px 10px 30px -5px #0000000a;
+}
+
+.forgot_password .top-navigation {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 0px 0px 5px;
+  position: relative;
+  align-self: stretch;
+  width: 100%;
+  flex: 0 0 auto;
+}
+
+.forgot_password .link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.forgot_password .SVG {
+  position: relative;
+  width: 16px;
+  height: 16px;
+}
+
+.forgot_password .vector {
+  position: absolute;
+  width: 91.67%;
+  height: 85.42%;
+  top: 14.58%;
+  left: 8.33%;
+}
+
+.forgot_password .text {
+  font-family: "Liberation Sans-Regular", Helvetica;
+  font-weight: 400;
+  color: #6b7280;
+  font-size: 14px;
+  letter-spacing: 0;
+  line-height: 20px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: fit-content;
+  margin-top: -1px;
+  white-space: nowrap;
+}
+
+.forgot_password .header-section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  position: relative;
+  align-self: stretch;
+  width: 100%;
+  flex: 0 0 auto;
+}
+
+.forgot_password .div-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  position: relative;
+  align-self: stretch;
+  width: 100%;
+  flex: 0 0 auto;
+}
+
+.forgot_password .text-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  align-self: stretch;
+  margin-top: -1px;
+  font-family: "Liberation Sans-Bold", Helvetica;
+  font-weight: 700;
+  color: #1e2329;
+  font-size: 26px;
+  letter-spacing: -0.65px;
+  line-height: 32.5px;
+}
+
+.forgot_password .enter-your {
+  position: relative;
+  align-self: stretch;
+  margin-top: -1px;
+  font-family: "Liberation Sans-Regular", Helvetica;
+  font-weight: 400;
+  color: #6b7280;
+  font-size: 14px;
+  letter-spacing: 0;
+  line-height: 20px;
+}
+
+.forgot_password .form-section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 4px 0px 0px;
+  position: relative;
+  align-self: stretch;
+  width: 100%;
+  flex: 0 0 auto;
+}
+
+.forgot_password .input-group-email-or {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  position: relative;
+  align-self: stretch;
+  width: 100%;
+  flex: 0 0 auto;
+}
+
+.forgot_password .label {
+  position: relative;
+  display: flex;
+  align-items: center;
+  align-self: stretch;
+  margin-top: -1px;
+  font-family: "Liberation Sans-Bold", Helvetica;
+  font-weight: 700;
+  color: #334155;
+  font-size: 12px;
+  letter-spacing: 0;
+  line-height: 16px;
+}
+
+.forgot_password .container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  position: relative;
+  align-self: stretch;
+  width: 100%;
+  flex: 0 0 auto;
+  border-radius: 12px;
+}
+
+.forgot_password .input {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 14px 14px 14px 40px;
+  position: relative;
+  align-self: stretch;
+  width: 100%;
+  flex: 0 0 auto;
+  background-color: #f1f3f7;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid;
+  border-color: transparent;
+}
+
+.forgot_password .container-2 {
+  position: relative;
+  align-self: stretch;
+  width: 100%;
+  border: none;
+  background: none;
+  margin-top: -1px;
+  font-family: "Liberation Sans-Regular", Helvetica;
+  font-weight: 400;
+  color: #94a3b8;
+  font-size: 14px;
+  letter-spacing: 0;
+  line-height: normal;
+  padding: 0;
+}
+
+.forgot_password .prefix-icon-user {
+  display: inline-flex;
+  height: 100%;
+  align-items: center;
+  padding: 0px 0px 0px 14px;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.forgot_password .img {
+  position: absolute;
+  width: 85.00%;
+  height: 94.38%;
+  top: 5.62%;
+  left: 15.00%;
+}
+
+.forgot_password .action-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7.11e-14px;
+  padding: 14px 16px;
+  position: relative;
+  align-self: stretch;
+  width: 100%;
+  flex: 0 0 auto;
+  background-color: #f97316;
+  border-radius: 12px;
+  box-shadow: 0px 4px 14px #f9731659;
+}
+
+.forgot_password .container-3 {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.forgot_password .text-2 {
+  justify-content: center;
+  font-family: "Liberation Sans-Bold", Helvetica;
+  font-weight: 700;
+  color: #ffffff;
+  font-size: 14px;
+  text-align: center;
+  letter-spacing: 0;
+  line-height: 20px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: fit-content;
+  margin-top: -1px;
+  white-space: nowrap;
+}
+
+.forgot_password .SVG-margin {
+  display: flex;
+  flex-direction: column;
+  width: 24px;
+  height: 16px;
+  align-items: flex-start;
+  padding: 0px 0px 0px 8px;
+  position: relative;
+}
+
+.forgot_password .SVG-wrapper {
+  display: flex;
+  flex-direction: column;
+  width: 16px;
+  height: 16px;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.forgot_password .vector-wrapper {
+  position: relative;
+  flex: 1;
+  width: 16px;
+  flex-grow: 1;
+}
+
+.forgot_password .vector-2 {
+  position: absolute;
+  width: 92.08%;
+  height: 85.83%;
+  top: 14.17%;
+  left: 7.92%;
+}
+
+.forgot_password .divider-section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 4px 0px 0px;
+  position: relative;
+  align-self: stretch;
+  width: 100%;
+  flex: 0 0 auto;
+}
+
+.forgot_password .horizontal-divider-wrapper {
+  display: flex;
+  width: 100%;
+  height: calc(100% - 4px);
+  align-items: center;
+  position: absolute;
+  top: 4px;
+  left: 0;
+}
+
+.forgot_password .horizontal-divider {
+  position: relative;
+  flex: 1;
+  flex-grow: 1;
+  height: 1px;
+  border-top-width: 1px;
+  border-top-style: solid;
+  border-color: #e2e8f0cc;
+}
+
+.forgot_password .background-wrapper {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  position: relative;
+  align-self: stretch;
+  width: 100%;
+  flex: 0 0 auto;
+}
+
+.forgot_password .background {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0px 12px;
+  position: relative;
+  align-self: stretch;
+  flex: 0 0 auto;
+  background-color: #ffffff;
+}
+
+.forgot_password .text-3 {
+  justify-content: center;
+  font-family: "Liberation Sans-Bold", Helvetica;
+  font-weight: 700;
+  color: #94a3b8;
+  font-size: 11px;
+  text-align: center;
+  letter-spacing: 0.55px;
+  line-height: 16.5px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: fit-content;
+  margin-top: -1px;
+  white-space: nowrap;
+}
+
+.forgot_password .social-auth-section {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 12px;
+  padding: 4px 0px 0px;
+  position: relative;
+  align-self: stretch;
+  width: 100%;
+  flex: 0 0 auto;
+}
+
+.forgot_password .div-2 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 12px;
+  position: relative;
+  flex: 1;
+  flex-grow: 1;
+  background-color: #f1f3f7;
+  border-radius: 12px;
+  border: 1px solid;
+  border-color: transparent;
+}
+
+.forgot_password .google-logo-SVG {
+  position: relative;
+  width: 24px;
+  height: 16px;
+}
+
+.forgot_password .container-4 {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  flex: 0 0 auto;
+  margin-left: -5.68e-14px;
+}
+
+.forgot_password .text-4 {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  margin-top: -1px;
+  font-family: "Liberation Sans-Regular", Helvetica;
+  font-weight: 400;
+  color: #334155;
+  font-size: 14px;
+  text-align: center;
+  letter-spacing: 0;
+  line-height: 20px;
+  white-space: nowrap;
+}
+
+.forgot_password .apple-logo-SVG {
+  width: 24px;
+  align-items: flex-start;
+  padding: 0px 8px 0px 0px;
+  display: flex;
+  flex-direction: column;
+  height: 16px;
+  position: relative;
+}
+
+.forgot_password .vector-3 {
+  position: absolute;
+  width: 91.45%;
+  height: 100%;
+  top: 0;
+  left: 8.55%;
+}
+
+.forgot_password .footer-section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px 0px 0px;
+  position: relative;
+  align-self: stretch;
+  width: 100%;
+  flex: 0 0 auto;
+}
+
+.forgot_password .switch-to-sign-in {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 4px;
+  position: relative;
+  align-self: stretch;
+  width: 100%;
+  flex: 0 0 auto;
+}
+
+.forgot_password .text-5 {
+  justify-content: center;
+  font-family: "Liberation Sans-Regular", Helvetica;
+  font-weight: 400;
+  color: #6b7280;
+  font-size: 13px;
+  text-align: center;
+  letter-spacing: 0;
+  line-height: 16px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: fit-content;
+  margin-top: -1px;
+  white-space: nowrap;
+}
+
+.forgot_password .link-sign-in {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  margin-top: -1px;
+  font-family: "Liberation Sans-Bold", Helvetica;
+  font-weight: 700;
+  color: #f97316;
+  font-size: 13px;
+  text-align: center;
+  letter-spacing: 0;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.forgot_password .security-guarantee {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  align-self: stretch;
+  width: 100%;
+  flex: 0 0 auto;
+}
+
+.forgot_password .img-wrapper {
+  position: relative;
+  width: 14px;
+  height: 14px;
+}
+
+.forgot_password .vector-4 {
+  position: absolute;
+  width: 91.25%;
+  height: 92.44%;
+  top: 7.56%;
+  left: 8.75%;
+}
+
+.forgot_password .margin {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 0px 0px 0px 6px;
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.forgot_password .p {
+  justify-content: center;
+  font-family: "Liberation Sans-Regular", Helvetica;
+  font-weight: 400;
+  color: #94a3b8;
+  font-size: 11px;
+  text-align: center;
+  letter-spacing: 0;
+  line-height: 16.5px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: fit-content;
+  margin-top: -1px;
+  white-space: nowrap;
+}
+
+/* Forgot Password: icon alignment and clickable navigation */
+.forgot_password .link,
+.forgot_password .link-sign-in { text-decoration: none; cursor: pointer; }
+.forgot_password .prefix-icon-user .SVG { width: 16px; height: 16px; }
+.forgot_password .google-logo-SVG { object-fit: contain; }
+.forgot_password .vector, .forgot_password .img,
+.forgot_password .vector-2, .forgot_password .vector-3,
+.forgot_password .vector-4 { object-fit: contain; }
+
+
+.forgot_password .container-2 {
+    width: 100%;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    appearance: none;
+    font-size: 14px;
+    color: #334155;
+    padding: 0;
+}
+
+/* Khi nhấn vào ô nhập */
+.forgot_password .container-2:focus {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
 }
