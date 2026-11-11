@@ -1,0 +1,84 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign in</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+</head>
+<body>
+<div class="login"><div class="html-body"><div class="main-logincard"><div class="div"></div>
+
+<div class="header-section">
+    <div class="div-2"><div class="text-wrapper">Sign in</div></div>
+    <div class="div-2"><p class="enter-your-email-or">Enter your email or phone number and password to<br>continue.</p></div>
+</div>
+
+<div class="login-form">
+    <div class="div-3">
+        <div class="div-2"><label class="label" for="input-1">Email or phone number</label></div>
+        <div class="overlay-shadow"><div class="input">
+            <input class="container" id="input-1" type="text" placeholder="Enter your email or phone number">
+        </div><div class="div-wrapper"><div class="div-4">
+            <img src="{{ url_for('static', filename='images/User.svg') }}">
+        </div></div></div>
+    </div>
+
+    <div class="div-3">
+        <div class="container-2">
+            <div class="text-wrapper-2"><div class="text">Password</div></div>
+            <div class="text-wrapper-2"><a class="text-2" href="/forgot-password">Forgot password?</a></div>
+        </div>
+        <div class="overlay-shadow"><div class="container-wrapper" style="position:relative">
+            <img src="{{ url_for('static', filename='images/lock.svg') }}" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);width:16px;z-index:2">
+            <input class="container-3" id="password" type="password" placeholder="Enter your password" style="padding-left:40px;padding-right:42px;box-sizing:border-box">
+            <button type="button" id="toggle-password" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);border:0;background:none;padding:0;cursor:pointer">
+                <img src="{{ url_for('static', filename='images/eye.svg') }}" style="width:18px;height:18px;display:block">
+            </button>
+        </div></div>
+    </div>
+
+    <div class="remember-me-checkbox" style="display:flex;align-items:center;gap:8px">
+        <input type="checkbox" id="remember-me" style="appearance:auto;width:16px;height:16px;margin:0">
+        <label for="remember-me" style="font:12px Arial">Remember me</label>
+    </div>
+    <div class="submit-button-button"><div class="container-4"><div class="text-3">Sign in &nbsp; →</div></div></div>
+</div>
+
+<div class="div-2">
+    <div class="horizontal-divider-wrapper"><div class="horizontal-divider"></div></div>
+    <div class="background-wrapper"><div class="background"><div class="text-4">OR CONTINUE WITH</div></div></div>
+</div>
+
+<div class="social-logins">
+    <div class="google-button">
+        <div class="div-4"><img class="vector-5" src="{{ url_for('static', filename='images/google.svg') }}"></div>
+        <div class="container-4"><div class="text-5">Google</div></div>
+    </div>
+    <div class="apple-ID-button">
+        <div class="div-4"><img class="vector-9" src="{{ url_for('static', filename='images/apple.svg') }}"></div>
+        <div class="container-4"><div class="text-5">Apple ID</div></div>
+    </div>
+</div>
+
+<div class="footer-section">
+    <div class="sign-up-link">
+        <div class="text-6">Don't have an account?</div>
+        <a class="link-sign-up-now" href="{{ url_for('signup') }}">Sign up now</a>
+    </div>
+    <div class="security-badge">
+        <div class="vector-wrapper">♢</div>
+        <div class="container-4"><p class="p">Data secured with SSL 256-bit encryption</p></div>
+    </div>
+</div>
+
+</div></div></div>
+<script>
+document.getElementById("toggle-password").onclick = function () {
+    const input = document.getElementById("password");
+    input.type = input.type === "password" ? "text" : "password";
+};
+</script>
+</body>
+</html>
