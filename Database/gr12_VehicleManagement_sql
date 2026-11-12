@@ -1,72 +1,613 @@
-DROP TABLE IF EXISTS models;
-DROP TABLE IF EXISTS brands;
-DROP TABLE IF EXISTS customers;
 
+CREATE DATABASE IF NOT EXISTS VehicleManagement
+CHARACTER SET utf8mb4
+COLLATE utf8mb4_unicode_ci;
 
-/* 2.1. Hãng xe */
-CREATE TABLE brands (
-    brand_id    INT           NOT NULL AUTO_INCREMENT,
-    brand_name  VARCHAR(50)   NOT NULL,
-    country     VARCHAR(50)   NULL,
-    PRIMARY KEY (brand_id),
-    UNIQUE KEY uq_brands_name (brand_name)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+USE VehicleManagement;
 
-/* 2.2. Dòng xe */
-CREATE TABLE models (
-    model_id      INT          NOT NULL AUTO_INCREMENT,
-    brand_id      INT          NOT NULL,
-    model_name    VARCHAR(80)  NOT NULL,
-    vehicle_type  ENUM('Sedan','SUV','Hatchback','MPV','Pickup','Xe may','Xe tai') NOT NULL,
-    seats         TINYINT UNSIGNED NOT NULL,
-    fuel_type     ENUM('Xang','Dau','Dien','Hybrid') NOT NULL,
-    PRIMARY KEY (model_id),
-    UNIQUE KEY uq_models_name (brand_id, model_name),
-    CONSTRAINT fk_models_brand FOREIGN KEY (brand_id) REFERENCES brands (brand_id),
-    CONSTRAINT ck_models_seats CHECK (seats BETWEEN 1 AND 45)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+-- =====================================================
+-- PHAN 1: TAO CAC BANG
+-- =====================================================
 
-/* 2.3. Khách hàng (đồng thời là chủ xe khi được vehicles.owner_id tham chiếu) */
-CREATE TABLE customers (
-    customer_id    INT          NOT NULL AUTO_INCREMENT,
-    full_name      VARCHAR(100) NOT NULL,
-    gender         ENUM('Nam','Nu','Khac') NOT NULL,
-    birth_date     DATE         NULL,
-    phone          VARCHAR(15)  NOT NULL,
-    email          VARCHAR(100) NULL,
-    citizen_id     CHAR(12)     NULL,
-    driver_license VARCHAR(20)  NULL,
-    address        VARCHAR(200) NULL,
-    created_at     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (customer_id),
-    UNIQUE KEY uq_customers_phone (phone),
-    UNIQUE KEY uq_customers_citizen (citizen_id),
-    CONSTRAINT ck_customers_phone CHECK (CHAR_LENGTH(phone) BETWEEN 9 AND 15),
-    CONSTRAINT ck_customers_birth CHECK (birth_date IS NULL OR birth_date >= '1900-01-01')
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS Vehicles (
+    VehicleID INT AUTO_INCREMENT PRIMARY KEY,
+    Brand VARCHAR(50) NOT NULL,
+    Model VARCHAR(50) NOT NULL,
+    VehicleType VARCHAR(30) NOT NULL,
+    ManufactureYear INT,
+    LicensePlate VARCHAR(20) NOT NULL UNIQUE,
+    Color VARCHAR(30),
+    PricePerDay DECIMAL(12,2) NOT NULL,
+    Status ENUM('Available','Rented','Maintenance')
+        DEFAULT 'Available',
+    CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-/* 2.4. Xe */
-CREATE TABLE vehicles (
-    vehicle_id       INT           NOT NULL AUTO_INCREMENT,
-    plate_number     VARCHAR(12)   NOT NULL,
-    model_id         INT           NOT NULL,
-    owner_id         INT           NOT NULL,
-    vin              CHAR(17)      NULL,
-    engine_number    VARCHAR(20)   NULL,
-    color            VARCHAR(20)   NOT NULL,
-    manufacture_year SMALLINT UNSIGNED NOT NULL,
-    purchase_date    DATE          NULL,
-    odometer         INT UNSIGNED  NOT NULL DEFAULT 0,
-    daily_rate       DECIMAL(12,2) NOT NULL,
-    status           ENUM('San sang','Dang thue','Bao duong','Ngung su dung')
-                                   NOT NULL DEFAULT 'San sang',
-    note             VARCHAR(300)  NULL,
-    PRIMARY KEY (vehicle_id),
-    UNIQUE KEY uq_vehicles_plate (plate_number),
-    UNIQUE KEY uq_vehicles_vin (vin),
-    KEY ix_vehicles_status (status),
-    CONSTRAINT fk_vehicles_model FOREIGN KEY (model_id) REFERENCES models (model_id),
-    CONSTRAINT fk_vehicles_owner FOREIGN KEY (owner_id) REFERENCES customers (customer_id),
-    CONSTRAINT ck_vehicles_year CHECK (manufacture_year BETWEEN 1950 AND 2100),
-    CONSTRAINT ck_vehicles_rate CHECK (daily_rate >= 0)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+    CHECK (ManufactureYear IS NULL OR ManufactureYear BETWEEN 1900 AND 2100),
+    CHECK (PricePerDay >= 0)
+);
+
+CREATE TABLE IF NOT EXISTS Customers (
+    CustomerID INT AUTO_INCREMENT PRIMARY KEY,
+    FullName VARCHAR(100) NOT NULL,
+    Gender ENUM('Male','Female','Other'),
+    DateOfBirth DATE,
+    Phone VARCHAR(15) NOT NULL UNIQUE,
+    Email VARCHAR(100) UNIQUE,
+    Address VARCHAR(255),
+    DriverLicense VARCHAR(30) NOT NULL UNIQUE,
+    CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS Employees (
+    EmployeeID INT AUTO_INCREMENT PRIMARY KEY,
+    FullName VARCHAR(100) NOT NULL,
+    Phone VARCHAR(15) NOT NULL UNIQUE,
+    Email VARCHAR(100) UNIQUE,
+    Position VARCHAR(50),
+    Salary DECIMAL(12,2) DEFAULT 0,
+    HireDate DATE,
+    CHECK (Salary >= 0)
+);
+
+CREATE TABLE IF NOT EXISTS Rentals (
+    RentalID INT AUTO_INCREMENT PRIMARY KEY,
+    VehicleID INT NOT NULL,
+    CustomerID INT NOT NULL,
+    EmployeeID INT NOT NULL,
+    RentalDate DATE NOT NULL,
+    ReturnDate DATE NOT NULL,
+    ActualReturnDate DATE,
+    TotalDays INT,
+    PricePerDay DECIMAL(12,2) NOT NULL,
+    TotalAmount DECIMAL(14,2) NOT NULL DEFAULT 0,
+    Status ENUM('Active','Completed','Cancelled')
+        DEFAULT 'Active',
+    Notes TEXT,
+    CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_rental_vehicle
+        FOREIGN KEY (VehicleID) REFERENCES Vehicles(VehicleID),
+
+    CONSTRAINT fk_rental_customer
+        FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID),
+
+    CONSTRAINT fk_rental_employee
+        FOREIGN KEY (EmployeeID) REFERENCES Employees(EmployeeID),
+
+    CHECK (ReturnDate >= RentalDate),
+    CHECK (TotalAmount >= 0),
+    CHECK (PricePerDay >= 0)
+);
+
+CREATE TABLE IF NOT EXISTS Payments (
+    PaymentID INT AUTO_INCREMENT PRIMARY KEY,
+    RentalID INT NOT NULL,
+    PaymentDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    Amount DECIMAL(14,2) NOT NULL,
+    PaymentMethod ENUM('Cash','Bank Transfer','Card','E-Wallet')
+        NOT NULL,
+    PaymentStatus ENUM('Paid','Unpaid','Refunded')
+        DEFAULT 'Unpaid',
+    TransactionCode VARCHAR(50) UNIQUE,
+    Notes TEXT,
+
+    FOREIGN KEY (RentalID) REFERENCES Rentals(RentalID),
+
+    CHECK (Amount > 0)
+);
+
+CREATE TABLE IF NOT EXISTS Maintenance (
+    MaintenanceID INT AUTO_INCREMENT PRIMARY KEY,
+    VehicleID INT NOT NULL,
+    MaintenanceDate DATE NOT NULL,
+    Description TEXT NOT NULL,
+    Cost DECIMAL(12,2) DEFAULT 0,
+    Status ENUM('Pending','In Progress','Completed')
+        DEFAULT 'Pending',
+    CompletionDate DATE,
+
+    FOREIGN KEY (VehicleID) REFERENCES Vehicles(VehicleID),
+
+    CHECK (Cost >= 0)
+);
+
+-- =====================================================
+-- PHAN 2: DU LIEU MAU
+-- =====================================================
+
+INSERT IGNORE INTO Vehicles
+(Brand, Model, VehicleType, ManufactureYear,
+ LicensePlate, Color, PricePerDay)
+VALUES
+('Toyota','Camry','Sedan',2023,'51A-12345','Black',800000),
+('Honda','Civic','Sedan',2022,'51B-23456','White',600000),
+('Ford','Ranger','Pickup',2024,'51C-34567','Blue',1000000),
+('Mazda','CX5','SUV',2023,'51D-45678','Red',900000),
+('Hyundai','Accent','Sedan',2022,'51E-56789','Silver',500000);
+
+INSERT IGNORE INTO Customers
+(FullName,Gender,DateOfBirth,Phone,Email,Address,DriverLicense)
+VALUES
+('Nguyen Van An','Male','2000-01-15',
+ '0901234567','an@gmail.com','Ho Chi Minh City','DL001'),
+
+('Tran Thi Binh','Female','1999-05-20',
+ '0912345678','binh@gmail.com','Ha Noi','DL002'),
+
+('Le Van Cuong','Male','2001-08-10',
+ '0923456789','cuong@gmail.com','Da Nang','DL003');
+
+INSERT IGNORE INTO Employees
+(FullName,Phone,Email,Position,Salary,HireDate)
+VALUES
+('Pham Van Nam','0987654321','nam@gmail.com',
+ 'Manager',15000000,'2023-01-01'),
+
+('Hoang Thi Hoa','0976543210','hoa@gmail.com',
+ 'Staff',9000000,'2024-02-01');
+
+-- =====================================================
+-- PHAN 3: TRIGGERS
+-- =====================================================
+
+DELIMITER $$
+
+-- Kiem tra xe truoc khi tao hop dong thue
+CREATE TRIGGER trg_check_rental
+BEFORE INSERT ON Rentals
+FOR EACH ROW
+BEGIN
+    DECLARE v_status VARCHAR(20);
+    DECLARE v_price DECIMAL(12,2);
+
+    IF NEW.ReturnDate < NEW.RentalDate THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Ngay tra xe khong hop le';
+    END IF;
+
+    IF NEW.Status = 'Active' THEN
+
+        SELECT Status, PricePerDay
+        INTO v_status, v_price
+        FROM Vehicles
+        WHERE VehicleID = NEW.VehicleID
+        FOR UPDATE;
+
+        IF v_status <> 'Available' THEN
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Xe khong san sang de cho thue';
+        END IF;
+
+        SET NEW.PricePerDay = v_price;
+        SET NEW.TotalDays = DATEDIFF(
+            NEW.ReturnDate, NEW.RentalDate
+        ) + 1;
+
+        SET NEW.TotalAmount =
+            NEW.TotalDays * NEW.PricePerDay;
+    END IF;
+END$$
+
+-- Cap nhat trang thai xe sau khi tao hop dong
+CREATE TRIGGER trg_after_rental_insert
+AFTER INSERT ON Rentals
+FOR EACH ROW
+BEGIN
+    IF NEW.Status = 'Active' THEN
+        UPDATE Vehicles
+        SET Status = 'Rented'
+        WHERE VehicleID = NEW.VehicleID;
+    END IF;
+END$$
+
+-- Cap nhat trang thai xe khi hop dong thay doi
+CREATE TRIGGER trg_after_rental_update
+AFTER UPDATE ON Rentals
+FOR EACH ROW
+BEGIN
+    IF OLD.Status <> NEW.Status THEN
+
+        IF NEW.Status = 'Completed'
+           OR NEW.Status = 'Cancelled' THEN
+
+            UPDATE Vehicles
+            SET Status =
+                CASE
+                    WHEN EXISTS (
+                        SELECT 1
+                        FROM Maintenance m
+                        WHERE m.VehicleID = NEW.VehicleID
+                        AND m.Status <> 'Completed'
+                    ) THEN 'Maintenance'
+                    ELSE 'Available'
+                END
+            WHERE VehicleID = NEW.VehicleID;
+
+        END IF;
+
+    END IF;
+END$$
+
+-- Kiem tra so tien thanh toan
+CREATE TRIGGER trg_check_payment
+BEFORE INSERT ON Payments
+FOR EACH ROW
+BEGIN
+    IF NEW.Amount <= 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'So tien thanh toan phai lon hon 0';
+    END IF;
+END$$
+
+-- Cap nhat trang thai xe khi them lich bao tri
+CREATE TRIGGER trg_after_maintenance_insert
+AFTER INSERT ON Maintenance
+FOR EACH ROW
+BEGIN
+    IF NEW.Status <> 'Completed' THEN
+        UPDATE Vehicles
+        SET Status = 'Maintenance'
+        WHERE VehicleID = NEW.VehicleID;
+    END IF;
+END$$
+
+-- Cap nhat trang thai xe khi thay doi bao tri
+CREATE TRIGGER trg_after_maintenance_update
+AFTER UPDATE ON Maintenance
+FOR EACH ROW
+BEGIN
+    IF NEW.Status = 'Completed'
+       AND OLD.Status <> 'Completed' THEN
+
+        UPDATE Vehicles
+        SET Status =
+            CASE
+                WHEN EXISTS (
+                    SELECT 1
+                    FROM Rentals r
+                    WHERE r.VehicleID = NEW.VehicleID
+                    AND r.Status = 'Active'
+                ) THEN 'Rented'
+                ELSE 'Available'
+            END
+        WHERE VehicleID = NEW.VehicleID;
+
+    ELSEIF NEW.Status <> 'Completed' THEN
+
+        UPDATE Vehicles
+        SET Status = 'Maintenance'
+        WHERE VehicleID = NEW.VehicleID;
+
+    END IF;
+END$$
+
+DELIMITER ;
+
+-- =====================================================
+-- PHAN 4: STORED PROCEDURES
+-- =====================================================
+
+DELIMITER $$
+
+-- 1. Them phuong tien
+CREATE PROCEDURE sp_AddVehicle(
+    IN p_Brand VARCHAR(50),
+    IN p_Model VARCHAR(50),
+    IN p_Type VARCHAR(30),
+    IN p_Year INT,
+    IN p_Plate VARCHAR(20),
+    IN p_Color VARCHAR(30),
+    IN p_Price DECIMAL(12,2)
+)
+BEGIN
+    INSERT INTO Vehicles
+    (Brand,Model,VehicleType,ManufactureYear,
+     LicensePlate,Color,PricePerDay)
+    VALUES
+    (p_Brand,p_Model,p_Type,p_Year,
+     p_Plate,p_Color,p_Price);
+END$$
+
+-- 2. Tim kiem phuong tien theo bien so
+CREATE PROCEDURE sp_SearchVehicle(
+    IN p_Plate VARCHAR(20)
+)
+BEGIN
+    SELECT *
+    FROM Vehicles
+    WHERE LicensePlate LIKE CONCAT('%',p_Plate,'%');
+END$$
+
+-- 3. Tao hop dong thue xe
+CREATE PROCEDURE sp_RentVehicle(
+    IN p_VehicleID INT,
+    IN p_CustomerID INT,
+    IN p_EmployeeID INT,
+    IN p_RentalDate DATE,
+    IN p_ReturnDate DATE
+)
+BEGIN
+    DECLARE v_price DECIMAL(12,2);
+    DECLARE v_status VARCHAR(20);
+
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+
+    START TRANSACTION;
+
+    IF p_ReturnDate < p_RentalDate THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Ngay tra xe khong hop le';
+    END IF;
+
+    SELECT Status, PricePerDay
+    INTO v_status, v_price
+    FROM Vehicles
+    WHERE VehicleID = p_VehicleID
+    FOR UPDATE;
+
+    IF v_status <> 'Available' THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Phuong tien khong kha dung';
+    END IF;
+
+    INSERT INTO Rentals
+    (VehicleID,CustomerID,EmployeeID,
+     RentalDate,ReturnDate,PricePerDay,TotalAmount)
+    VALUES
+    (p_VehicleID,p_CustomerID,p_EmployeeID,
+     p_RentalDate,p_ReturnDate,v_price,0);
+
+    COMMIT;
+END$$
+
+-- 4. Tra xe
+CREATE PROCEDURE sp_ReturnVehicle(
+    IN p_RentalID INT
+)
+BEGIN
+    DECLARE v_status VARCHAR(20);
+    DECLARE v_return_date DATE;
+
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+
+    START TRANSACTION;
+
+    SELECT Status, ReturnDate
+    INTO v_status, v_return_date
+    FROM Rentals
+    WHERE RentalID = p_RentalID
+    FOR UPDATE;
+
+    IF v_status <> 'Active' THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Hop dong khong o trang thai Active';
+    END IF;
+
+    UPDATE Rentals
+    SET Status = 'Completed',
+        ActualReturnDate = CURDATE(),
+        TotalDays = DATEDIFF(CURDATE(), RentalDate) + 1,
+        TotalAmount =
+            (DATEDIFF(CURDATE(), RentalDate) + 1)
+            * PricePerDay
+    WHERE RentalID = p_RentalID;
+
+    COMMIT;
+END$$
+
+-- 5. Huy hop dong
+CREATE PROCEDURE sp_CancelRental(
+    IN p_RentalID INT
+)
+BEGIN
+    DECLARE v_status VARCHAR(20);
+
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+
+    START TRANSACTION;
+
+    SELECT Status INTO v_status
+    FROM Rentals
+    WHERE RentalID = p_RentalID
+    FOR UPDATE;
+
+    IF v_status <> 'Active' THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Khong the huy hop dong nay';
+    END IF;
+
+    UPDATE Rentals
+    SET Status = 'Cancelled'
+    WHERE RentalID = p_RentalID;
+
+    COMMIT;
+END$$
+
+-- 6. Them thanh toan
+CREATE PROCEDURE sp_AddPayment(
+    IN p_RentalID INT,
+    IN p_Amount DECIMAL(14,2),
+    IN p_Method VARCHAR(30),
+    IN p_TransactionCode VARCHAR(50)
+)
+BEGIN
+    INSERT INTO Payments
+    (RentalID,Amount,PaymentMethod,
+     PaymentStatus,TransactionCode)
+    VALUES
+    (p_RentalID,p_Amount,p_Method,
+     'Paid',p_TransactionCode);
+END$$
+
+-- 7. Thong ke doanh thu theo thang
+CREATE PROCEDURE sp_RevenueByMonth(
+    IN p_Month INT,
+    IN p_Year INT
+)
+BEGIN
+    SELECT
+        YEAR(PaymentDate) AS Nam,
+        MONTH(PaymentDate) AS Thang,
+        SUM(Amount) AS TongDoanhThu
+    FROM Payments
+    WHERE PaymentStatus = 'Paid'
+    AND MONTH(PaymentDate) = p_Month
+    AND YEAR(PaymentDate) = p_Year
+    GROUP BY YEAR(PaymentDate), MONTH(PaymentDate);
+END$$
+
+DELIMITER ;
+
+-- =====================================================
+-- PHAN 5: VIEWS
+-- =====================================================
+
+-- 1. Danh sach xe
+CREATE OR REPLACE VIEW vw_VehicleList AS
+SELECT
+    VehicleID,
+    Brand,
+    Model,
+    VehicleType,
+    ManufactureYear,
+    LicensePlate,
+    Color,
+    PricePerDay,
+    Status
+FROM Vehicles;
+
+-- 2. Danh sach hop dong thue
+CREATE OR REPLACE VIEW vw_RentalDetails AS
+SELECT
+    r.RentalID,
+    v.LicensePlate,
+    CONCAT(v.Brand,' ',v.Model) AS VehicleName,
+    c.FullName AS CustomerName,
+    c.Phone AS CustomerPhone,
+    e.FullName AS EmployeeName,
+    r.RentalDate,
+    r.ReturnDate,
+    r.ActualReturnDate,
+    r.TotalDays,
+    r.TotalAmount,
+    r.Status
+FROM Rentals r
+JOIN Vehicles v ON r.VehicleID = v.VehicleID
+JOIN Customers c ON r.CustomerID = c.CustomerID
+JOIN Employees e ON r.EmployeeID = e.EmployeeID;
+
+-- 3. Thong tin thanh toan
+CREATE OR REPLACE VIEW vw_PaymentDetails AS
+SELECT
+    p.PaymentID,
+    p.RentalID,
+    c.FullName AS CustomerName,
+    p.PaymentDate,
+    p.Amount,
+    p.PaymentMethod,
+    p.PaymentStatus
+FROM Payments p
+JOIN Rentals r ON p.RentalID = r.RentalID
+JOIN Customers c ON r.CustomerID = c.CustomerID;
+
+-- 4. Lich su bao tri
+CREATE OR REPLACE VIEW vw_MaintenanceHistory AS
+SELECT
+    m.MaintenanceID,
+    v.LicensePlate,
+    v.Brand,
+    v.Model,
+    m.MaintenanceDate,
+    m.Description,
+    m.Cost,
+    m.Status
+FROM Maintenance m
+JOIN Vehicles v ON m.VehicleID = v.VehicleID;
+
+-- =====================================================
+-- PHAN 6: CAC CAU LENH BAO CAO
+-- =====================================================
+
+-- 1. Tong so phuong tien
+SELECT COUNT(*) AS TotalVehicles
+FROM Vehicles;
+
+-- 2. Dem phuong tien theo trang thai
+SELECT Status, COUNT(*) AS Total
+FROM Vehicles
+GROUP BY Status;
+
+-- 3. Phuong tien dang san sang
+SELECT *
+FROM Vehicles
+WHERE Status = 'Available';
+
+-- 4. Hop dong dang hoat dong
+SELECT *
+FROM vw_RentalDetails
+WHERE Status = 'Active';
+
+-- 5. Tong doanh thu
+SELECT
+    COALESCE(SUM(Amount),0) AS TotalRevenue
+FROM Payments
+WHERE PaymentStatus = 'Paid';
+
+-- 6. Khach hang thue xe nhieu nhat
+SELECT
+    c.CustomerID,
+    c.FullName,
+    COUNT(r.RentalID) AS TotalRentals
+FROM Customers c
+LEFT JOIN Rentals r
+    ON c.CustomerID = r.CustomerID
+GROUP BY c.CustomerID, c.FullName
+ORDER BY TotalRentals DESC;
+
+-- 7. Doanh thu theo phuong tien
+SELECT
+    v.VehicleID,
+    v.Brand,
+    v.Model,
+    COALESCE(SUM(p.Amount),0) AS Revenue
+FROM Vehicles v
+LEFT JOIN Rentals r ON v.VehicleID = r.VehicleID
+LEFT JOIN Payments p
+    ON r.RentalID = p.RentalID
+    AND p.PaymentStatus = 'Paid'
+GROUP BY v.VehicleID, v.Brand, v.Model
+ORDER BY Revenue DESC;
+
+-- 8. Chi phi bao tri
+SELECT
+    VehicleID,
+    SUM(Cost) AS TotalMaintenanceCost
+FROM Maintenance
+GROUP BY VehicleID;
+
+-- 9. Doanh thu theo thang
+SELECT
+    YEAR(PaymentDate) AS Nam,
+    MONTH(PaymentDate) AS Thang,
+    SUM(Amount) AS DoanhThu
+FROM Payments
+WHERE PaymentStatus = 'Paid'
+GROUP BY YEAR(PaymentDate), MONTH(PaymentDate)
+ORDER BY Nam, Thang;
+
+-- =====================================================
+-- END OF PROJECT
+-- =====================================================
+
