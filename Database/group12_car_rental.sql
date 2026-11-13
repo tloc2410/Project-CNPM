@@ -36,7 +36,27 @@ CREATE TABLE Oderitem (
     pickupDate DATE,
     returnDate DATE,
     FOREIGN KEY (OderID) REFERENCES Orders(oderID)
+);
 
+CREATE TABLE Car (
+    carID INT PRIMARY KEY AUTO_INCREMENT,
+    TypeID INT,
+    code VARCHAR(50),
+    name VARCHAR(150),
+    pictures TEXT,
+    description TEXT,
+    numberOfSeats INT,
+    pricePerDay DECIMAL(12,2),
+    status VARCHAR(30),
+    numberOfViews INT,
+    FOREIGN KEY (TypeID) REFERENCES CarTypes(typeID)
+);
+
+CREATE TABLE CarTypes (
+    typeID INT PRIMARY KEY AUTO_INCREMENT,
+    typeName VARCHAR(100),
+    description TEXT
+);
 
 - Bảng Payments phục vụ module Thanh toán và Admin
 CREATE TABLE IF NOT EXISTS payments (
