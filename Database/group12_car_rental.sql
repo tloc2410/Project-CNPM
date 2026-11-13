@@ -52,7 +52,3 @@ CREATE TABLE IF NOT EXISTS payments (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Truy vấn cập nhật trạng thái đơn hàng (Admin)
-UPDATE Orders 
-SET status = 'Confirmed', updated_at = CURRENT_TIMESTAMP 
-WHERE oderID = 1 AND status = 'New';
