@@ -3,7 +3,11 @@ from flask import Flask, render_template, request, redirect, url_for, session
 from business.auth_service import register_user, login_user
 from dotenv import load_dotenv
 load_dotenv()
-from business.password_reset_service import create_token_for_email
+from business.password_reset_service import (
+    create_token_for_email,
+    verify_reset_token,
+    reset_password_with_token,
+)
 from business.reset_email import send_reset_email
 app = Flask(
     __name__,
