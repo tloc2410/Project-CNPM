@@ -1,9 +1,3 @@
-"""Password reset business logic: signed 15-minute, single-use links.
-
-Tokens contain only the user ID and a keyed fingerprint of the current
-password hash. After a successful password change, the old token is invalid.
-No extra database table is required for this implementation.
-"""
 import hashlib
 import hmac
 

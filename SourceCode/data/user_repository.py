@@ -16,20 +16,37 @@ def find_user_by_email(email):
         cursor.close()
         connection.close()
 
+def find_user_by_phone(phone):
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
 
-def create_user(full_name, email, password_hash):
+    try:
+        cursor.execute(
+            "SELECT * FROM users WHERE phone = %s",
+            (phone,)
+        )
+        return cursor.fetchone()
+    finally:
+        cursor.close()
+        connection.close()
+
+
+def create_user(full_name, phone, email, password_hash):
     connection = get_db_connection()
     cursor = connection.cursor()
 
     try:
         sql = """
-            INSERT INTO users (fullName, email, passwordHash)
-            VALUES (%s, %s, %s)
+            INSERT INTO users (fullName, phone, email, passwordHash)
+            VALUES (%s, %s, %s, %s)
         """
 
-        cursor.execute(sql, (full_name, email, password_hash))
-        connection.commit()
+        cursor.execute(
+            sql,
+            (full_name, phone, email, password_hash)
+        )
 
+        connection.commit()
         return cursor.lastrowid
 
     except Exception:

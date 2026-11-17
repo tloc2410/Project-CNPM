@@ -1,4 +1,5 @@
 import os
+from data.user_repository import find_user_by_email
 from flask import Flask, render_template, request, redirect, url_for, session
 from business.auth_service import register_user, login_user
 from dotenv import load_dotenv
@@ -43,6 +44,7 @@ def signup():
         full_name = request.form.get("full_name", "")
         email = request.form.get("email", "")
         password = request.form.get("password", "")
+        phone = request.form.get("phone", "").strip()
         confirm_password = request.form.get("confirm_password", "")
 
         if password != confirm_password:
@@ -58,7 +60,7 @@ def signup():
             )
 
         success, message = register_user(
-            full_name, email, password
+            full_name,phone, email, password
         )
 
         if success:
@@ -69,36 +71,51 @@ def signup():
     return render_template("signup.html")
 
 
+
 @app.route("/forgot-password", methods=["GET", "POST"])
 def forgot_password():
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
 
-        message = (
-            "If this email is registered, a password reset link "
-            "will be sent. Please check your inbox."
-        )
+        user = find_user_by_email(email)
+
+        if not user:
+            return render_template(
+                "forgot_password.html",
+                error="This email does not exist."
+            )
 
         try:
             token = create_token_for_email(email)
 
-            if token:
-                reset_url = url_for(
-                    "reset_password",
-                    token=token,
-                    _external=True
-                )
-                send_reset_email(email, reset_url)
+            reset_url = url_for(
+                "reset_password",
+                token=token,
+                _external=True
+            )
+
+            send_reset_email(email, reset_url)
+
+            message = (
+                "If this email is registered, a password reset link "
+                "will be sent. Please check your inbox."
+            )
+
+            return render_template(
+                "forgot_password.html",
+                message=message
+            )
 
         except Exception:
             app.logger.exception("Password reset email failed")
 
-        return render_template(
-            "forgot_password.html",
-            message=message
-        )
+            return render_template(
+                "forgot_password.html",
+                error="Unable to send reset email. Please try again."
+            )
 
     return render_template("forgot_password.html")
+
 
 @app.route("/reset-password/<token>", methods=["GET", "POST"])
 def reset_password(token):
