@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Group12 Car Rental{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/vehicle.css') }}">
+</head>
+<body>
+<header class="site-header">
+    <nav class="nav container" aria-label="Main navigation">
+        <a class="brand" href="{{ url_for('home') }}">
+            <span class="brand-mark" aria-hidden="true">◆</span>
+            <span>Group12<span class="brand-accent">Car</span></span>
+        </a>
+
+        <div class="nav-links">
+            <a href="{{ url_for('home') }}" class="nav-link {% if request.endpoint == 'home' %}active{% endif %}">Trang chủ</a>
+            <a href="{{ url_for('cars') }}" class="nav-link {% if request.endpoint in ['cars', 'car_detail'] %}active{% endif %}">Danh sách xe</a>
+            {% if is_admin() %}
+                <a href="{{ url_for('admin_cars') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('admin_') %}active{% endif %}">Quản lý xe</a>
+                <a href="{{ url_for('admin_car_types') }}" class="nav-link">Loại xe</a>
+            {% endif %}
+        </div>
+
+        <div class="nav-account">
+            {% if session.get('full_name') %}
+                <span class="nav-user" title="{{ session.get('role', '') }}">{{ session.get('full_name') }}</span>
+                <a class="btn btn-ghost btn-small" href="{{ url_for('logout') }}">Đăng xuất</a>
+            {% else %}
+                <a class="btn btn-ghost btn-small" href="{{ url_for('login') }}">Đăng nhập</a>
+                <a class="btn btn-primary btn-small" href="{{ url_for('signup') }}">Đăng ký</a>
+            {% endif %}
+        </div>
+    </nav>
+</header>
+
+<main class="site-main">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="container flash-stack">
+                {% for category, message in messages %}
+                    <div class="flash flash-{{ category }}" role="alert">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer">
+    <div class="container footer-inner">
+        <span>© 2026 Group12 Car Rental</span>
+        <span>Dự án nhóm 12 – Website cho thuê ô tô</span>
+    </div>
+</footer>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

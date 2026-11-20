@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block title %}Danh sách xe – Group12 Car Rental{% endblock %}
+
+{% block content %}
+<section class="container section">
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">DANH MỤC XE</p>
+            <h1>Danh sách xe cho thuê</h1>
+            <p class="page-subtitle">Tất cả dữ liệu được lấy trực tiếp từ MySQL – không nhập cứng trên giao diện.</p>
+        </div>
+        <div class="result-count"><strong>{{ total }}</strong> xe tìm thấy</div>
+    </div>
+
+    {% set action_url = url_for('cars') %}
+    {% set show_status = false %}
+    {% include '_filter_form.html' %}
+
+    {% if db_error %}
+        <div class="notice notice-warning">Không thể truy vấn MySQL: {{ db_error }}</div>
+    {% endif %}
+
+    {% if cars %}
+        <div class="car-grid">
+            {% for car in cars %}
+                {% include '_car_card.html' %}
+            {% endfor %}
+        </div>
+
+        {% if total_pages > 1 %}
+        <nav class="pagination" aria-label="Phân trang">
+            {% if filters.page > 1 %}
+                <a class="page-btn" href="{{ url_for('cars', q=filters.keyword, type_id=filters.type_id, seats_min=filters.seats_min, seats_max=filters.seats_max, sort=filters.sort, page=filters.page - 1) }}">← Trước</a>
+            {% endif %}
+
+            {% for p in range(1, total_pages + 1) %}
+                {% if p == 1 or p == total_pages or (p >= filters.page - 2 and p <= filters.page + 2) %}
+                    <a class="page-btn {% if p == filters.page %}active{% endif %}"
+                       href="{{ url_for('cars', q=filters.keyword, type_id=filters.type_id, seats_min=filters.seats_min, seats_max=filters.seats_max, sort=filters.sort, page=p) }}">{{ p }}</a>
+                {% elif p == 2 and filters.page > 4 or p == total_pages - 1 and filters.page < total_pages - 3 %}
+                    <span class="page-dots">…</span>
+                {% endif %}
+            {% endfor %}
+
+            {% if filters.page < total_pages %}
+                <a class="page-btn" href="{{ url_for('cars', q=filters.keyword, type_id=filters.type_id, seats_min=filters.seats_min, seats_max=filters.seats_max, sort=filters.sort, page=filters.page + 1) }}">Sau →</a>
+            {% endif %}
+        </nav>
+        {% endif %}
+    {% else %}
+        <div class="empty-state">
+            <span class="empty-icon">🔍</span>
+            <h3>Không tìm thấy xe phù hợp</h3>
+            <p>Thử thay đổi từ khóa, loại xe hoặc khoảng số chỗ để xem thêm kết quả.</p>
+            <a class="btn btn-primary" href="{{ url_for('cars') }}">Xem tất cả xe</a>
+        </div>
+    {% endif %}
+</section>
+{% endblock %}
