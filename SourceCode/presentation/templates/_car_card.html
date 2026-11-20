@@ -1,0 +1,23 @@
+<article class="car-card">
+    <a class="car-card-image" href="{{ url_for('car_detail', car_id=car.carID) }}">
+        <img src="{{ car_image(car) }}" alt="{{ car.name }}"
+             onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/cars/car-placeholder.svg') }}'">
+        <span class="status-badge status-{{ car.status }}">{{ status_label(car.status) }}</span>
+    </a>
+    <div class="car-card-body">
+        <p class="car-type">{{ car.typeName or 'Chưa phân loại' }}</p>
+        <h3 class="car-name"><a href="{{ url_for('car_detail', car_id=car.carID) }}">{{ car.name }}</a></h3>
+        <p class="car-code">Mã xe: {{ car.code }}</p>
+        <div class="car-specs">
+            <span title="Số chỗ">👥 {{ car.numberOfSeats or '—' }} chỗ</span>
+            <span title="Lượt xem">👁 {{ car.numberOfViews or 0 }}</span>
+            <span title="Lượt thuê">📅 {{ car.rentalCount or 0 }}</span>
+        </div>
+        <div class="car-card-footer">
+            <div class="car-price">
+                <strong>{{ format_price(car.pricePerDay) }}</strong><span> / ngày</span>
+            </div>
+            <a class="btn btn-primary btn-small" href="{{ url_for('car_detail', car_id=car.carID) }}">Chi tiết</a>
+        </div>
+    </div>
+</article>

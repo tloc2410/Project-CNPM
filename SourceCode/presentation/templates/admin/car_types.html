@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% block title %}Quản lý loại xe – Group12 Car Rental{% endblock %}
+
+{% block content %}
+<section class="container section">
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">ADMIN</p>
+            <h1>Quản lý loại xe</h1>
+            <p class="page-subtitle">Danh mục CarTypes dùng chung với bảng Cars. Không xóa loại xe đang có xe thuộc về nó.</p>
+        </div>
+        <a class="btn btn-ghost" href="{{ url_for('admin_cars') }}">← Quản lý xe</a>
+    </div>
+
+    {% if errors.get('database') %}
+        <div class="notice notice-error">{{ errors.database }}</div>
+    {% endif %}
+
+    <div class="admin-two-col">
+        <div class="form-card">
+            <h2>Thêm loại xe mới</h2>
+            <form method="POST" action="{{ url_for('admin_car_types') }}" class="admin-form">
+                <div class="form-field">
+                    <label for="type-name">Tên loại xe <span class="required">*</span></label>
+                    <input id="type-name" name="type_name" value="{{ form.get('type_name', '') }}" required maxlength="100" placeholder="VD: SUV">
+                    {% if errors.get('type_name') %}<small class="field-error">{{ errors.type_name }}</small>{% endif %}
+                </div>
+                <div class="form-field">
+                    <label for="type-description">Mô tả</label>
+                    <textarea id="type-description" name="description" rows="3" maxlength="1000">{{ form.get('description', '') }}</textarea>
+                </div>
+                <button class="btn btn-primary" type="submit">+ Thêm loại xe</button>
+            </form>
+        </div>
+
+        <div class="table-wrap">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Tên loại</th>
+                        <th>Mô tả</th>
+                        <th>Số xe</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for type in types %}
+                    <tr>
+                        <td><strong>{{ type.typeName }}</strong><small>ID: {{ type.typeId }}</small></td>
+                        <td>{{ type.description or '—' }}</td>
+                        <td><span class="count-pill">{{ type.car_count }}</span></td>
+                    </tr>
+                    <tr class="edit-row">
+                        <td colspan="3">
+                            <form class="inline-form" method="POST" action="{{ url_for('admin_car_type_edit', type_id=type.typeId) }}">
+                                <input name="type_name" value="{{ type.typeName }}" maxlength="100" required aria-label="Tên loại xe">
+                                <input name="description" value="{{ type.description or '' }}" maxlength="1000" aria-label="Mô tả loại xe">
+                                <button class="btn btn-ghost btn-small" type="submit">Lưu</button>
+                            </form>
+                            <form class="inline-form" method="POST" action="{{ url_for('admin_car_type_delete', type_id=type.typeId) }}"
+                                  onsubmit="return confirm('Xác nhận xóa loại xe {{ type.typeName }}?');">
+                                <button class="link-btn link-danger" type="submit">Xóa</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="3">Chưa có loại xe nào. Hãy thêm loại xe đầu tiên.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+{% endblock %}

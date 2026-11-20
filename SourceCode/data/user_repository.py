@@ -31,6 +31,22 @@ def find_user_by_phone(phone):
         connection.close()
 
 
+def find_user_permissions(user_id):
+    """Return the current role/lock state from MySQL for backend auth checks."""
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+
+    try:
+        cursor.execute(
+            "SELECT role, isLocked FROM users WHERE UserID = %s",
+            (user_id,),
+        )
+        return cursor.fetchone()
+    finally:
+        cursor.close()
+        connection.close()
+
+
 def create_user(full_name, phone, email, password_hash):
     connection = get_db_connection()
     cursor = connection.cursor()
