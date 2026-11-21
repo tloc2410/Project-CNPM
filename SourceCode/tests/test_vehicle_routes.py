@@ -43,6 +43,22 @@ class VehicleRouteTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("Toyota Vios 2023", response.get_data(as_text=True))
 
+    def test_nav_vehicle_dropdown_and_car_rental_without_arrow(self):
+        with patch.object(vehicle_service, "list_vehicles",
+                          return_value=([CAR], 1, 1, FILTERS)), \
+             patch.object(vehicle_service, "list_car_types",
+                          return_value=[TYPE]):
+            response = self.client.get("/")
+        self.assertEqual(response.status_code, 200)
+        html = response.get_data(as_text=True)
+        self.assertIn('id="g12-seats-toggle"', html)
+        self.assertIn('id="g12-seat-dropdown"', html)
+        for seats in ("4-Seater Vehicle", "7-Seater Vehicle",
+                      "16-Seater Vehicle", "45-Seater Vehicle"):
+            self.assertIn(seats, html)
+        self.assertIn('CAR RENTAL</a>', html)
+        self.assertNotIn('CAR RENTAL <span class="g12-chevron">', html)
+
     def test_cars_page_passes_filters_to_service(self):
         with patch.object(vehicle_service, "list_vehicles",
                           return_value=([CAR], 1, 1, FILTERS)) as listing, \
