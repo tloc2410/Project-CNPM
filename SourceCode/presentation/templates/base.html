@@ -19,9 +19,20 @@
     </a>
     <div class="g12-nav-links">
       <a href="{{ url_for('home') }}#about-us">ABOUT US</a>
-      <a href="{{ url_for('cars') }}" class="{% if request.endpoint in ('cars', 'car_detail') %}g12-nav-active{% endif %}">VEHICLE LIST <span class="g12-chevron">⌄</span></a>
-      <a href="{{ url_for('home') }}#rental-process">CAR RENTAL <span class="g12-chevron">⌄</span></a>
+      <div class="g12-nav-vehicle-group">
+        <a href="{{ url_for('cars') }}" class="{% if request.endpoint in ('cars', 'car_detail') %}g12-nav-active{% endif %}">VEHICLE LIST</a>
+        <button type="button" id="g12-seats-toggle" class="g12-nav-seat-toggle" aria-label="Show vehicle categories by number of seats" aria-controls="g12-seat-dropdown" aria-expanded="false" aria-haspopup="true">
+          <span class="g12-chevron" aria-hidden="true">⌄</span>
+        </button>
+      </div>
+      <a href="{{ url_for('home') }}#rental-process">CAR RENTAL</a>
       <a href="{{ url_for('home') }}#contact">CONTACT</a>
+    </div>
+    <div id="g12-seat-dropdown" class="g12-nav-seat-dropdown" aria-label="Vehicle categories by seats" hidden>
+      <a href="{{ url_for('cars', seats_min=4, seats_max=4) }}">4-Seater Vehicle</a>
+      <a href="{{ url_for('cars', seats_min=7, seats_max=7) }}">7-Seater Vehicle</a>
+      <a href="{{ url_for('cars', seats_min=16, seats_max=16) }}">16-Seater Vehicle</a>
+      <a href="{{ url_for('cars', seats_min=45, seats_max=45) }}">45-Seater Vehicle</a>
     </div>
     <form class="g12-header-search" action="{{ url_for('cars') }}" method="GET" role="search">
       <input name="q" type="search" value="{{ request.args.get('q','') }}" aria-label="Search for cars">
@@ -52,6 +63,36 @@
 <footer class="g12-site-footer" id="contact">
   <div class="g12-page-width"><img src="{{ url_for('static', filename='images/group12-logo.svg') }}" alt="Group12" width="128"><span>© 2026 Group12 Car Rental · Find your next journey</span><a href="{{ url_for('cars') }}">Vehicle List</a></div>
 </footer>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const toggle = document.getElementById('g12-seats-toggle');
+  const panel = document.getElementById('g12-seat-dropdown');
+  if (!toggle || !panel) return;
+
+  function setOpen(open) {
+    panel.hidden = !open;
+    toggle.setAttribute('aria-expanded', String(open));
+  }
+
+  toggle.addEventListener('click', function (event) {
+    event.stopPropagation();
+    setOpen(panel.hidden);
+  });
+
+  document.addEventListener('click', function (event) {
+    if (!panel.hidden && !panel.contains(event.target) && !toggle.contains(event.target)) {
+      setOpen(false);
+    }
+  });
+
+  document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape' && !panel.hidden) {
+      setOpen(false);
+      toggle.focus();
+    }
+  });
+});
+</script>
 {% block scripts %}{% endblock %}
 </body>
 </html>
