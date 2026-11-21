@@ -1,12 +1,4 @@
--- ============================================================================
--- Module: Rental Cart & Booking (Đỗ Thu Thảo)
--- Project: Group 12 Car Rental
--- Note: File SQL riêng bổ sung cho module Cart & Booking.
---       Không sửa đổi Database/group12_car_rental.sql của nhóm.
---       Khớp 100% schema chuẩn: Users, CarTypes, Cars, Orders, Oderitem.
--- ============================================================================
 
-CREATE DATABASE IF NOT EXISTS group12_car_rental;
 USE group12_car_rental;
 
 -- Đảm bảo 2 bảng Orders & Oderitem tồn tại đúng khóa ngoại chuẩn của nhóm
