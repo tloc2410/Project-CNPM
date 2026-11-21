@@ -55,6 +55,14 @@ class NormalizeFiltersTests(unittest.TestCase):
         self.assertEqual(filters["sort"], "newest")
         self.assertEqual(filters["page"], 1)
 
+    def test_price_range_filters_are_validated(self):
+        filters = service.normalize_filters({"price_min":"900000","price_max":"500000"})
+        self.assertEqual(filters["price_min"], 500000)
+        self.assertEqual(filters["price_max"], 900000)
+        invalid = service.normalize_filters({"price_min":"abc","price_max":"-10"})
+        self.assertIsNone(invalid["price_min"])
+        self.assertIsNone(invalid["price_max"])
+
     def test_seats_range_is_swapped_when_reversed(self):
         filters = service.normalize_filters({"seats_min": "8", "seats_max": "4"})
         self.assertEqual((filters["seats_min"], filters["seats_max"]), (4, 8))
