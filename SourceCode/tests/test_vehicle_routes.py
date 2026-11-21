@@ -32,7 +32,7 @@ class VehicleRouteTests(unittest.TestCase):
         run.app.config.update(TESTING=True, WTF_CSRF_ENABLED=False)
         self.client = run.app.test_client()
 
-    # -- public pages     # -- public pages -------------------------------------------------------
+    # -- public customer-facing pages -------------------------------------------------------
     def test_home_renders_cars_from_service(self):
         with patch.object(vehicle_service, "list_vehicles",
                           return_value=([CAR], 1, 1, FILTERS)), \
@@ -63,7 +63,7 @@ class VehicleRouteTests(unittest.TestCase):
             response = self.client.get("/cars?q=khong-ton-tai")
 
         self.assertEqual(response.status_code, 200)
-        self.assertIn("Không tìm thấy xe", response.get_data(as_text=True))
+        self.assertIn("No matching vehicles", response.get_data(as_text=True))
 
     def test_detail_increments_view_and_renders_all_fields(self):
         with patch.object(vehicle_service, "get_vehicle",
@@ -75,9 +75,18 @@ class VehicleRouteTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         get_car.assert_called_once_with(1, count_view=True)
         body = response.get_data(as_text=True)
-        for expected in ("SEDAN-01", "Toyota Vios 2023", "Sedan",
-                         "Available", "Lượt xem", "Lượt thuê"):
+        for expected in ("Toyota Vios 2023", "Vehicle information",
+                         "5 seats", "850,000 ₫", "Book a ride", "Add to cart"):
             self.assertIn(expected, body)
+
+    def test_price_filter_is_passed_to_vehicle_service(self):
+        with patch.object(vehicle_service, "list_vehicles",
+                          return_value=([CAR], 1, 1, FILTERS)) as listing, \
+             patch.object(vehicle_service, "list_car_types", return_value=[TYPE]):
+            response = self.client.get("/cars?price_min=500000&price_max=1000000")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(listing.call_args[0][0].get("price_min"), "500000")
+        self.assertEqual(listing.call_args[0][0].get("price_max"), "1000000")
 
     def test_missing_car_returns_404(self):
         with patch.object(vehicle_service, "get_vehicle", return_value=None):
