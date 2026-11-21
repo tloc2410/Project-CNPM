@@ -1,15 +1,178 @@
 {% extends 'base.html' %}
-{% block title %}Bảng điều khiển – Group12 Car Rental{% endblock %}
+{% block title %}My Account & My Rentals – Group 12 Car Rental{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/account.css') }}">
+{% endblock %}
 
 {% block content %}
-<section class="container section section-narrow">
-    <div class="form-card">
-        <p class="eyebrow">BẢNG ĐIỀU KHIỂN</p>
-        <h1>Xin chào, {{ session.get('full_name') }}!</h1>
-        <p class="page-subtitle">Bạn đã đăng nhập với vai trò <strong>{{ session.get('role', 'CUSTOMER') }}</strong>.</p>
-        <div class="dashboard-links">
-            <a class="btn btn-primary" href="{{ url_for('cars') }}">Xem danh sách xe</a>
+<div class="g12-account-page">
+  <div class="g12-account-shell">
+    <header class="g12-account-intro">
+      <div>
+        <p class="g12-account-eyebrow">GROUP 12 CAR RENTAL / CUSTOMER CENTER</p>
+        <h1>My Account<span class="g12-account-title-accent">.</span></h1>
+        <p>Quản lý thông tin cá nhân và theo dõi mọi hành trình thuê xe của bạn.</p>
+      </div>
+      <a class="g12-account-explore" href="{{ url_for('cars') }}">
+        <span>Khám phá xe thuê</span><span aria-hidden="true">↗</span>
+      </a>
+    </header>
+
+    <div class="g12-account-layout">
+      <aside class="g12-account-sidebar" aria-label="Tài khoản của tôi">
+        <div class="g12-account-person">
+          <div class="g12-account-avatar" aria-hidden="true">{{ (profile.fullName or session.get('full_name', 'G'))[0]|upper }}</div>
+          <div class="g12-account-person-meta">
+            <strong>{{ profile.fullName }}</strong>
+            <span>{{ profile.email }}</span>
+            <small><span class="g12-account-online-dot"></span> Customer account</small>
+          </div>
         </div>
+
+        <p class="g12-account-nav-title">MY ACCOUNT</p>
+        <nav class="g12-account-side-nav">
+          <a class="g12-account-side-link {% if section == 'orders' %}is-active{% endif %}" href="{{ url_for('dashboard', section='orders') }}">
+            <span class="g12-account-side-icon">▤</span><span>Đơn thuê của tôi</span>
+          </a>
+          <a class="g12-account-side-link {% if section == 'profile' %}is-active{% endif %}" href="{{ url_for('dashboard', section='profile') }}">
+            <span class="g12-account-side-icon">♙</span><span>Hồ sơ cá nhân</span>
+          </a>
+          <a class="g12-account-side-link" href="{{ url_for('booking.cart') }}">
+            <span class="g12-account-side-icon">▣</span><span>Giỏ thuê xe</span>
+            <span class="g12-account-nav-count">{{ nav_cart_count }}</span>
+          </a>
+        </nav>
+        <p class="g12-account-nav-title g12-account-nav-title-secondary">SUPPORT & SECURITY</p>
+        <nav class="g12-account-side-nav">
+          <a class="g12-account-side-link" href="{{ url_for('forgot_password') }}"><span class="g12-account-side-icon">♧</span><span>Đặt lại mật khẩu</span></a>
+          <a class="g12-account-side-link" href="{{ url_for('home') }}#contact"><span class="g12-account-side-icon">☏</span><span>Liên hệ hỗ trợ</span></a>
+          <a class="g12-account-side-link g12-account-signout" href="{{ url_for('logout') }}"><span class="g12-account-side-icon">↪</span><span>Đăng xuất</span></a>
+        </nav>
+        <div class="g12-account-help">
+          <span class="g12-account-help-icon">✦</span>
+          <strong>Sẵn sàng cho chuyến đi tiếp theo?</strong>
+          <p>Khám phá nhiều mẫu xe phù hợp với hành trình của bạn.</p>
+          <a href="{{ url_for('cars') }}">Tìm xe ngay <span aria-hidden="true">→</span></a>
+        </div>
+      </aside>
+
+      <div class="g12-account-main">
+        {% if section == 'profile' %}
+          <div class="g12-account-panel">
+            <div class="g12-account-panel-head">
+              <div><p class="g12-account-eyebrow">YOUR INFORMATION</p><h2>Hồ sơ của tôi</h2><p>Thông tin người thuê xe và liên hệ nhận xe.</p></div>
+              <span class="g12-account-soft-icon">♙</span>
+            </div>
+            <form action="{{ url_for('account_update_profile') }}" method="POST" class="g12-profile-form">
+              <input type="hidden" name="csrf_token" value="{{ profile_csrf }}">
+              <div class="g12-profile-grid">
+                <div class="g12-profile-field"><label for="account-name">Họ và tên <span>*</span></label><input id="account-name" name="full_name" value="{{ profile.fullName }}" maxlength="100" minlength="2" required></div>
+                <div class="g12-profile-field"><label for="account-phone">Số điện thoại <span>*</span></label><input id="account-phone" name="phone" value="{{ profile.phone or '' }}" maxlength="20" required></div>
+                <div class="g12-profile-field"><label for="account-email">Email</label><input id="account-email" type="email" value="{{ profile.email }}" readonly><small>Email không thể chỉnh sửa tại đây.</small></div>
+                <div class="g12-profile-field"><label for="account-role">Loại tài khoản</label><input id="account-role" value="{{ profile.role or session.get('role', 'CUSTOMER') }}" readonly></div>
+                <div class="g12-profile-field g12-profile-address"><label for="account-address">Địa chỉ liên hệ</label><input id="account-address" name="address" value="{{ profile.address or '' }}" maxlength="255" placeholder="Nhập địa chỉ liên hệ (không bắt buộc)"></div>
+              </div>
+              <div class="g12-profile-actions"><span>Thông tin chỉ được cập nhật cho tài khoản đang đăng nhập.</span><button class="g12-account-primary" type="submit">Lưu thay đổi <span aria-hidden="true">→</span></button></div>
+            </form>
+          </div>
+        {% else %}
+          <div class="g12-account-overview">
+            <div class="g12-account-welcome">
+              <p class="g12-account-eyebrow">YOUR RENTAL JOURNEY</p>
+              <h2>Xin chào, {{ profile.fullName }} <span>👋</span></h2>
+              <p>Theo dõi trạng thái đơn thuê xe và chuẩn bị cho hành trình tiếp theo.</p>
+            </div>
+            <div class="g12-account-stat"><span>Tổng đơn thuê</span><strong>{{ order_counts.all }}</strong><small>Trên tài khoản của bạn</small></div>
+            <div class="g12-account-stat"><span>Đang xử lý</span><strong>{{ order_counts.pending + order_counts.confirmed }}</strong><small>Chờ xác nhận / Đã xác nhận</small></div>
+          </div>
+
+          <section class="g12-account-panel g12-account-orders-panel">
+            <div class="g12-account-panel-head">
+              <div><p class="g12-account-eyebrow">ORDER HISTORY</p><h2>Đơn thuê xe của tôi</h2><p>Quản lý tất cả đơn thuê, tương tự mục Đơn mua nhưng dành riêng cho dịch vụ thuê ô tô.</p></div>
+              <a class="g12-account-small-link" href="{{ url_for('cars') }}">+ Thuê xe mới</a>
+            </div>
+            <nav class="g12-account-order-tabs" aria-label="Lọc đơn hàng theo trạng thái">
+              {% for value, title in order_tabs %}
+                <a class="g12-account-tab {% if active_status == value %}is-active{% endif %}" href="{{ url_for('dashboard', section='orders', status=value, q=order_query or None) }}" {% if active_status == value %}aria-current="page"{% endif %}>
+                  <span>{{ title }}</span><small>{{ order_counts[value] }}</small>
+                </a>
+              {% endfor %}
+            </nav>
+            <form class="g12-account-order-search" method="GET" action="{{ url_for('dashboard') }}">
+              <input type="hidden" name="section" value="orders">
+              <input type="hidden" name="status" value="{{ active_status }}">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8"/><path d="m16.5 16.5 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+              <input name="q" value="{{ order_query }}" placeholder="Tìm bằng mã đơn hoặc tên xe..." aria-label="Tìm kiếm đơn thuê xe">
+              {% if order_query %}<a href="{{ url_for('dashboard', section='orders', status=active_status) }}" class="g12-account-search-clear" aria-label="Xóa tìm kiếm">×</a>{% endif %}
+              <button type="submit">Tìm kiếm</button>
+            </form>
+
+            <div class="g12-account-order-list">
+              {% if orders %}
+                {% for order in orders %}
+                  {% set group = order_status_group(order.status) %}
+                  <article class="g12-account-order-card">
+                    <header class="g12-account-order-top">
+                      <div class="g12-account-order-identity"><strong>ĐƠN THUÊ #{{ order.oderID }}</strong><span>Đặt ngày {{ order.orderTime|dt_str }}</span></div>
+                      <span class="g12-account-order-status g12-order-status-{{ group }}">
+                        {% if group == 'pending' %}Chờ xác nhận{% elif group == 'confirmed' %}Đã xác nhận{% elif group == 'renting' %}Đang thuê{% elif group == 'completed' %}Hoàn thành{% elif group == 'cancelled' %}Đã hủy{% else %}{{ order.status or 'Đang xử lý' }}{% endif %}
+                      </span>
+                    </header>
+                    {% for item in order["items"] %}
+                      <div class="g12-account-order-car">
+                        <a href="{{ url_for('car_detail', car_id=item.CarID) }}" class="g12-account-car-image">
+                          <img src="{{ item.pictures|car_img_url }}" alt="{{ item.carName }}" loading="lazy" onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/cars/car-placeholder.svg') }}'">
+                        </a>
+                        <div class="g12-account-car-details">
+                          <a href="{{ url_for('car_detail', car_id=item.CarID) }}"><h3>{{ item.carName }}</h3></a>
+                          <div class="g12-account-car-tags"><span>🚘 Thuê xe tự lái</span><span>{{ item.rentalDays }} ngày</span></div>
+                          <p>Nhận xe <strong>{{ item.pickupDate|vn_date }}</strong> <span aria-hidden="true">→</span> Trả xe <strong>{{ item.returnDate|vn_date }}</strong></p>
+                          <span class="g12-account-car-unit">{{ item.unitPrice|vnd }}/ngày</span>
+                        </div>
+                        <strong class="g12-account-line-price">{{ item.lineTotal|vnd }}</strong>
+                      </div>
+                    {% endfor %}
+                    <footer class="g12-account-order-footer">
+                      <div class="g12-account-order-details">
+                        <span>Hình thức nhận xe: <strong>{{ order.receiving_label }}</strong></span>
+                        <span>Thanh toán: <strong>{{ order.payment_label }}</strong></span>
+                        <span>Phí giao xe: <strong>{{ 'Miễn phí' if (order.deliveryFee or 0) == 0 else order.deliveryFee|vnd }}</strong></span>
+                      </div>
+                      <div class="g12-account-order-summary">
+                        <div><span>Tổng thanh toán</span><strong>{{ order.totalPrice|vnd }}</strong></div>
+                        <div class="g12-account-order-actions">
+                          {% if order["items"] %}<a class="g12-account-outline-btn" href="{{ url_for('car_detail', car_id=order['items'][0].CarID) }}">Thuê lại xe</a>{% endif %}
+                          {% if order.can_cancel %}
+                            <form method="POST" action="{{ url_for('booking.cancel_order', order_id=order.oderID) }}" class="g12-account-cancel-form">
+                              <button class="g12-account-outline-btn g12-account-danger-btn" type="submit" onclick="return confirm('Bạn muốn hủy đơn thuê #{{ order.oderID }}?')">Hủy đơn</button>
+                            </form>
+                          {% endif %}
+                          <details class="g12-account-order-more"><summary>Chi tiết đơn <span aria-hidden="true">⌄</span></summary>
+                            <div class="g12-account-order-breakdown">
+                              <span>Mã đơn thuê</span><strong>#{{ order.oderID }}</strong>
+                              <span>Đặt cọc dự kiến</span><strong>{{ order.deposit|vnd }}</strong>
+                              <span>Phương thức thanh toán</span><strong>{{ order.payment_label }}</strong>
+                              <span>Trạng thái hệ thống</span><strong>{{ order.status }}</strong>
+                            </div>
+                          </details>
+                        </div>
+                      </div>
+                    </footer>
+                  </article>
+                {% endfor %}
+              {% else %}
+                <div class="g12-account-empty">
+                  <span class="g12-account-empty-art">🚙</span>
+                  <h3>{% if order_query %}Không tìm thấy đơn thuê phù hợp{% elif active_status != 'all' %}Chưa có đơn ở trạng thái này{% else %}Bạn chưa có đơn thuê xe nào{% endif %}</h3>
+                  <p>Thử tìm bằng mã đơn, đổi bộ lọc hoặc khám phá mẫu xe phù hợp cho chuyến đi sắp tới.</p>
+                  <a class="g12-account-primary" href="{{ url_for('cars') }}">Xem danh sách xe <span aria-hidden="true">→</span></a>
+                </div>
+              {% endif %}
+            </div>
+          </section>
+        {% endif %}
+      </div>
     </div>
-</section>
+  </div>
+</div>
 {% endblock %}

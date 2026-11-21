@@ -69,9 +69,10 @@
                         <span class="g12-user-pill">{{ nav_user_name }}</span>
                     </button>
                     <div class="g12-user-dropdown" id="user-menu-dropdown" hidden>
+                        <a href="{{ url_for('dashboard') }}" class="g12-dropdown-item">My Account</a>
                         <a href="{{ url_for('booking.cart') }}" class="g12-dropdown-item">Giỏ thuê xe (Your Cart)</a>
                         <a href="{{ url_for('booking.my_orders') }}" class="g12-dropdown-item">Đơn hàng của tôi (My Orders)</a>
-                        <a href="{{ url_for('login') }}" class="g12-dropdown-item">Đổi tài khoản / Đăng nhập</a>
+                        <a href="{{ url_for('logout') }}" class="g12-dropdown-item">Log out</a>
                     </div>
                 </div>
             </div>

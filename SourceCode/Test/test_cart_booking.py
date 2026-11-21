@@ -1015,3 +1015,125 @@ def test_direct_booking_pickup_mode_forces_showroom_without_touching_cart(flask_
         assert sess["direct_booking"]["pickup_location"] == svc.SHOWROOM_LOCATION
         assert sess["direct_booking"]["return_location"] == svc.SHOWROOM_LOCATION
         assert not sess.get("rental_cart")
+
+
+# ===========================================================================
+# My Account / My Rentals (Shopee-inspired customer dashboard)
+# ===========================================================================
+def test_account_login_required_and_shows_real_profile(flask_client):
+    assert "/login" in flask_client.get("/dashboard").headers["Location"]
+    assert "/login" in flask_client.post("/account/profile", data={}).headers["Location"]
+    _login_session(flask_client)
+    page = flask_client.get("/dashboard")
+    assert page.status_code == 200
+    body = page.get_data(as_text=True)
+    assert "My Account" in body
+    assert "Do Thu Thao" in body
+    assert "thao@group12.vn" in body
+    assert "Đơn thuê xe của tôi" in body
+    assert "Tất cả" in body and "Chờ xác nhận" in body
+    assert "Đã xác nhận" in body and "Hoàn thành" in body
+    assert "Đang thuê" in body and "Đã hủy" in body
+    assert "Bạn chưa có đơn thuê xe nào" in body
+
+
+def test_account_orders_filter_search_and_rebook_link(flask_client, booking_db):
+    raw, _ = booking_db
+    _login_session(flask_client)
+    orders = [
+        (101, 1, "2026-11-21 09:00:00", "PENDING", "PICKUP", 0, 180000, 600000, "CASH"),
+        (102, 1, "2026-11-20 08:00:00", "COMPLETED", "DELIVERY", 0, 390000, 1300000, "CARD"),
+        (103, 2, "2026-11-19 09:00:00", "CANCELLED", "PICKUP", 0, 180000, 600000, "CASH"),
+    ]
+    raw.executemany(
+        """INSERT INTO Orders(oderID,useID,orderTime,status,receivingMethod,
+        deliveryFee,deposit,totalPrice,paymentMethod) VALUES (?,?,?,?,?,?,?,?,?)""",
+        orders,
+    )
+    raw.executemany(
+        """INSERT INTO Oderitem(OderID,CarID,unitPrice,rentalDays,pickupDate,returnDate)
+           VALUES (?,?,?,?,?,?)""",
+        [
+            (101, 1, 600000, 1, "2026-12-15", "2026-12-16"),
+            (102, 2, 650000, 2, "2026-12-17", "2026-12-19"),
+            (103, 1, 600000, 1, "2026-12-15", "2026-12-16"),
+        ],
+    )
+
+    all_page = flask_client.get("/dashboard").get_data(as_text=True)
+    assert "ĐƠN THUÊ #101" in all_page
+    assert "ĐƠN THUÊ #102" in all_page
+    assert "ĐƠN THUÊ #103" not in all_page   # user owns only 101 and 102
+    assert "/cars/1" in all_page and "/cars/2" in all_page
+
+    pending = flask_client.get("/dashboard?status=pending").get_data(as_text=True)
+    assert "ĐƠN THUÊ #101" in pending
+    assert "ĐƠN THUÊ #102" not in pending
+    assert "Hủy đơn" in pending
+    completed = flask_client.get("/dashboard?status=completed").get_data(as_text=True)
+    assert "ĐƠN THUÊ #102" in completed
+    assert "ĐƠN THUÊ #101" not in completed
+    assert "Hủy đơn" not in completed
+
+    search = flask_client.get("/dashboard?q=Honda+City").get_data(as_text=True)
+    assert "ĐƠN THUÊ #102" in search and "ĐƠN THUÊ #101" not in search
+    search_number = flask_client.get("/dashboard?q=101").get_data(as_text=True)
+    assert "ĐƠN THUÊ #101" in search_number and "ĐƠN THUÊ #102" not in search_number
+
+
+def test_account_profile_edits_only_signed_in_user(flask_client, booking_db):
+    raw, _ = booking_db
+    _login_session(flask_client)
+    page = flask_client.get("/dashboard?section=profile")
+    assert page.status_code == 200
+    html = page.get_data(as_text=True)
+    assert "Hồ sơ của tôi" in html and "thao@group12.vn" in html
+    assert 'name="csrf_token"' in html
+    assert 'id="account-email"' in html
+    assert 'readonly' in html
+    with flask_client.session_transaction() as s:
+        csrf = s["account_profile_csrf"]
+
+    updated = flask_client.post("/account/profile", data={
+        "csrf_token": csrf,
+        "full_name": "Nguyen Gia Ky",
+        "phone": "0976543210",
+        "address": "District 1, HCMC",
+        "email": "forged@example.com",
+        "role": "ADMIN",
+    }, follow_redirects=True)
+    assert updated.status_code == 200
+    assert "Nguyen Gia Ky" in updated.get_data(as_text=True)
+    row = raw.execute("SELECT fullName, phone, address, email, role FROM Users WHERE UserID=1").fetchone()
+    assert row["fullName"] == "Nguyen Gia Ky"
+    assert row["phone"] == "0976543210"
+    assert row["address"] == "District 1, HCMC"
+    assert row["email"] == "thao@group12.vn"
+    assert row["role"] == "CUSTOMER"
+    with flask_client.session_transaction() as s:
+        assert s["full_name"] == "Nguyen Gia Ky"
+
+
+def test_account_profile_blocks_csrf_duplicates_and_bad_phone(flask_client, booking_db):
+    raw, _ = booking_db
+    _login_session(flask_client)
+    assert flask_client.post("/account/profile", data={
+        "full_name": "Fake Name", "phone": "0981234567",
+    }).status_code == 400
+    flask_client.get("/dashboard?section=profile")
+    with flask_client.session_transaction() as s:
+        csrf = s["account_profile_csrf"]
+
+    bad = flask_client.post("/account/profile", data={
+        "csrf_token": csrf, "full_name": "Do Thu Thao", "phone": "123",
+    }, follow_redirects=True)
+    assert "Số điện thoại không hợp lệ." in bad.get_data(as_text=True)
+
+    duplicate = flask_client.post("/account/profile", data={
+        "csrf_token": csrf, "full_name": "Do Thu Thao",
+        "phone": "0987654321", "address": "Other",
+    }, follow_redirects=True)
+    assert "Số điện thoại đã được tài khoản khác sử dụng." in duplicate.get_data(as_text=True)
+    row = raw.execute("SELECT phone, address FROM Users WHERE UserID=1").fetchone()
+    assert row["phone"] == "0912345678"
+    assert row["address"] is None

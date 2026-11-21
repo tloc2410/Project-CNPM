@@ -1,4 +1,6 @@
 import os
+import re
+import secrets
 
 from flask import Flask, abort, flash, redirect, render_template, request, session, url_for
 from dotenv import load_dotenv
@@ -11,7 +13,7 @@ from business.password_reset_service import (
     reset_password_with_token,
 )
 from business.reset_email import send_reset_email
-from data.user_repository import find_user_by_email
+from data.user_repository import find_user_by_email, update_user_profile
 
 load_dotenv()
 
@@ -252,11 +254,105 @@ def reset_password(token):
     return render_template("reset_password.html")
 
 
+# Customer account center: Shopee-style order tabs adapted to rentals.
+_ACCOUNT_ORDER_GROUPS = {
+    "PENDING": "pending", "NEW": "pending",
+    "CONFIRMED": "confirmed",
+    "RENTED": "renting", "ONGOING": "renting",
+    "IN_PROGRESS": "renting", "IN_USE": "renting",
+    "PICKED_UP": "renting", "ACTIVE": "renting",
+    "COMPLETED": "completed", "RETURNED": "completed",
+    "CANCELLED": "cancelled", "CANCELED": "cancelled",
+}
+_ACCOUNT_TABS = (
+    ("all", "Tất cả"),
+    ("pending", "Chờ xác nhận"),
+    ("confirmed", "Đã xác nhận"),
+    ("renting", "Đang thuê"),
+    ("completed", "Hoàn thành"),
+    ("cancelled", "Đã hủy"),
+)
+
+
+def _account_order_group(status):
+    return _ACCOUNT_ORDER_GROUPS.get(str(status or "").upper(), "other")
+
+
 @app.route("/dashboard")
 def dashboard():
     if "user_id" not in session:
         return redirect(url_for("login"))
-    return render_template("dashboard.html")
+
+    from business import booking_service
+
+    section = request.args.get("section", "orders")
+    if section not in ("orders", "profile"):
+        section = "orders"
+    status = request.args.get("status", "all")
+    if status not in dict(_ACCOUNT_TABS):
+        status = "all"
+    query = request.args.get("q", "").strip()[:80]
+    user = booking_service.get_renter_profile(session["user_id"])
+    if not user:
+        flash("Không tìm thấy thông tin tài khoản. Vui lòng đăng nhập lại.", "error")
+        return redirect(url_for("logout"))
+
+    if "account_profile_csrf" not in session:
+        session["account_profile_csrf"] = secrets.token_urlsafe(24)
+
+    orders = booking_service.get_user_orders(session["user_id"]) if section == "orders" else []
+    counts = {"all": len(orders), **{
+        tab: sum(_account_order_group(o.get("status")) == tab for o in orders)
+        for tab, _ in _ACCOUNT_TABS if tab != "all"
+    }}
+    filtered = [
+        o for o in orders
+        if (status == "all" or _account_order_group(o.get("status")) == status)
+        and (not query or query.casefold() in str(o.get("oderID", "")).casefold()
+             or any(query.casefold() in str(i.get("carName", "")).casefold()
+                    for i in o.get("items", [])))
+    ]
+    return render_template(
+        "dashboard.html", section=section, profile=user, orders=filtered,
+        order_counts=counts, order_tabs=_ACCOUNT_TABS, active_status=status,
+        order_query=query, profile_csrf=session["account_profile_csrf"],
+        order_status_group=_account_order_group,
+    )
+
+
+@app.route("/account/profile", methods=["POST"])
+def account_update_profile():
+    """A signed-in customer may edit only their own non-sensitive profile fields."""
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+    csrf = request.form.get("csrf_token", "")
+    expected = session.get("account_profile_csrf", "")
+    if not expected or not secrets.compare_digest(csrf, expected):
+        abort(400)
+
+    full_name = request.form.get("full_name", "").strip()
+    phone = re.sub(r"[\s().-]", "", request.form.get("phone", "").strip())
+    if phone.startswith("+84"):
+        phone = "0" + phone[3:]
+    address = request.form.get("address", "").strip()
+    if not (2 <= len(full_name) <= 100):
+        flash("Họ tên phải từ 2 đến 100 ký tự.", "error")
+    elif not re.fullmatch(r"0[35789][0-9]{8}", phone):
+        flash("Số điện thoại không hợp lệ.", "error")
+    elif len(address) > 255:
+        flash("Địa chỉ không được dài quá 255 ký tự.", "error")
+    else:
+        try:
+            saved, message = update_user_profile(
+                session["user_id"], full_name, phone, address
+            )
+            flash(message, "success" if saved else "error")
+            if saved:
+                session["full_name"] = full_name
+        except Exception:
+            app.logger.exception("Account profile update failed")
+            flash("Không thể cập nhật hồ sơ. Vui lòng thử lại.", "error")
+    return redirect(url_for("dashboard", section="profile"))
 
 
 # ---------------------------------------------------------------------------
