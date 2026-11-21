@@ -153,5 +153,8 @@ def dashboard():
 
 
 
+from presentation.booking_routes import booking_bp
+app.register_blueprint(booking_bp)
+
 if __name__ == "__main__":
     app.run(debug=True)
