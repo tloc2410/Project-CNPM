@@ -536,7 +536,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid #fde68a; border-c
 .g12-nav-seat-toggle:hover,
 .g12-nav-seat-toggle[aria-expanded="true"] { color: #e99400; background: #fff7e7; }
 .g12-nav-seat-toggle:focus-visible { outline: 2px solid #db9200; outline-offset: 2px; }
-.g12-nav-seat-toggle .g12-chevron { display: inline-block; transition: transform .15s ease; }
+.g12-nav-seat-toggle .g12-chevron { display: block; width: 16px; height: 16px; flex-shrink: 0; vertical-align: middle; transition: transform .15s ease; }
 .g12-nav-seat-toggle[aria-expanded="true"] .g12-chevron { transform: rotate(180deg); }
 .g12-nav-seat-dropdown {
   position: absolute; z-index: 100; left: 50%; top: calc(100% - 3px);
