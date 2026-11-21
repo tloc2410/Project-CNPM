@@ -56,7 +56,7 @@ def _close(cursor, connection):
 
 
 def _build_filters(keyword="", type_id=None, seats_min=None, seats_max=None,
-                   status=None):
+                   status=None, price_min=None, price_max=None):
     where = []
     params = []
 
@@ -81,6 +81,13 @@ def _build_filters(keyword="", type_id=None, seats_min=None, seats_max=None,
         where.append("c.numberOfSeats <= %s")
         params.append(seats_max)
 
+    if price_min is not None:
+        where.append("c.pricePerDay >= %s")
+        params.append(price_min)
+    if price_max is not None:
+        where.append("c.pricePerDay <= %s")
+        params.append(price_max)
+
     if status:
         where.append("c.status = %s")
         params.append(status)
@@ -101,10 +108,10 @@ _SORT_SQL = {
 
 
 def search_cars(keyword="", type_id=None, seats_min=None, seats_max=None,
-                status=None, sort="newest", limit=12, offset=0):
+                status=None, sort="newest", limit=12, offset=0, price_min=None, price_max=None):
     """Return a page of cars joined with their type and rental count."""
     where, params = _build_filters(keyword, type_id, seats_min, seats_max,
-                                  status)
+                                  status, price_min, price_max)
     order = _SORT_SQL.get(sort, _SORT_SQL["newest"])
 
     sql = f"""
@@ -126,10 +133,10 @@ def search_cars(keyword="", type_id=None, seats_min=None, seats_max=None,
 
 
 def count_cars(keyword="", type_id=None, seats_min=None, seats_max=None,
-               status=None):
+               status=None, price_min=None, price_max=None):
     """Count cars matching the same filters as :func:`search_cars`."""
     where, params = _build_filters(keyword, type_id, seats_min, seats_max,
-                                  status)
+                                  status, price_min, price_max)
     sql = f"""
         SELECT COUNT(*) AS total
         FROM Cars c
