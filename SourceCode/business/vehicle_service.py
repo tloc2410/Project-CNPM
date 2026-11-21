@@ -61,6 +61,18 @@ def normalize_filters(args=None):
     if seats_min is not None and seats_max is not None and seats_min > seats_max:
         seats_min, seats_max = seats_max, seats_min
 
+    def _price(value):
+        try:
+            price = float(str(value).strip())
+            return price if 0 <= price <= MAX_PRICE else None
+        except (TypeError, ValueError):
+            return None
+
+    price_min = _price(args.get("price_min"))
+    price_max = _price(args.get("price_max"))
+    if price_min is not None and price_max is not None and price_min > price_max:
+        price_min, price_max = price_max, price_min
+
     status = str(args.get("status", "") or "").strip().lower()
     if status not in _STATUS_VALUES:
         status = None
@@ -74,6 +86,8 @@ def normalize_filters(args=None):
 
     return {
         "keyword": keyword,
+        "price_min": price_min,
+        "price_max": price_max,
         "type_id": type_id,
         "seats_min": seats_min,
         "seats_max": seats_max,
@@ -90,6 +104,8 @@ def list_vehicles(args=None):
 
     common = dict(
         keyword=filters["keyword"],
+        price_min=filters["price_min"],
+        price_max=filters["price_max"],
         type_id=filters["type_id"],
         seats_min=filters["seats_min"],
         seats_max=filters["seats_max"],
