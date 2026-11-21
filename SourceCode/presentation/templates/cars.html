@@ -29,8 +29,10 @@
           <label for="price-min">Price range</label>
           <div class="g12-price-labels"><span>Min price</span><span>Max price</span></div>
           <div class="g12-price-row">
-            <input id="price-min" type="number" name="price_min" min="0" step="10000" placeholder="0₫" value="{{ filters.price_min if filters.price_min is not none else '' }}">
-            <input id="price-max" type="number" name="price_max" min="0" step="10000" placeholder="2.000.000₫" value="{{ filters.price_max if filters.price_max is not none else '' }}">
+            <input id="price-min" type="text" inputmode="numeric" autocomplete="off" aria-label="Minimum price in VND" placeholder="0 ₫" value="">
+            <input id="price-max" type="text" inputmode="numeric" autocomplete="off" aria-label="Maximum price in VND" placeholder="2.000.000 ₫" value="">
+            <input id="price-min-raw" type="hidden" name="price_min" value="{{ filters.price_min if filters.price_min is not none else '' }}">
+            <input id="price-max-raw" type="hidden" name="price_max" value="{{ filters.price_max if filters.price_max is not none else '' }}">
           </div>
           <div class="g12-dual-range" id="g12-dual-range" role="group" aria-label="Drag to select the daily rental price range">
             <div class="g12-dual-range-track" aria-hidden="true"><div class="g12-dual-range-fill" id="g12-range-fill"></div></div>
@@ -124,74 +126,93 @@
 document.addEventListener('DOMContentLoaded',function(){
   const form=document.getElementById('figma-side-filter');
   if(!form)return;
-  // Two draggable thumbs, synchronized with the visible price inputs.
+  // Show Vietnamese thousands separators while keeping numeric SQL filters.
   const minField = document.getElementById('price-min');
   const maxField = document.getElementById('price-max');
+  const minRaw = document.getElementById('price-min-raw');
+  const maxRaw = document.getElementById('price-max-raw');
   const minSlider = document.getElementById('g12-slider-min');
   const maxSlider = document.getElementById('g12-slider-max');
   const rangeFill = document.getElementById('g12-range-fill');
   const upperBound = Number(minSlider.max);
   const step = Number(minSlider.step);
-  const bound = (number) => Math.min(upperBound, Math.max(0, number));
+  const bound = number => Math.min(upperBound, Math.max(0, number));
+  const formatPrice = number => Number(number).toLocaleString('vi-VN');
+
+  function setPrice(field, rawField, value) {
+    field.value = value === null ? '' : formatPrice(value);
+    rawField.value = value === null ? '' : String(value);
+  }
 
   function drawRange() {
     const low = Number(minSlider.value);
     const high = Number(maxSlider.value);
-    const from = low / upperBound * 100;
-    const to = high / upperBound * 100;
-    rangeFill.style.left = from + '%';
-    rangeFill.style.width = (to - from) + '%';
-    // Keep the left thumb reachable when the handles approach each other.
+    rangeFill.style.left = (low / upperBound * 100) + '%';
+    rangeFill.style.width = (Math.max(0, high - low) / upperBound * 100) + '%';
     minSlider.style.zIndex = low >= high - 3 * step ? '5' : '3';
     maxSlider.style.zIndex = low >= high - 3 * step ? '4' : '5';
-    minSlider.setAttribute('aria-valuetext', low.toLocaleString('vi-VN') + ' đồng');
-    maxSlider.setAttribute('aria-valuetext', high.toLocaleString('vi-VN') + ' đồng');
+    minSlider.setAttribute('aria-valuetext', formatPrice(low) + ' đồng');
+    maxSlider.setAttribute('aria-valuetext', formatPrice(high) + ' đồng');
   }
 
   minSlider.addEventListener('input', function () {
-    const low = Math.min(Number(minSlider.value), Number(maxSlider.value) - step);
-    minSlider.value = String(Math.max(0, low));
-    minField.value = minSlider.value;
+    const low = Math.max(0, Math.min(Number(minSlider.value), Number(maxSlider.value) - step));
+    minSlider.value = String(low);
+    setPrice(minField, minRaw, low);
     drawRange();
   });
 
   maxSlider.addEventListener('input', function () {
-    const high = Math.max(Number(maxSlider.value), Number(minSlider.value) + step);
-    maxSlider.value = String(Math.min(upperBound, high));
-    maxField.value = maxSlider.value;
+    const high = Math.min(upperBound, Math.max(Number(maxSlider.value), Number(minSlider.value) + step));
+    maxSlider.value = String(high);
+    setPrice(maxField, maxRaw, high);
     drawRange();
   });
 
-  // Manual input works too. Preserve an empty box as "no limit" when submitted.
-  minField.addEventListener('change', function () {
-    if (minField.value === '') {
-      minSlider.value = '0';
-    } else {
-      const low = Math.min(bound(Number(minField.value)), Number(maxSlider.value) - step);
-      minSlider.value = String(Math.max(0, low));
-      minField.value = minSlider.value;
-    }
-    drawRange();
-  });
-
-  maxField.addEventListener('change', function () {
-    if (maxField.value === '') {
-      maxSlider.value = '2000000';
-      if (Number(maxSlider.value) <= Number(minSlider.value)) {
-        maxSlider.value = String(Math.min(upperBound, Number(minSlider.value) + step));
+  // Reformat as the user types; keep caret near the same digit after dots are inserted.
+  function listenForPrice(field, rawField, slider, isMin) {
+    field.addEventListener('input', function () {
+      const cursor = field.selectionStart === null ? field.value.length : field.selectionStart;
+      const digitPosition = field.value.slice(0, cursor).replace(/\\D/g, '').length;
+      const digits = field.value.replace(/\\D/g, '');
+      if (!digits) {
+        setPrice(field, rawField, null);
+        slider.value = isMin ? '0' : '2000000';
+        drawRange();
+        return;
       }
-    } else {
-      const high = Math.max(bound(Number(maxField.value)), Number(minSlider.value) + step);
-      maxSlider.value = String(Math.min(upperBound, high));
-      maxField.value = maxSlider.value;
-    }
-    drawRange();
-  });
+      let amount = bound(Number(digits));
+      if (isMin && amount >= Number(maxSlider.value)) {
+        amount = Math.min(amount, upperBound - step);
+        const newMax = Math.min(upperBound, amount + step);
+        maxSlider.value = String(newMax);
+        setPrice(maxField, maxRaw, newMax);
+      } else if (!isMin && amount <= Number(minSlider.value)) {
+        const newMin = Math.max(0, amount - step);
+        minSlider.value = String(newMin);
+        setPrice(minField, minRaw, newMin);
+      }
+      setPrice(field, rawField, amount);
+      slider.value = String(amount);
+      let pos = 0;
+      let digitsSeen = 0;
+      while (pos < field.value.length && digitsSeen < digitPosition) {
+        if (/\\d/.test(field.value[pos])) digitsSeen++;
+        pos++;
+      }
+      field.setSelectionRange(pos, pos);
+      drawRange();
+    });
+  }
 
-  // Query parameters may contain non-step amounts; keep original values on page load.
+  // Format restored URL values on first load, without changing the submitted filters.
+  if (minRaw.value !== '') minField.value = formatPrice(Number(minRaw.value));
+  if (maxRaw.value !== '') maxField.value = formatPrice(Number(maxRaw.value));
   if (Number(minSlider.value) >= Number(maxSlider.value)) {
     maxSlider.value = String(Math.min(upperBound, Number(minSlider.value) + step));
   }
+  listenForPrice(minField, minRaw, minSlider, true);
+  listenForPrice(maxField, maxRaw, maxSlider, false);
   drawRange();
 
   form.querySelectorAll('input[name="seat_choice"]').forEach(function(input){
