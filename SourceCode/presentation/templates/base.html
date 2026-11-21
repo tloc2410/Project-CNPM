@@ -39,7 +39,7 @@
       <button type="submit" aria-label="Search"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2"><circle cx="10.8" cy="10.8" r="6.6"/><path d="m16 16 5 5"/></svg></button>
     </form>
     {% if booking_enabled %}
-      <a class="g12-header-cart" href="{{ url_for('booking.cart') }}" aria-label="Your cart"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M2 4h3l2.4 12h12l2.2-9H6"/><circle cx="9" cy="20" r="1"/><circle cx="19" cy="20" r="1"/></svg></a>
+      <a class="g12-header-cart" href="{{ url_for('booking.cart') }}" aria-label="Your cart ({{ nav_cart_count }} vehicles)"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M2 4h3l2.4 12h12l2.2-9H6"/><circle cx="9" cy="20" r="1"/><circle cx="19" cy="20" r="1"/></svg><span class="g12-cart-count" id="g12-global-cart-count" data-cart-badge {% if not nav_cart_count %}hidden{% endif %}>{{ nav_cart_count }}</span></a>
     {% else %}
       <span class="g12-header-cart" title="Cart will be available after Booking is integrated" aria-label="Cart coming soon"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M2 4h3l2.4 12h12l2.2-9H6"/><circle cx="9" cy="20" r="1"/><circle cx="19" cy="20" r="1"/></svg></span>
     {% endif %}
@@ -93,6 +93,7 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 });
 </script>
+{% if booking_enabled %}<div id="g12-cart-message" class="g12-cart-message" role="status" aria-live="polite" hidden></div><script src="{{ url_for('static', filename='js/vehicle_cart.js') }}" defer></script>{% endif %}
 {% block scripts %}{% endblock %}
 </body>
 </html>

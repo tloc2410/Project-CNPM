@@ -583,3 +583,21 @@ input:focus, select:focus, textarea:focus { outline: 2px solid #fde68a; border-c
   .g12-brand-tabs .g12-brand-tab { font-size: 13px; padding: 8px 6px; }
   .g12-brand-panel .g12-featured-grid { min-height: 300px; }
 }
+
+/* Unified session-backed cart badge and AJAX confirmation for customer pages */
+.g12-header-cart{position:relative}
+.g12-cart-count{
+  position:absolute;top:-7px;right:-5px;min-width:18px;height:18px;
+  padding:0 4px;border-radius:999px;display:inline-flex;align-items:center;
+  justify-content:center;background:#ffbc24;color:#0b0b0b;
+  border:2px solid #fff;font-size:11px;line-height:1;font-weight:800;
+}
+.g12-cart-count[hidden]{display:none!important}
+.g12-cart-message{
+  position:fixed;z-index:1200;top:90px;right:22px;max-width:min(390px,calc(100vw - 44px));
+  padding:13px 18px;border-radius:12px;background:#1c2630;color:#fff;
+  box-shadow:0 10px 30px #0003;font-size:14px;font-weight:600;line-height:1.5;
+}
+.g12-cart-message[hidden]{display:none!important}
+.g12-cart-message.g12-cart-error{background:#9f2d25}
+.g12-cart-message a{color:#ffd56a;text-decoration:underline;margin-left:8px}

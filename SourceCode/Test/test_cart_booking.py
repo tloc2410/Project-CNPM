@@ -610,3 +610,47 @@ def test_car_image_url_resolution(flask_client):
     assert res.status_code == 200
     assert b"/static/images/cars/toyotavios2023.webp" in res.data
     assert b"/static/images/cars/hondacity2022.webp" in res.data
+
+
+def test_ajax_add_keeps_page_and_syncs_cart_count_on_vehicle_pages(flask_client):
+    """AJAX adds and duplicate requests share one session cart across pages."""
+    from unittest.mock import patch
+    from business import vehicle_service
+
+    _login_session(flask_client)
+    payload = {"pickup_date": "2026-12-15", "return_date": "2026-12-17"}
+    first = flask_client.post("/cart/add/1", json=payload)
+    assert first.status_code == 200
+    data = first.get_json()
+    assert data["ok"] is True
+    assert data["added"] is True
+    assert data["total_count"] == 1
+
+    duplicate = flask_client.post("/cart/add/1", json=payload)
+    assert duplicate.status_code == 200
+    again = duplicate.get_json()
+    assert again["added"] is False
+    assert again["total_count"] == 1
+
+    sample_car = {
+        "carID": 1, "TypeID": 1, "code": "SEDAN-01",
+        "name": "Toyota Vios 2023", "pictures": "toyotavios2023.webp",
+        "description": "Test car", "numberOfSeats": 5,
+        "pricePerDay": 850000.0, "status": "available",
+        "numberOfViews": 10, "typeName": "Sedan", "rentalCount": 0,
+    }
+    filters = vehicle_service.normalize_filters({})
+    with patch.object(vehicle_service, "list_vehicles",
+                      return_value=([sample_car], 1, 1, filters)), \
+         patch.object(vehicle_service, "list_car_types", return_value=[]), \
+         patch.object(vehicle_service, "get_vehicle",
+                      return_value=dict(sample_car)):
+        for url in ("/", "/cars", "/cars/1"):
+            response = flask_client.get(url)
+            assert response.status_code == 200
+            assert b'id="g12-global-cart-count"' in response.data
+            assert b'Your cart (1 vehicles)' in response.data
+
+        detail = flask_client.get("/cars/1").get_data(as_text=True)
+        assert 'data-ajax-add-to-cart' in detail
+        assert 'data-login-url="/login"' in detail

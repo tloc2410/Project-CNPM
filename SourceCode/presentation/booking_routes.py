@@ -167,13 +167,16 @@ def cart():
 @booking_bp.route("/cart/add/<int:car_id>", methods=["POST"])
 @login_required
 def cart_add(car_id):
-    pickup = request.form.get("pickup_date", "").strip()
-    return_ = request.form.get("return_date", "").strip()
+    # JSON requests are handled without navigation; ordinary POST forms still work.
+    payload = request.get_json(silent=True) if request.is_json else request.form
+    payload = payload or {}
+    pickup = str(payload.get("pickup_date", "")).strip()
+    return_ = str(payload.get("return_date", "")).strip()
     if not pickup or not return_:
         pickup, return_ = svc.default_rental_dates()
 
-    pickup_loc = request.form.get("pickup_location", svc.DEFAULT_LOCATION)
-    return_loc = request.form.get("return_location", svc.DEFAULT_LOCATION)
+    pickup_loc = payload.get("pickup_location", svc.DEFAULT_LOCATION)
+    return_loc = payload.get("return_location", svc.DEFAULT_LOCATION)
 
     cart_items, added, msg = svc.add_to_cart(
         _get_cart(),
@@ -187,7 +190,7 @@ def cart_add(car_id):
     _save_cart(cart_items)
 
     if request.is_json:
-        return jsonify({**_summary_json(svc.build_cart_summary(cart_items)), "message": msg})
+        return jsonify({**_summary_json(svc.build_cart_summary(cart_items)), "message": msg, "added": added})
 
     flash(msg, "success" if added else "error")
     return redirect(request.form.get("next") or url_for("booking.cart"))
