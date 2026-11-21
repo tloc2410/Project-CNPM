@@ -1,0 +1,373 @@
+{% extends "booking/base_booking.html" %}
+{% block title %}Checkout - Group 12 Car Rental{% endblock %}
+{% block body_class %}booking-page page-checkout{% endblock %}
+
+{% block content %}
+<div class="checkout-container" data-page="checkout">
+    <!-- 3-Step Progress Stepper (Figma: 1 Cart (done) -> 2 Checkout (active) -> 3 Payment) -->
+    <div class="checkout-stepper" aria-label="Checkout progress">
+        <a href="{{ url_for('booking.cart') }}" class="step-item is-done">
+            <span class="step-circle">
+                <svg viewBox="0 0 16 16" fill="none" width="14" height="14">
+                    <path d="M3.5 8.5l3 3 6-6.5" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </span>
+            <span class="step-label">Cart</span>
+        </a>
+        <span class="step-line is-done"></span>
+        <div class="step-item is-active" aria-current="step">
+            <span class="step-circle">2</span>
+            <span class="step-label">Checkout</span>
+        </div>
+        <span class="step-line"></span>
+        <div class="step-item">
+            <span class="step-circle">3</span>
+            <span class="step-label">Payment</span>
+        </div>
+    </div>
+
+    <form method="POST"
+          action="{{ url_for('booking.checkout') }}"
+          id="checkout-form"
+          class="checkout-grid">
+        <input type="hidden" name="dates_modified" id="co-dates-modified" value="0">
+
+        <!-- Left Column: Rental Information + Payment Method + Security Banner -->
+        <div class="checkout-left">
+            <!-- Card 1: Rental Information -->
+            <section class="checkout-card">
+                <div class="checkout-card-header">
+                    <svg viewBox="0 0 24 24" fill="none" width="22" height="22">
+                        <circle cx="12" cy="8" r="4" fill="#111111"/>
+                        <path d="M4.5 20c1.4-3.8 4.4-5.5 7.5-5.5s6.1 1.7 7.5 5.5" fill="#111111"/>
+                    </svg>
+                    <h2>Rental Information</h2>
+                </div>
+
+                {% if renter or full_name %}
+                    <div class="renter-pill-bar">
+                        <span>Khách thuê: <strong>{{ renter.fullName if renter else full_name }}</strong></span>
+                        {% if renter and renter.phone %}
+                            <span>· SĐT: {{ renter.phone }}</span>
+                        {% endif %}
+                        {% if renter and renter.email %}
+                            <span>· {{ renter.email }}</span>
+                        {% endif %}
+                    </div>
+                {% endif %}
+
+                <div class="rental-info-grid">
+                    <div class="info-input-box">
+                        <label for="co-pickup-date" class="info-input-label">
+                            <svg viewBox="0 0 20 20" fill="none" width="14" height="14">
+                                <rect x="3" y="4.5" width="14" height="12.5" rx="2" stroke="currentColor" stroke-width="1.5"/>
+                                <path d="M3 8.5h14M6.5 2.5v3M13.5 2.5v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                            </svg>
+                            Pickup Date
+                        </label>
+                        <input type="date"
+                               id="co-pickup-date"
+                               name="pickup_date"
+                               class="info-input-control"
+                               value="{{ first_item.pickup_date }}"
+                               required>
+                    </div>
+
+                    <div class="info-input-box">
+                        <label for="co-return-date" class="info-input-label">
+                            <svg viewBox="0 0 20 20" fill="none" width="14" height="14">
+                                <rect x="3" y="4.5" width="14" height="12.5" rx="2" stroke="currentColor" stroke-width="1.5"/>
+                                <path d="M3 8.5h14M6.5 2.5v3M13.5 2.5v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                            </svg>
+                            Return Date
+                        </label>
+                        <input type="date"
+                               id="co-return-date"
+                               name="return_date"
+                               class="info-input-control"
+                               value="{{ first_item.return_date }}"
+                               required>
+                    </div>
+
+                    <div class="info-input-box">
+                        <label for="co-pickup-location" class="info-input-label">
+                            <svg viewBox="0 0 20 20" fill="none" width="14" height="14">
+                                <path d="M10 17.5s5.5-4.7 5.5-9.2a5.5 5.5 0 1 0-11 0c0 4.5 5.5 9.2 5.5 9.2Z" stroke="currentColor" stroke-width="1.5"/>
+                                <circle cx="10" cy="8.3" r="1.8" fill="currentColor"/>
+                            </svg>
+                            Pickup Location
+                        </label>
+                        <select id="co-pickup-location" name="pickup_location" class="info-input-control">
+                            {% for loc in locations %}
+                                <option value="{{ loc }}" {% if first_item.pickup_location == loc %}selected{% endif %}>{{ loc }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="info-input-box">
+                        <label for="co-return-location" class="info-input-label">
+                            <svg viewBox="0 0 20 20" fill="none" width="14" height="14">
+                                <path d="M10 17.5s5.5-4.7 5.5-9.2a5.5 5.5 0 1 0-11 0c0 4.5 5.5 9.2 5.5 9.2Z" stroke="currentColor" stroke-width="1.5"/>
+                                <circle cx="10" cy="8.3" r="1.8" fill="currentColor"/>
+                            </svg>
+                            Return Location
+                        </label>
+                        <select id="co-return-location" name="return_location" class="info-input-control">
+                            {% for loc in locations %}
+                                <option value="{{ loc }}" {% if first_item.return_location == loc %}selected{% endif %}>{{ loc }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Receiving Method Selection (maps to Orders.receivingMethod & Orders.deliveryFee) -->
+                <div class="receiving-toggle-row">
+                    <span class="receiving-label">Hình thức nhận xe:</span>
+                    <div class="receiving-pills">
+                        <label class="receiving-pill {% if receiving == 'PICKUP' %}is-selected{% endif %}">
+                            <input type="radio"
+                                   name="receiving_method"
+                                   value="PICKUP"
+                                   {% if receiving == 'PICKUP' %}checked{% endif %}>
+                            <span>Nhận tại điểm hẹn (Miễn phí)</span>
+                        </label>
+                        <label class="receiving-pill {% if receiving == 'DELIVERY' %}is-selected{% endif %}">
+                            <input type="radio"
+                                   name="receiving_method"
+                                   value="DELIVERY"
+                                   {% if receiving == 'DELIVERY' %}checked{% endif %}>
+                            <span>Giao xe tận nơi (100.000₫ · Free từ 2tr)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Live Overlap / Date Error Banner -->
+                <div class="item-error-banner" id="checkout-error-banner" hidden>
+                    <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
+                        <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.6"/>
+                        <path d="M10 6.2v4.5M10 13.5h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                    </svg>
+                    <span id="checkout-error-text"></span>
+                </div>
+            </section>
+
+            <!-- Card 2: Payment Method (Figma: 4 selectable cards + Card Details + Terms) -->
+            <section class="checkout-card">
+                <div class="checkout-card-header">
+                    <svg viewBox="0 0 24 24" fill="none" width="22" height="22">
+                        <rect x="2.5" y="5" width="19" height="14" rx="2.5" stroke="#111111" stroke-width="1.8"/>
+                        <path d="M2.5 10h19M6.5 14.5h4" stroke="#111111" stroke-width="1.8" stroke-linecap="round"/>
+                    </svg>
+                    <h2>Payment Method</h2>
+                </div>
+
+                <div class="payment-options-grid" role="radiogroup" aria-label="Payment method">
+                    <label class="pay-card is-selected" data-method="CARD">
+                        <input type="radio" name="payment_method" value="CARD" checked>
+                        <span class="pay-check-badge" aria-hidden="true">✓</span>
+                        <svg viewBox="0 0 28 28" fill="none" width="26" height="26">
+                            <rect x="3" y="6" width="22" height="16" rx="2.8" stroke="currentColor" stroke-width="1.8"/>
+                            <path d="M3 11.5h22M7.5 16.5h4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                        </svg>
+                        <span class="pay-card-title">Credit / Debit<br>Card</span>
+                    </label>
+
+                    <label class="pay-card" data-method="E_WALLET">
+                        <input type="radio" name="payment_method" value="E_WALLET">
+                        <span class="pay-check-badge" aria-hidden="true">✓</span>
+                        <svg viewBox="0 0 28 28" fill="none" width="26" height="26">
+                            <path d="M4 9.5A2.5 2.5 0 0 1 6.5 7h14A2.5 2.5 0 0 1 23 9.5v9a2.5 2.5 0 0 1-2.5 2.5h-14A2.5 2.5 0 0 1 4 18.5v-9Z" stroke="currentColor" stroke-width="1.8"/>
+                            <path d="M17.5 14h5.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                            <circle cx="17.5" cy="14" r="1.3" fill="currentColor"/>
+                        </svg>
+                        <span class="pay-card-title">E-Wallet</span>
+                    </label>
+
+                    <label class="pay-card" data-method="BANK_TRANSFER">
+                        <input type="radio" name="payment_method" value="BANK_TRANSFER">
+                        <span class="pay-check-badge" aria-hidden="true">✓</span>
+                        <svg viewBox="0 0 28 28" fill="none" width="26" height="26">
+                            <path d="M4 10.5 14 5l10 5.5H4ZM6.5 13.5v7M11.5 13.5v7M16.5 13.5v7M21.5 13.5v7M4 21.5h20"
+                                  stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span class="pay-card-title">Bank Transfer</span>
+                    </label>
+
+                    <label class="pay-card" data-method="CASH">
+                        <input type="radio" name="payment_method" value="CASH">
+                        <span class="pay-check-badge" aria-hidden="true">✓</span>
+                        <svg viewBox="0 0 28 28" fill="none" width="26" height="26">
+                            <rect x="3.5" y="7" width="21" height="14" rx="2.5" stroke="currentColor" stroke-width="1.8"/>
+                            <circle cx="14" cy="14" r="3" stroke="currentColor" stroke-width="1.8"/>
+                            <circle cx="7.5" cy="14" r="1" fill="currentColor"/>
+                            <circle cx="20.5" cy="14" r="1" fill="currentColor"/>
+                        </svg>
+                        <span class="pay-card-title">Cash on Delivery</span>
+                    </label>
+                </div>
+
+                <!-- Card Details Sub-panel (shown for Credit/Debit Card; never persisted to DB) -->
+                <div class="card-details-panel" id="card-details-panel">
+                    <div class="card-input-group card-num-group">
+                        <label for="card-number">Card Number</label>
+                        <div class="card-input-wrap">
+                            <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
+                                <rect x="2" y="4.5" width="16" height="11" rx="2" stroke="#6B7280" stroke-width="1.5"/>
+                                <path d="M2 8.5h16" stroke="#6B7280" stroke-width="1.5"/>
+                            </svg>
+                            <input type="text" id="card-number" placeholder="1234 5678 9012 3456" maxlength="19" autocomplete="off">
+                        </div>
+                    </div>
+
+                    <div class="card-input-group">
+                        <label for="card-expiry">Expiry Date</label>
+                        <div class="card-input-wrap">
+                            <svg viewBox="0 0 20 20" fill="none" width="15" height="15">
+                                <rect x="3" y="4" width="14" height="12.5" rx="2" stroke="#6B7280" stroke-width="1.5"/>
+                                <path d="M3 8h14" stroke="#6B7280" stroke-width="1.5"/>
+                            </svg>
+                            <input type="text" id="card-expiry" placeholder="MM / YY" maxlength="7" autocomplete="off">
+                        </div>
+                    </div>
+
+                    <div class="card-input-group">
+                        <label for="card-cvv">CVV</label>
+                        <div class="card-input-wrap">
+                            <svg viewBox="0 0 20 20" fill="none" width="15" height="15">
+                                <rect x="4" y="9" width="12" height="8" rx="1.8" stroke="#6B7280" stroke-width="1.5"/>
+                                <path d="M7 9V6.8a3 3 0 0 1 6 0V9" stroke="#6B7280" stroke-width="1.5"/>
+                            </svg>
+                            <input type="password" id="card-cvv" placeholder="123" maxlength="4" autocomplete="off">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alternative Payment Hint (for E-Wallet / Bank Transfer / Cash) -->
+                <div class="alt-payment-note" id="alt-payment-note" hidden></div>
+
+                <!-- Terms and Conditions Checkbox -->
+                <label class="terms-row">
+                    <input type="checkbox" name="agree_terms" id="agree-terms" class="g12-checkbox-amber" checked required>
+                    <span>
+                        I agree to the
+                        <a href="#terms" class="terms-link" onclick="return false;">Terms and Conditions</a>
+                        and
+                        <a href="#privacy" class="terms-link" onclick="return false;">Privacy Policy</a>
+                    </span>
+                </label>
+            </section>
+
+            <!-- Bottom Security Banner (Figma) -->
+            <div class="security-banner">
+                <div class="security-left">
+                    <svg viewBox="0 0 24 24" fill="none" width="22" height="22">
+                        <path d="M12 2.5 4.5 5.8v5.7c0 4.9 3.2 9.4 7.5 10.8 4.3-1.4 7.5-5.9 7.5-10.8V5.8L12 2.5Z" fill="#1B2A3A"/>
+                        <path d="M8.8 12.2 11 14.4l4.5-4.8" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span>Your information is secure and protected.</span>
+                </div>
+                <div class="security-brands" aria-label="Accepted payment methods">
+                    <span class="brand-visa">VISA</span>
+                    <span class="brand-mc" aria-label="Mastercard">
+                        <span class="mc-red"></span>
+                        <span class="mc-orange"></span>
+                    </span>
+                    <span class="brand-jcb">JCB</span>
+                    <span class="brand-momo">mo<br>mo</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Order Summary Card (Figma) -->
+        <aside class="checkout-card checkout-summary-card">
+            <div class="checkout-card-header">
+                <svg viewBox="0 0 24 24" fill="none" width="22" height="22">
+                    <rect x="4" y="3" width="16" height="18" rx="2.5" stroke="#111111" stroke-width="1.8"/>
+                    <path d="M8 8h8M8 12h8M8 16h5" stroke="#111111" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
+                <h2>Order Summary</h2>
+            </div>
+
+            <hr class="summary-divider">
+
+            <div class="co-cars-list">
+                {% for item in summary["items"] %}
+                    <div class="co-car-block" data-co-car="{{ item.car_id }}">
+                        <div class="co-car-preview">
+                            {% set pic = (item.car.pictures if item.car and item.car.pictures else url_for('static', filename='images/booking/car_vios.svg')) %}
+                            <img src="{{ pic }}"
+                                 alt="{{ item.car.name if item.car else 'Car' }}"
+                                 class="co-car-thumb"
+                                 onerror="this.src='{{ url_for('static', filename='images/booking/car_vios.svg') }}'">
+                            <div>
+                                <h3 class="co-car-name">{{ item.car.name if item.car else ('Xe #' ~ item.car_id) }}</h3>
+                                <p class="co-car-specs">
+                                    {{ item.car.numberOfSeats if item.car and item.car.numberOfSeats else 4 }} seats
+                                    • Automatic
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="co-meta-row">
+                            <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
+                                <rect x="3" y="4.5" width="14" height="12.5" rx="2" stroke="#4B5563" stroke-width="1.5"/>
+                                <path d="M3 8.5h14M6.5 2.5v3M13.5 2.5v3" stroke="#4B5563" stroke-width="1.5" stroke-linecap="round"/>
+                            </svg>
+                            <span data-co-date-range="{{ item.car_id }}">
+                                {{ item.pickup_date|en_date }} – {{ item.return_date|en_date }}
+                                ({{ item.rental_days }} {{ 'day' if item.rental_days == 1 else 'days' }})
+                            </span>
+                        </div>
+
+                        <div class="co-meta-row">
+                            <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
+                                <path d="M10 17.5s5.5-4.7 5.5-9.2a5.5 5.5 0 1 0-11 0c0 4.5 5.5 9.2 5.5 9.2Z" stroke="#4B5563" stroke-width="1.5"/>
+                                <circle cx="10" cy="8.3" r="1.7" fill="#4B5563"/>
+                            </svg>
+                            <span data-co-loc="{{ item.car_id }}">{{ item.pickup_location }}</span>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <hr class="summary-divider">
+
+            {% set total_rental_days = summary["items"]|sum(attribute='rental_days') %}
+            <div class="summary-row">
+                <span>Rental Fee (<span id="co-days-label">{{ total_rental_days }} {{ 'day' if total_rental_days == 1 else 'days' }}</span>)</span>
+                <strong id="co-subtotal">{{ summary.subtotal|vnd }}</strong>
+            </div>
+            <div class="summary-row">
+                <span class="service-fee-label">
+                    Service Fee
+                    <span class="info-circle" title="Miễn phí khi nhận tại điểm hẹn hoặc đơn từ 2.000.000₫">i</span>
+                </span>
+                <strong id="co-delivery-fee" class="{% if summary.delivery_fee == 0 %}text-free{% endif %}">
+                    {% if summary.delivery_fee == 0 %}Free{% else %}{{ summary.delivery_fee|vnd }}{% endif %}
+                </strong>
+            </div>
+            <div class="summary-row summary-row-muted">
+                <span>Đặt cọc dự kiến (30%)</span>
+                <span id="co-deposit">{{ summary.deposit|vnd }}</span>
+            </div>
+
+            <hr class="summary-divider">
+
+            <div class="summary-total-row co-total-row">
+                <span>Total Amount</span>
+                <strong id="co-total">{{ summary.total|vnd }}</strong>
+            </div>
+
+            <button type="submit" id="btn-submit-order" class="btn-pay-cta">
+                <svg viewBox="0 0 24 24" fill="none" width="20" height="20">
+                    <rect x="2.5" y="5.5" width="19" height="13" rx="2.5" stroke="#111111" stroke-width="1.9"/>
+                    <path d="M2.5 10h19" stroke="#111111" stroke-width="1.9"/>
+                </svg>
+                <span>Proceed to Payment →</span>
+            </button>
+
+            <a href="{{ url_for('booking.cart') }}" class="co-back-link">← Quay lại giỏ hàng</a>
+        </aside>
+    </form>
+</div>
+{% endblock %}

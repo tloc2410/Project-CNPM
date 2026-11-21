@@ -1,0 +1,104 @@
+{% extends "booking/base_booking.html" %}
+{% block title %}My Orders - Group 12 Car Rental{% endblock %}
+{% block body_class %}booking-page page-orders{% endblock %}
+
+{% block content %}
+<div class="orders-container">
+    <div class="cart-top-bar">
+        <div class="cart-heading-group">
+            <svg viewBox="0 0 28 28" fill="none" width="30" height="30">
+                <rect x="5" y="3.5" width="18" height="21" rx="3" stroke="#111827" stroke-width="2.1"/>
+                <path d="M9.5 10h9M9.5 14.5h9M9.5 19h5.5" stroke="#111827" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <h1 class="cart-title">My Rental Orders ({{ orders|length }})</h1>
+        </div>
+        <div class="cart-top-right">
+            <a href="{{ url_for('booking.cart') }}" class="btn-primary-sm">+ Đặt thêm xe</a>
+        </div>
+    </div>
+
+    {% if orders %}
+        <div class="orders-list">
+            {% for order in orders %}
+                {% set st = (order.status or 'PENDING')|upper %}
+                <article class="order-card">
+                    <div class="order-card-head">
+                        <div class="order-head-left">
+                            <span class="order-id">Đơn hàng #{{ order.oderID }}</span>
+                            <span class="order-time">Đặt lúc: {{ order.orderTime|dt_str }}</span>
+                        </div>
+                        <span class="status-pill status-{{ st|lower }}">
+                            {% if st in ('PENDING', 'NEW') %}
+                                Chờ xác nhận ({{ st }})
+                            {% elif st == 'CONFIRMED' %}
+                                Đã xác nhận
+                            {% elif st == 'CANCELLED' %}
+                                Đã hủy
+                            {% elif st in ('COMPLETED', 'RETURNED') %}
+                                Hoàn thành
+                            {% else %}
+                                {{ order.status }}
+                            {% endif %}
+                        </span>
+                    </div>
+
+                    <div class="order-items-list">
+                        {% for item in order["items"] %}
+                            <div class="order-item-row">
+                                {% set pic = (item.pictures if item.pictures else url_for('static', filename='images/booking/car_vios.svg')) %}
+                                <img src="{{ pic }}"
+                                     alt="{{ item.carName }}"
+                                     class="order-item-thumb"
+                                     onerror="this.src='{{ url_for('static', filename='images/booking/car_vios.svg') }}'">
+                                <div class="order-item-info">
+                                    <h3>{{ item.carName }}</h3>
+                                    <p class="order-item-dates">
+                                        Lịch thuê: <strong>{{ item.pickupDate|vn_date }}</strong> → <strong>{{ item.returnDate|vn_date }}</strong>
+                                        ({{ item.rentalDays }} ngày)
+                                    </p>
+                                    <p class="order-item-unit">
+                                        Đơn giá: {{ item.unitPrice|vnd }}/ngày
+                                    </p>
+                                </div>
+                                <div class="order-item-subtotal">
+                                    {{ item.lineTotal|vnd }}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="order-card-foot">
+                        <div class="order-meta-summary">
+                            <span>Nhận xe: <strong>{{ order.receiving_label }}</strong></span>
+                            <span>Thanh toán: <strong>{{ order.payment_label }}</strong></span>
+                            <span>Phí giao xe: <strong>{{ 'Miễn phí' if (order.deliveryFee or 0) == 0 else order.deliveryFee|vnd }}</strong></span>
+                            <span>Đặt cọc (30%): <strong>{{ order.deposit|vnd }}</strong></span>
+                        </div>
+
+                        <div class="order-foot-right">
+                            <div class="order-grand-total">
+                                <span>Tổng cộng:</span>
+                                <strong>{{ order.totalPrice|vnd }}</strong>
+                            </div>
+                            {% if order.can_cancel %}
+                                <form method="POST"
+                                      action="{{ url_for('booking.cancel_order', order_id=order.oderID) }}"
+                                      class="cancel-order-form"
+                                      data-order-id="{{ order.oderID }}">
+                                    <button type="submit" class="btn-cancel-order">Hủy đơn hàng</button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                </article>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-cart-box">
+            <h2>Bạn chưa có đơn thuê xe nào</h2>
+            <p>Hãy chọn xe trong giỏ hàng và tiến hành đặt lịch ngay.</p>
+            <a href="{{ url_for('booking.cart') }}" class="btn-primary-sm" style="margin-top: 12px;">Đi tới giỏ hàng</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
