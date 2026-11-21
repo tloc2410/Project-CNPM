@@ -25,23 +25,41 @@
 
   <section class="g12-section g12-featured-section">
     <div class="g12-divider-title"><span></span><h2>FEATURED VEHICLES</h2><span></span></div>
-    <nav class="g12-pill-tabs" aria-label="Vehicle brands">
-      <a class="active" href="{{ url_for('cars', q='VinFast') }}">VinFast</a>
-      <a href="{{ url_for('cars', q='KIA') }}">KIA</a>
-      <a href="{{ url_for('cars', q='Toyota') }}">Toyota</a>
-      <a href="{{ url_for('cars', q='BMW') }}">BMW</a>
-    </nav>
-    {% if db_error %}<div class="notice notice-warning">Cannot load vehicles from MySQL. Check your local database settings.</div>{% endif %}
-    <div class="g12-featured-grid">
-      {% for car in spotlight|default(featured[:2]) %}
-      <article class="g12-featured-car">
-        <a class="g12-featured-photo" href="{{ url_for('car_detail', car_id=car.carID) }}"><img src="{{ car_image(car) }}" alt="{{ car.name }}" data-fallback="{{ url_for('static', filename='images/cars/car-placeholder.svg') }}" onerror="this.onerror=null;this.src=this.dataset.fallback"></a>
-        <div class="g12-featured-text"><h3>{{ car.name|upper }}</h3><p>{{ car.typeName or 'Vehicle' }} · {{ car.numberOfSeats }}-seater · Automatic transmission</p><p>Rent: {{ format_price(car.pricePerDay) }}/Day</p><a href="{{ url_for('car_detail', car_id=car.carID) }}">Detail <span aria-hidden="true">→</span></a></div>
-      </article>
-      {% else %}
-      <div class="empty-state">No featured vehicles found. Add cars to MySQL to populate this section.</div>
+    <div class="g12-pill-tabs g12-brand-tabs" role="tablist" aria-label="Vehicle brands">
+      {% for brand in ('VinFast', 'KIA', 'Toyota', 'BMW') %}
+      <button type="button" class="g12-brand-tab {% if loop.first %}active{% endif %}" id="brand-tab-{{ loop.index }}"
+              role="tab" aria-controls="brand-panel-{{ loop.index }}"
+              aria-selected="{{ 'true' if loop.first else 'false' }}" tabindex="{{ '0' if loop.first else '-1' }}"
+              data-brand-index="{{ loop.index }}">{{ brand }}</button>
       {% endfor %}
     </div>
+    {% if db_error %}<div class="notice notice-warning">Cannot load vehicles from MySQL. Check your local database settings.</div>{% endif %}
+    {% for brand, vehicles in brand_cars.items() %}
+      <div id="brand-panel-{{ loop.index }}" class="g12-brand-panel" role="tabpanel"
+           aria-labelledby="brand-tab-{{ loop.index }}" {% if not loop.first %}hidden{% endif %}>
+        <div class="g12-featured-grid">
+        {% for car in vehicles %}
+          <article class="g12-featured-car">
+            <a class="g12-featured-photo" href="{{ url_for('car_detail', car_id=car.carID) }}">
+              <img src="{{ car_image(car) }}" alt="{{ car.name }}"
+                   data-fallback="{{ url_for('static', filename='images/cars/car-placeholder.svg') }}"
+                   onerror="this.onerror=null;this.src=this.dataset.fallback">
+            </a>
+            <div class="g12-featured-text">
+              <h3>{{ car.name|upper }}</h3>
+              <p>{{ car.typeName or 'Vehicle' }} · {{ car.numberOfSeats }}-seater · Automatic transmission</p>
+              <p>Rent: {{ format_price(car.pricePerDay) }}/Day</p>
+              <a href="{{ url_for('car_detail', car_id=car.carID) }}">Detail <span aria-hidden="true">→</span></a>
+            </div>
+          </article>
+        {% else %}
+          <div class="g12-featured-empty">
+            <p>No {{ brand }} vehicles available yet.</p>
+          </div>
+        {% endfor %}
+        </div>
+      </div>
+    {% endfor %}
   </section>
 
   <section class="g12-section g12-process-section" id="rental-process">
@@ -78,4 +96,37 @@
     </div>
   </section>
 </div>
+{% endblock %}
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const tabs = Array.from(document.querySelectorAll('.g12-brand-tab'));
+  const panels = Array.from(document.querySelectorAll('.g12-brand-panel'));
+
+  function activateTab(index, focus) {
+    tabs.forEach(function (tab, i) {
+      const active = i === index;
+      tab.classList.toggle('active', active);
+      tab.setAttribute('aria-selected', String(active));
+      tab.tabIndex = active ? 0 : -1;
+      if (active && focus) tab.focus();
+    });
+    panels.forEach(function (panel, i) { panel.hidden = i !== index; });
+  }
+
+  tabs.forEach(function (tab, index) {
+    tab.addEventListener('click', function () { activateTab(index, false); });
+    tab.addEventListener('keydown', function (event) {
+      let next = index;
+      if (event.key === 'ArrowRight') next = (index + 1) % tabs.length;
+      else if (event.key === 'ArrowLeft') next = (index - 1 + tabs.length) % tabs.length;
+      else if (event.key === 'Home') next = 0;
+      else if (event.key === 'End') next = tabs.length - 1;
+      else return;
+      event.preventDefault();
+      activateTab(next, true);
+    });
+  });
+});
+</script>
 {% endblock %}
