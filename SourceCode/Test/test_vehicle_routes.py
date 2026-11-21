@@ -83,8 +83,44 @@ class VehicleRouteTests(unittest.TestCase):
         for seats in ("4-Seater Vehicle", "7-Seater Vehicle",
                       "16-Seater Vehicle", "45-Seater Vehicle"):
             self.assertIn(seats, html)
-        self.assertIn('CAR RENTAL</a>', html)
+        self.assertRegex(html, r'CAR RENTAL\s*</a>')
         self.assertNotIn('CAR RENTAL <span class="g12-chevron">', html)
+
+    def test_customer_pages_use_booking_header_with_cart_and_account(self):
+        with patch.object(vehicle_service, "list_vehicles",
+                          return_value=([CAR], 1, 1, FILTERS)), \
+             patch.object(vehicle_service, "list_car_types", return_value=[TYPE]), \
+             patch.object(vehicle_service, "get_vehicle", return_value=dict(CAR)):
+            with self.client.session_transaction() as s:
+                s["user_id"] = 8
+                s["full_name"] = "Gia Ky"
+                s["role"] = "CUSTOMER"
+                s["rental_cart"] = [{
+                    "car_id": 1, "selected": True,
+                    "pickup_date": "2026-12-10", "return_date": "2026-12-12",
+                    "pickup_location": "Tan Son Nhat Airport",
+                    "return_location": "Tan Son Nhat Airport",
+                }]
+            for url in ("/", "/cars", "/cars/1"):
+                res = self.client.get(url)
+                self.assertEqual(res.status_code, 200, url)
+                body = res.get_data(as_text=True)
+                self.assertIn('class="g12-header"', body)
+                self.assertIn('class="g12-header-inner"', body)
+                self.assertIn("images/booking/group12_logo.svg", body)
+                self.assertIn('class="g12-search-form"', body)
+                self.assertIn("Search for cars...", body)
+                self.assertIn('id="g12-seats-toggle"', body)
+                self.assertIn('id="g12-seat-dropdown"', body)
+                self.assertIn('id="g12-global-cart-count"', body)
+                self.assertIn('Your cart (1 vehicles)', body)
+                self.assertIn('class="g12-avatar-circle"', body)
+                self.assertIn('class="g12-user-pill">Gia Ky</span>', body)
+                self.assertIn('id="user-menu-dropdown"', body)
+                self.assertIn('href="/logout"', body)
+                self.assertIn("css/booking_header.css", body)
+                self.assertIn("js/vehicle_cart.js", body)
+                self.assertNotIn("g12-site-header", body)
 
     def test_cars_page_passes_filters_to_service(self):
         with patch.object(vehicle_service, "list_vehicles",
