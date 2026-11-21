@@ -173,8 +173,8 @@ document.addEventListener('DOMContentLoaded',function(){
   function listenForPrice(field, rawField, slider, isMin) {
     field.addEventListener('input', function () {
       const cursor = field.selectionStart === null ? field.value.length : field.selectionStart;
-      const digitPosition = field.value.slice(0, cursor).replace(/\\D/g, '').length;
-      const digits = field.value.replace(/\\D/g, '');
+      const digitPosition = field.value.slice(0, cursor).replace(/\D/g, '').length;
+      const digits = field.value.replace(/\D/g, '');
       if (!digits) {
         setPrice(field, rawField, null);
         slider.value = isMin ? '0' : '2000000';
@@ -197,7 +197,7 @@ document.addEventListener('DOMContentLoaded',function(){
       let pos = 0;
       let digitsSeen = 0;
       while (pos < field.value.length && digitsSeen < digitPosition) {
-        if (/\\d/.test(field.value[pos])) digitsSeen++;
+        if (/\d/.test(field.value[pos])) digitsSeen++;
         pos++;
       }
       field.setSelectionRange(pos, pos);
