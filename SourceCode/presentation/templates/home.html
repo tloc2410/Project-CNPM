@@ -1,82 +1,81 @@
 {% extends 'base.html' %}
-{% block title %}Trang chủ – Group12 Car Rental{% endblock %}
-
+{% block title %}Home – Group12 Car Rental{% endblock %}
 {% block content %}
-<section class="hero">
-    <div class="container hero-inner">
-        <div class="hero-copy">
-            <p class="eyebrow">CHO THUÊ Ô TÔ TỰ LÁI</p>
-            <h1>Tìm chiếc xe phù hợp<br>cho hành trình của bạn</h1>
-            <p class="hero-subtitle">Danh sách xe được cập nhật trực tiếp từ MySQL. Tìm kiếm, lọc theo loại xe, số chỗ và so sánh giá chỉ trong vài giây.</p>
-            <form class="hero-search" method="GET" action="{{ url_for('cars') }}">
-                <input type="search" name="q" placeholder="Nhập tên xe hoặc mã xe…" aria-label="Tìm xe">
-                <select name="type_id" aria-label="Loại xe">
-                    <option value="">Tất cả loại xe</option>
-                    {% for type in types %}
-                        <option value="{{ type.typeId }}">{{ type.typeName }}</option>
-                    {% endfor %}
-                </select>
-                <button class="btn btn-primary" type="submit">Tìm xe</button>
-            </form>
-            <div class="hero-types">
-                <span>Danh mục phổ biến:</span>
-                {% for type in types[:6] %}
-                    <a href="{{ url_for('cars', type_id=type.typeId) }}">{{ type.typeName }}</a>
-                {% endfor %}
-            </div>
-        </div>
-        <div class="hero-art" aria-hidden="true">
-            <div class="hero-art-circle"></div>
-            <div class="hero-art-car">◆</div>
-        </div>
+<div class="g12-home-page">
+  <section class="g12-home-hero" aria-label="Car Rental">
+    <div class="g12-hero-copy">
+      <p class="g12-hero-eyebrow">THUÊ XE DỄ DÀNG - HÀNH TRÌNH VỮNG BƯỚC</p>
+      <div class="g12-hero-advantages">
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" width="28" height="28"><rect x="3" y="9" width="18" height="8" rx="2"/><path d="m6 9 3-5h6l3 5M6 17v3m12-3v3"/><circle cx="7" cy="14" r="1"/><circle cx="17" cy="14" r="1"/></svg><small>ĐA DẠNG<br>XE</small></span>
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" width="28" height="28"><path d="m12 2 8 4v6c0 6-4 9-8 10-4-1-8-4-8-10V6z"/><path d="m9 12 2 2 4-4"/></svg><small>AN TOÀN<br>UY TÍN</small></span>
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" width="28" height="28"><circle cx="12" cy="12" r="9"/><path d="M12 7v6l4 3"/></svg><small>THỦ TỤC<br>NHANH GỌN</small></span>
+      </div>
     </div>
-</section>
+    <a class="g12-hero-cta" href="{{ url_for('cars') }}">
+      <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.1"><path d="M3 12h18l-2-5H5zM5 12v6m14-6v6M7 17h2m6 0h2"/></svg>
+      Book a ride
+    </a>
+  </section>
 
-<section class="container section">
-    <div class="section-heading">
-        <div>
-            <p class="eyebrow">XE NỔI BẬT</p>
-            <h2>Được xem nhiều nhất</h2>
-        </div>
-        <a class="btn btn-ghost" href="{{ url_for('cars') }}">Xem tất cả xe →</a>
+  <section class="g12-home-benefits" id="about-us">
+    <div class="g12-benefit"><svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18l-2-5H5zM5 12v6m14-6v6"/><circle cx="7" cy="18" r="1"/><circle cx="17" cy="18" r="1"/></svg><strong>Premium vehicle</strong><span>Kia Carnival &amp; Limousine</span></div>
+    <div class="g12-benefit"><svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v6h5"/></svg><strong>24/7 Support</strong><span>Ready to serve at any time.</span></div>
+    <div class="g12-benefit"><svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 2 8 4v6c0 6-4 9-8 10-4-1-8-4-8-10V6z"/><path d="m9 12 2 2 4-4"/></svg><strong>5-star quality</strong><span>Professional service</span></div>
+  </section>
+
+  <section class="g12-section g12-featured-section">
+    <div class="g12-divider-title"><span></span><h2>FEATURED VEHICLES</h2><span></span></div>
+    <nav class="g12-pill-tabs" aria-label="Vehicle brands">
+      <a class="active" href="{{ url_for('cars', q='VinFast') }}">VinFast</a>
+      <a href="{{ url_for('cars', q='KIA') }}">KIA</a>
+      <a href="{{ url_for('cars', q='Toyota') }}">Toyota</a>
+      <a href="{{ url_for('cars', q='BMW') }}">BMW</a>
+    </nav>
+    {% if db_error %}<div class="notice notice-warning">Cannot load vehicles from MySQL. Check your local database settings.</div>{% endif %}
+    <div class="g12-featured-grid">
+      {% for car in spotlight|default(featured[:2]) %}
+      <article class="g12-featured-car">
+        <a class="g12-featured-photo" href="{{ url_for('car_detail', car_id=car.carID) }}"><img src="{{ car_image(car) }}" alt="{{ car.name }}" data-fallback="{{ url_for('static', filename='images/cars/car-placeholder.svg') }}" onerror="this.onerror=null;this.src=this.dataset.fallback"></a>
+        <div class="g12-featured-text"><h3>{{ car.name|upper }}</h3><p>{{ car.typeName or 'Vehicle' }} · {{ car.numberOfSeats }}-seater · Automatic transmission</p><p>Rent: {{ format_price(car.pricePerDay) }}/Day</p><a href="{{ url_for('car_detail', car_id=car.carID) }}">Detail <span aria-hidden="true">→</span></a></div>
+      </article>
+      {% else %}
+      <div class="empty-state">No featured vehicles found. Add cars to MySQL to populate this section.</div>
+      {% endfor %}
     </div>
+  </section>
 
-    {% if db_error %}
-        <div class="notice notice-warning">Chưa kết nối được MySQL. Hãy cấu hình file <code>.env</code> và chạy script <code>Database/group12_car_rental.sql</code> để xem dữ liệu mẫu.</div>
-    {% endif %}
-
-    {% if featured %}
-        <div class="car-grid">
-            {% for car in featured %}
-                {% include '_car_card.html' %}
-            {% endfor %}
-        </div>
-    {% elif not db_error %}
-        <div class="empty-state">
-            <span class="empty-icon">🚗</span>
-            <h3>Chưa có xe nào trong database</h3>
-            <p>Nhóm có thể chạy <code>Database/sample_data_vehicles.sql</code> để thêm dữ liệu mẫu phục vụ phát triển.</p>
-        </div>
-    {% endif %}
-</section>
-
-<section class="container section">
-    <div class="feature-row">
-        <div class="feature-item">
-            <span class="feature-icon">🔎</span>
-            <h3>Tìm kiếm nhanh</h3>
-            <p>Tìm theo tên, mã xe hoặc loại xe.</p>
-        </div>
-        <div class="feature-item">
-            <span class="feature-icon">⚙️</span>
-            <h3>Lọc &amp; sắp xếp</h3>
-            <p>Theo số chỗ, giá và lượt thuê.</p>
-        </div>
-        <div class="feature-item">
-            <span class="feature-icon">🛡️</span>
-            <h3>Quản lý tập trung</h3>
-            <p>Admin cập nhật xe và trạng thái.</p>
-        </div>
+  <section class="g12-section g12-process-section" id="rental-process">
+    <div class="g12-divider-title"><span></span><h2>Car Rental</h2><span></span></div>
+    <div class="g12-process-grid">
+      <a class="g12-process-card g12-process-1" href="{{ url_for('cars') }}"><span><strong>SELECT RENTAL RATE</strong><small>Detailed price list for each vehicle model</small></span></a>
+      <a class="g12-process-card g12-process-2" href="{{ url_for('cars') }}"><span><strong>BOOK A VEHICLE WITH EASE</strong><small>Select your rental dates and vehicle pick-up time</small></span></a>
+      <a class="g12-process-card g12-process-3" href="{{ url_for('cars') }}"><span><strong>CAR RENTAL PROCEDURES</strong><small>Required documentation and rental terms</small></span></a>
+      <a class="g12-process-card g12-process-4" href="#contact"><span><strong>CUSTOMER SUPPORT</strong><small>Consultation and assistance throughout the vehicle rental process</small></span></a>
     </div>
-</section>
+  </section>
+
+  <section class="g12-section g12-home-vehicles" id="vehicle-list">
+    <div class="g12-divider-title"><span></span><h2>Vehicle List</h2><span></span></div>
+    <nav class="g12-pill-tabs g12-seat-tabs" aria-label="Browse vehicle seats">
+      <a href="{{ url_for('cars', seats_min=4, seats_max=4) }}">4-Seater Vehicle</a>
+      <a href="{{ url_for('cars', seats_min=7, seats_max=7) }}">7-Seater Vehicle</a>
+      <a href="{{ url_for('cars', seats_min=16, seats_max=16) }}">16-Seater Vehicle</a>
+      <a href="{{ url_for('cars', seats_min=45, seats_max=45) }}">45-Seater Vehicle</a>
+    </nav>
+    <div class="g12-home-car-grid">
+      {% for car in vehicle_showcase|default(featured) %}
+      <article class="g12-home-vehicle-card">
+        <a href="{{ url_for('car_detail', car_id=car.carID) }}" class="g12-home-vehicle-image"><img src="{{ car_image(car) }}" alt="{{ car.name }}" data-fallback="{{ url_for('static', filename='images/cars/car-placeholder.svg') }}" onerror="this.onerror=null;this.src=this.dataset.fallback"></a>
+        <div class="g12-home-vehicle-body">
+          <h3><a href="{{ url_for('car_detail', car_id=car.carID) }}">{{ car.name }}</a></h3>
+          <div class="g12-home-mini-specs"><span>♟ {{ car.numberOfSeats or '–' }} seats</span><span>⚙ Automatic</span><span>◉ {{ car.typeName or 'Vehicle' }}</span></div>
+          <div class="g12-home-vehicle-bottom"><strong>{{ format_price(car.pricePerDay) }}<small>/Day</small></strong><a href="{{ url_for('car_detail', car_id=car.carID) }}">See details →</a></div>
+        </div>
+      </article>
+      {% else %}
+      <div class="empty-state">No vehicles found. Add demo cars through Database/sample_data_vehicles.sql.</div>
+      {% endfor %}
+    </div>
+  </section>
+</div>
 {% endblock %}
