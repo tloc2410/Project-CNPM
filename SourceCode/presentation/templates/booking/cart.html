@@ -57,11 +57,11 @@
                         </div>
 
                         <div class="cart-card-thumb-wrap">
-                            {% set pic = (item.car.pictures if item.car and item.car.pictures else url_for('static', filename='images/booking/car_vios.svg')) %}
+                            {% set pic = (item.car.pictures|car_img_url if item.car else url_for('static', filename='images/booking/car_vios.svg')) %}
                             <img src="{{ pic }}"
                                  alt="{{ item.car.name if item.car else 'Car' }}"
                                  class="cart-card-thumb"
-                                 onerror="this.src='{{ url_for('static', filename='images/booking/car_vios.svg') }}'">
+                                 onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/booking/car_vios.svg') }}'">
                         </div>
 
                         <div class="cart-card-body">
@@ -213,11 +213,11 @@
                 {% for car in cars %}
                     <div class="avail-car-card">
                         <div class="avail-car-img-wrap">
-                            {% set cpic = (car.pictures if car.pictures else url_for('static', filename='images/booking/car_vios.svg')) %}
+                            {% set cpic = car.pictures|car_img_url %}
                             <img src="{{ cpic }}"
                                  alt="{{ car.name }}"
                                  class="avail-car-img"
-                                 onerror="this.src='{{ url_for('static', filename='images/booking/car_vios.svg') }}'">
+                                 onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/booking/car_vios.svg') }}'">
                             <span class="avail-badge">Available</span>
                         </div>
                         <div class="avail-car-info">

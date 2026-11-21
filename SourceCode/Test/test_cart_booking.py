@@ -206,8 +206,8 @@ def booking_db(monkeypatch):
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         [
-            (1, 1, "VIOS-01", "Toyota Vios", "/static/images/booking/car_vios.svg", "Automatic · Petrol", 4, 600000.0, "available"),
-            (2, 1, "CITY-02", "Honda City", "/static/images/booking/car_city.svg", "Automatic · Petrol", 4, 650000.0, "available"),
+            (1, 1, "VIOS-01", "Toyota Vios", "toyotavios2023.webp", "Automatic · Petrol", 4, 600000.0, "available"),
+            (2, 1, "CITY-02", "Honda City", "hondacity2022.webp", "Automatic · Petrol", 4, 650000.0, "available"),
             (3, 2, "CARNIVAL-03", "Kia Carnival", "/static/images/booking/car_carnival.svg", "Automatic · Diesel", 7, 1400000.0, "available"),
             (4, 1, "MAINT-04", "Mazda 3", "", "Under maintenance", 4, 700000.0, "maintenance"),
         ],
@@ -591,3 +591,22 @@ def test_full_web_booking_flow_cart_to_checkout_to_cancel(flask_client):
     cancel_res = flask_client.post("/orders/1/cancel", follow_redirects=True)
     assert cancel_res.status_code == 200
     assert "Đã hủy đơn hàng #1".encode("utf-8") in cancel_res.data
+
+
+def test_car_image_url_resolution(flask_client):
+    """Verify bare .webp filenames from sample_data_vehicles.sql resolve to /static/images/cars/..."""
+    from presentation.booking_routes import car_img_url
+    import run as app_module
+
+    with app_module.app.test_request_context():
+        assert car_img_url("toyotavios2023.webp") == "/static/images/cars/toyotavios2023.webp"
+        assert car_img_url("hondacity2022.webp, interior.webp") == "/static/images/cars/hondacity2022.webp"
+        assert car_img_url("/static/images/booking/car_vios.svg") == "/static/images/booking/car_vios.svg"
+        assert car_img_url("https://example.com/car.jpg") == "https://example.com/car.jpg"
+        assert car_img_url("") == "/static/images/booking/car_vios.svg"
+
+    _login_session(flask_client, user_id=1, full_name="Do Thu Thao")
+    res = flask_client.get("/cart")
+    assert res.status_code == 200
+    assert b"/static/images/cars/toyotavios2023.webp" in res.data
+    assert b"/static/images/cars/hondacity2022.webp" in res.data

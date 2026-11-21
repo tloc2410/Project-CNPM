@@ -45,11 +45,11 @@
                     <div class="order-items-list">
                         {% for item in order["items"] %}
                             <div class="order-item-row">
-                                {% set pic = (item.pictures if item.pictures else url_for('static', filename='images/booking/car_vios.svg')) %}
+                                {% set pic = item.pictures|car_img_url %}
                                 <img src="{{ pic }}"
                                      alt="{{ item.carName }}"
                                      class="order-item-thumb"
-                                     onerror="this.src='{{ url_for('static', filename='images/booking/car_vios.svg') }}'">
+                                     onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/booking/car_vios.svg') }}'">
                                 <div class="order-item-info">
                                     <h3>{{ item.carName }}</h3>
                                     <p class="order-item-dates">

@@ -294,11 +294,11 @@
                 {% for item in summary["items"] %}
                     <div class="co-car-block" data-co-car="{{ item.car_id }}">
                         <div class="co-car-preview">
-                            {% set pic = (item.car.pictures if item.car and item.car.pictures else url_for('static', filename='images/booking/car_vios.svg')) %}
+                            {% set pic = (item.car.pictures|car_img_url if item.car else url_for('static', filename='images/booking/car_vios.svg')) %}
                             <img src="{{ pic }}"
                                  alt="{{ item.car.name if item.car else 'Car' }}"
                                  class="co-car-thumb"
-                                 onerror="this.src='{{ url_for('static', filename='images/booking/car_vios.svg') }}'">
+                                 onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/booking/car_vios.svg') }}'">
                             <div>
                                 <h3 class="co-car-name">{{ item.car.name if item.car else ('Xe #' ~ item.car_id) }}</h3>
                                 <p class="co-car-specs">

@@ -110,6 +110,31 @@ def dt_str(value):
     return str(value or "")
 
 
+@booking_bp.app_template_filter("car_img_url")
+def car_img_url(pictures):
+    """Resolve Cars.pictures to a valid image URL.
+
+    Supports:
+      - Bare filenames from Database/sample_data_vehicles.sql
+        (e.g. 'toyotavios2023.webp' -> '/static/images/cars/toyotavios2023.webp')
+      - Comma/semicolon/newline-separated image lists (takes the first image)
+      - Absolute URLs ('http://...', 'https://...') or root-relative paths ('/static/...')
+      - Fallback placeholder when empty
+    """
+    raw = (pictures or "").strip()
+    if raw:
+        first = raw.replace("\n", ",").replace(";", ",").split(",")[0].strip()
+        if first:
+            if first.startswith(("http://", "https://", "//", "/")):
+                return first
+            if first.startswith("static/"):
+                return "/" + first
+            if first.startswith("images/"):
+                return url_for("static", filename=first)
+            return url_for("static", filename="images/cars/" + first)
+    return url_for("static", filename="images/booking/car_vios.svg")
+
+
 @booking_bp.app_context_processor
 def inject_booking_nav():
     cart = _get_cart()

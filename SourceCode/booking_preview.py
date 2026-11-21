@@ -172,11 +172,11 @@ def _init_preview_db():
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         [
-            (1, 1, "CAR-VIOS-01", "Toyota Vios", "/static/images/booking/car_vios.svg", "Automatic · Petrol", 4, 600000.0, "available"),
-            (2, 1, "CAR-CITY-02", "Honda City", "/static/images/booking/car_city.svg", "Automatic · Petrol", 4, 650000.0, "available"),
-            (3, 2, "CAR-VF5-03", "VinFast VF 5", "/static/images/booking/car_vf5.svg", "Automatic · Electric", 4, 700000.0, "available"),
-            (4, 2, "CAR-VF3-04", "VinFast VF 3", "/static/images/booking/car_vf3.svg", "Automatic · Electric", 4, 500000.0, "available"),
-            (5, 3, "CAR-CARNIVAL-05", "Kia Carnival", "/static/images/booking/car_carnival.svg", "Automatic · Diesel", 7, 1400000.0, "available"),
+            (1, 1, "SEDAN-01", "Toyota Vios 2023", "toyotavios2023.webp", "Automatic · Petrol", 5, 850000.0, "available"),
+            (2, 1, "SEDAN-02", "Honda City 2022", "hondacity2022.webp", "Automatic · Petrol", 5, 900000.0, "available"),
+            (3, 2, "SUV-01", "Toyota Corolla Cross", "toyotacorollacross.webp", "Automatic · SUV", 5, 1250000.0, "available"),
+            (4, 2, "SUV-02", "Mazda CX-5 2023", "mazdacx-52023.webp", "Automatic · SUV", 5, 1400000.0, "available"),
+            (5, 3, "ELEC-01", "VinFast VF e34", "vinfastVFe34.webp", "Automatic · Electric", 5, 1100000.0, "available"),
         ],
     )
     conn.commit()
