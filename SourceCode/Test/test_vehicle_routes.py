@@ -122,6 +122,18 @@ class VehicleRouteTests(unittest.TestCase):
                 self.assertIn("js/vehicle_cart.js", body)
                 self.assertNotIn("g12-site-header", body)
 
+    def test_booking_demo_vehicles_use_real_model_photos(self):
+        with run.app.test_request_context():
+            example = dict(CAR)
+            for code, name, source, expected in (
+                ("BOOK-VIOS-01", "Toyota Vios", "/static/images/booking/car_vios.svg", "/static/images/cars/toyotavios2023.webp"),
+                ("BOOK-CITY-02", "Honda City", "/static/images/booking/car_city.svg", "/static/images/cars/hondacity2022.webp"),
+                ("BOOK-VF5-03", "VinFast VF 5", "/static/images/booking/car_vf5.svg", "https://commons.wikimedia.org/wiki/Special:FilePath/VinFast_VF5.jpg?width=960"),
+            ):
+                example.update(code=code, name=name, pictures=source)
+                self.assertEqual(run.car_image(example), expected)
+                self.assertEqual(run.car_gallery(example)[0], expected)
+
     def test_cars_page_passes_filters_to_service(self):
         with patch.object(vehicle_service, "list_vehicles",
                           return_value=([CAR], 1, 1, FILTERS)) as listing, \

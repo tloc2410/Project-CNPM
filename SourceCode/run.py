@@ -32,6 +32,18 @@ def car_image(car):
     """Resolve a vehicle photo, including legacy image paths from booking demo rows."""
     image = vehicle_service.primary_picture_name(car)
     fallback = url_for("static", filename="images/cars/car-placeholder.svg")
+    # Booking demo cars have legacy drawing paths. Resolve to real photos
+    # even before the user updates existing MySQL records.
+    code = str((car or {}).get("code", "")).upper()
+    real_booking_photos = {
+        "BOOK-VIOS-01": "images/cars/toyotavios2023.webp",
+        "BOOK-CITY-02": "images/cars/hondacity2022.webp",
+    }
+    if code in real_booking_photos:
+        return url_for("static", filename=real_booking_photos[code])
+    if code == "BOOK-VF5-03":
+        # Real VinFast VF5 photo; Wikimedia Commons CC0, photographer Bún bòa.
+        return "https://commons.wikimedia.org/wiki/Special:FilePath/VinFast_VF5.jpg?width=960"
     if image:
         image = str(image).strip()
         if image.startswith(("http://", "https://")):

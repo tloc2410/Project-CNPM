@@ -16,7 +16,7 @@ INSERT IGNORE INTO Cars
     (TypeID, code, name, pictures, description,
      numberOfSeats, pricePerDay, status, numberOfViews)
 SELECT typeId, 'BOOK-VIOS-01', 'Toyota Vios',
-       '/static/images/booking/car_vios.svg',
+       'toyotavios2023.webp',
        'Automatic; Petrol; Tan Son Nhat Airport',
        4, 600000.00, 'available', 120
 FROM CarTypes WHERE typeName = 'Sedan' LIMIT 1;
@@ -25,7 +25,7 @@ INSERT IGNORE INTO Cars
     (TypeID, code, name, pictures, description,
      numberOfSeats, pricePerDay, status, numberOfViews)
 SELECT typeId, 'BOOK-CITY-02', 'Honda City',
-       '/static/images/booking/car_city.svg',
+       'hondacity2022.webp',
        'Automatic; Petrol; Tan Son Nhat Airport',
        4, 650000.00, 'available', 98
 FROM CarTypes WHERE typeName = 'Sedan' LIMIT 1;
@@ -34,7 +34,7 @@ INSERT IGNORE INTO Cars
     (TypeID, code, name, pictures, description,
      numberOfSeats, pricePerDay, status, numberOfViews)
 SELECT typeId, 'BOOK-VF5-03', 'VinFast VF 5',
-       '/static/images/booking/car_vf5.svg',
+       'https://commons.wikimedia.org/wiki/Special:FilePath/VinFast_VF5.jpg?width=960',
        'Automatic; Electric; District 1 Showroom',
        4, 700000.00, 'available', 145
 FROM CarTypes WHERE typeName = 'Electric' LIMIT 1;
@@ -62,3 +62,9 @@ SELECT carID, code, name, pricePerDay, status
 FROM Cars
 WHERE code LIKE 'BOOK-%'
 ORDER BY carID;
+
+-- Fix the picture field of the three existing booking demo cars by unique code.
+-- Safe on the existing group database; orders and other vehicles are unaffected.
+UPDATE Cars SET pictures = 'toyotavios2023.webp' WHERE code = 'BOOK-VIOS-01';
+UPDATE Cars SET pictures = 'hondacity2022.webp' WHERE code = 'BOOK-CITY-02';
+UPDATE Cars SET pictures = 'https://commons.wikimedia.org/wiki/Special:FilePath/VinFast_VF5.jpg?width=960' WHERE code = 'BOOK-VF5-03';
