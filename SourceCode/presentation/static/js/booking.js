@@ -252,6 +252,31 @@
         const returnChoiceInput = document.getElementById("co-return-choice");
         const returnPreview = document.getElementById("co-return-location-preview");
         const showroomLocation = checkoutRoot.dataset.showroomLocation || "Group 12 Showroom - District 1";
+        const pickupHelp = document.getElementById("co-pickup-location-help");
+        let savedDeliveryAddress = pickupLocInput && !pickupLocInput.readOnly
+            ? pickupLocInput.value.trim() : "";
+
+        function updatePickupMode() {
+            if (!pickupLocInput) return;
+            if (getSelectedReceiving() === "PICKUP") {
+                if (!pickupLocInput.readOnly && pickupLocInput.value.trim() &&
+                    pickupLocInput.value.trim() !== showroomLocation) {
+                    savedDeliveryAddress = pickupLocInput.value.trim();
+                }
+                pickupLocInput.value = showroomLocation;
+                pickupLocInput.readOnly = true;
+                pickupLocInput.classList.add("is-showroom-locked");
+                if (pickupHelp) pickupHelp.textContent =
+                    "Khách đến showroom nhận xe. Không phát sinh phí giao xe.";
+            } else {
+                if (pickupLocInput.readOnly) pickupLocInput.value = savedDeliveryAddress;
+                pickupLocInput.readOnly = false;
+                pickupLocInput.classList.remove("is-showroom-locked");
+                if (pickupHelp) pickupHelp.textContent =
+                    "Nhập địa chỉ để nhân viên giao xe tận nơi.";
+            }
+            resolveReturnLocation();
+        }
 
         function resolveReturnLocation() {
             const pickupAddress = pickupLocInput ? pickupLocInput.value.trim() : "";
@@ -266,7 +291,7 @@
             }
             return returnAddress;
         }
-        resolveReturnLocation();
+        updatePickupMode();
         const datesModifiedInput = document.getElementById("co-dates-modified");
         const errBanner = document.getElementById("checkout-error-banner");
         const errText = document.getElementById("checkout-error-text");
@@ -361,7 +386,10 @@
         if (pickupInput) pickupInput.addEventListener("change", syncCheckoutDates);
         if (returnInput) returnInput.addEventListener("change", syncCheckoutDates);
         if (pickupLocInput) {
-            pickupLocInput.addEventListener("input", resolveReturnLocation);
+            pickupLocInput.addEventListener("input", () => {
+                if (!pickupLocInput.readOnly) savedDeliveryAddress = pickupLocInput.value;
+                resolveReturnLocation();
+            });
             pickupLocInput.addEventListener("change", () => {
                 resolveReturnLocation();
                 if (pickupLocInput.value.trim()) syncCheckoutDates();
@@ -376,6 +404,7 @@
         const checkoutForm = document.getElementById("checkout-form");
         if (checkoutForm) {
             checkoutForm.addEventListener("submit", function () {
+                updatePickupMode();
                 resolveReturnLocation();
             });
         }
@@ -390,7 +419,14 @@
         checkoutRoot.querySelectorAll('input[name="receiving_method"]').forEach((radio) => {
             radio.addEventListener("change", () => {
                 updateReceivingPills();
-                syncCheckoutSummaryOnly();
+                updatePickupMode();
+                // Updating location and method together also recalculates the
+                // delivery fee and prevents stale showroom/custom addresses.
+                if (pickupLocInput && pickupLocInput.value.trim()) {
+                    syncCheckoutDates();
+                } else {
+                    syncCheckoutSummaryOnly();
+                }
             });
         });
 

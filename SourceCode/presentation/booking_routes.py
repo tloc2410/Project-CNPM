@@ -298,12 +298,19 @@ def api_cart_dates():
         receiving = "PICKUP"
 
     if data.get("apply_selected"):
+        pickup_location = (svc.SHOWROOM_LOCATION if receiving == "PICKUP"
+                           else (data.get("pickup_location") or "").strip())
+        return_location = data.get("return_location")
+        if receiving == "PICKUP" and (
+            not return_location or return_location == data.get("pickup_location")
+        ):
+            return_location = svc.SHOWROOM_LOCATION
         cart_items = svc.update_all_selected_dates(
             _get_cart(),
             data.get("pickup_date"),
             data.get("return_date"),
-            data.get("pickup_location"),
-            data.get("return_location"),
+            pickup_location or None,
+            return_location,
         )
         _save_cart(cart_items)
         return jsonify(
@@ -344,9 +351,16 @@ def api_direct_booking_dates():
     receiving = data.get("receiving_method", "PICKUP")
     if receiving not in svc.RECEIVING_METHODS:
         receiving = "PICKUP"
+    pickup_location = (svc.SHOWROOM_LOCATION if receiving == "PICKUP"
+                       else (data.get("pickup_location") or "").strip())
+    return_location = data.get("return_location")
+    if receiving == "PICKUP" and (
+        not return_location or return_location == data.get("pickup_location")
+    ):
+        return_location = svc.SHOWROOM_LOCATION
     items = svc.update_all_selected_dates(
         [item], data.get("pickup_date"), data.get("return_date"),
-        data.get("pickup_location"), data.get("return_location"),
+        pickup_location or None, return_location,
     )
     _save_direct_booking(items[0])
     return jsonify(_summary_json(svc.build_cart_summary(
@@ -439,13 +453,18 @@ def checkout():
         form_return_loc = request.form.get("return_location", "").strip()
         return_choice = request.form.get("return_choice")
 
+        # PICKUP always means collection at our showroom. Do not trust
+        # a forged/old pickup_location submitted by the browser.
+        if receiving == "PICKUP":
+            form_pickup_loc = svc.SHOWROOM_LOCATION
+        elif not form_pickup_loc or form_pickup_loc in svc.LOCATIONS:
+            flash("Vui lòng nhập địa chỉ giao xe tận nơi.", "error")
+            return redirect(checkout_again)
+        if len(form_pickup_loc) > 255:
+            flash("Địa chỉ điểm đón quá dài (tối đa 255 ký tự).", "error")
+            return redirect(checkout_again)
+
         if return_choice is not None:
-            if not form_pickup_loc:
-                flash("Vui lòng nhập địa chỉ điểm đón xe.", "error")
-                return redirect(checkout_again)
-            if len(form_pickup_loc) > 255:
-                flash("Địa chỉ điểm đón quá dài (tối đa 255 ký tự).", "error")
-                return redirect(checkout_again)
             if return_choice not in ("SAME_AS_PICKUP", "SHOWROOM"):
                 flash("Vui lòng chọn địa điểm trả xe hợp lệ.", "error")
                 return redirect(checkout_again)
@@ -453,6 +472,9 @@ def checkout():
                 svc.SHOWROOM_LOCATION if return_choice == "SHOWROOM"
                 else form_pickup_loc
             )
+        elif receiving == "PICKUP":
+            # Keep legacy POST forms consistent with showroom pickup.
+            form_return_loc = svc.SHOWROOM_LOCATION
 
         dates_modified = request.form.get("dates_modified") == "1"
         if form_pickup and form_return and (len(selected_items) == 1 or dates_modified):

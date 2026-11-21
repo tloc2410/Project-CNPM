@@ -104,9 +104,10 @@
                                maxlength="255"
                                autocomplete="street-address"
                                placeholder="Nhập số nhà, tên đường, phường/quận, tỉnh/thành..."
-                               value="{{ first_item.pickup_location if first_item.pickup_location not in locations else '' }}"
+                               value="{{ showroom_location if receiving == 'PICKUP' else (first_item.pickup_location if first_item.pickup_location not in locations and first_item.pickup_location != showroom_location else '') }}"
+                               {% if receiving == 'PICKUP' %}readonly{% endif %}
                                required>
-                        <small class="location-help-text">Khách hàng tự nhập địa chỉ nhận xe cụ thể.</small>
+                        <small id="co-pickup-location-help" class="location-help-text" aria-live="polite">{{ 'Khách đến showroom nhận xe. Không phát sinh phí giao xe.' if receiving == 'PICKUP' else 'Nhập địa chỉ để nhân viên giao xe tận nơi.' }}</small>
                     </div>
 
                     <div class="info-input-box">
@@ -136,7 +137,7 @@
                                    name="receiving_method"
                                    value="PICKUP"
                                    {% if receiving == 'PICKUP' %}checked{% endif %}>
-                            <span>Nhận tại điểm hẹn (Miễn phí)</span>
+                            <span>Nhận tại showroom (Miễn phí)</span>
                         </label>
                         <label class="receiving-pill {% if receiving == 'DELIVERY' %}is-selected{% endif %}">
                             <input type="radio"

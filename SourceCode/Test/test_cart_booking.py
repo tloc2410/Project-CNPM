@@ -703,7 +703,7 @@ def test_checkout_custom_pickup_and_return_options(flask_client):
     address = "123 Nguyen Hue, Phuong Sai Gon, TP HCM"
     response = flask_client.post("/checkout", data={
         "pickup_location": address, "return_choice": "SAME_AS_PICKUP",
-        "return_location": "Attacker-controlled value", "payment_method": "CASH",
+        "return_location": "Attacker-controlled value", "payment_method": "CASH", "receiving_method": "DELIVERY",
         # No terms: do not create an order, but save valid locations to the cart.
     })
     assert response.status_code == 302
@@ -713,7 +713,7 @@ def test_checkout_custom_pickup_and_return_options(flask_client):
 
     response = flask_client.post("/checkout", data={
         "pickup_location": address, "return_choice": "SHOWROOM",
-        "return_location": "Ignored", "payment_method": "CASH",
+        "return_location": "Ignored", "payment_method": "CASH", "receiving_method": "DELIVERY",
     })
     assert response.status_code == 302
     with flask_client.session_transaction() as sess:
@@ -730,6 +730,7 @@ def test_checkout_rejects_blank_pickup_and_invalid_return_option(flask_client):
     blank = flask_client.post("/checkout", data={
         "pickup_location": " ", "return_choice": "SAME_AS_PICKUP",
         "agree_terms": "on", "payment_method": "CASH",
+        "receiving_method": "DELIVERY",
     }, follow_redirects=True)
     assert "Vui lòng nhập địa chỉ điểm đón xe.".encode("utf-8") in blank.data
 
@@ -738,6 +739,7 @@ def test_checkout_rejects_blank_pickup_and_invalid_return_option(flask_client):
         "return_choice": "UNTRUSTED_ADDRESS",
         "return_location": "Unknown location",
         "agree_terms": "on", "payment_method": "CASH",
+        "receiving_method": "DELIVERY",
     }, follow_redirects=True)
     assert "Vui lòng chọn địa điểm trả xe hợp lệ.".encode("utf-8") in invalid.data
 
@@ -902,3 +904,114 @@ def test_cart_and_checkout_do_not_display_default_pickup_location(flask_client):
     assert 'id="co-pickup-location"' in html
     assert 'name="pickup_location"' in html
     assert 'id="co-return-choice"' in html
+
+
+def test_showroom_pickup_is_locked_and_cannot_be_overridden_by_post(flask_client):
+    """Pickup mode forces showroom address on HTML, session, and return location."""
+    _login_session(flask_client)
+    flask_client.post("/cart/add/1", data={
+        "pickup_date": "2026-12-15", "return_date": "2026-12-17",
+    })
+    page = flask_client.get("/checkout")
+    assert page.status_code == 200
+    body = page.get_data(as_text=True)
+    assert 'Nhận tại showroom (Miễn phí)' in body
+    assert 'value="Group 12 Showroom - District 1"' in body
+    assert 'readonly' in body
+    assert 'id="co-pickup-location-help"' in body
+
+    response = flask_client.post("/checkout", data={
+        "receiving_method": "PICKUP",
+        "pickup_location": "999 Fake Address, TP HCM",
+        "return_location": "999 Fake Address, TP HCM",
+        "return_choice": "SAME_AS_PICKUP",
+        "payment_method": "CASH",
+    })
+    assert response.status_code == 302  # terms unchecked: address still synchronized
+    with flask_client.session_transaction() as sess:
+        item = sess["rental_cart"][0]
+        assert item["pickup_location"] == svc.SHOWROOM_LOCATION
+        assert item["return_location"] == svc.SHOWROOM_LOCATION
+
+    # AJAX path must also ignore forged pickup addresses when mode is showroom.
+    response = flask_client.post("/api/cart/dates", json={
+        "apply_selected": True,
+        "receiving_method": "PICKUP",
+        "pickup_date": "2026-12-15", "return_date": "2026-12-17",
+        "pickup_location": "Tampered address",
+        "return_location": "Tampered address",
+    })
+    assert response.status_code == 200
+    assert response.get_json()["delivery_fee"] == 0
+    with flask_client.session_transaction() as sess:
+        assert sess["rental_cart"][0]["pickup_location"] == svc.SHOWROOM_LOCATION
+        assert sess["rental_cart"][0]["return_location"] == svc.SHOWROOM_LOCATION
+
+
+def test_delivery_requires_entered_address_and_calculates_fee(flask_client):
+    """Delivery needs user-entered address and charges its configured fee."""
+    _login_session(flask_client)
+    flask_client.post("/cart/add/1", data={
+        "pickup_date": "2026-12-15", "return_date": "2026-12-17",
+    })
+    blank = flask_client.post("/checkout", data={
+        "receiving_method": "DELIVERY",
+        "pickup_location": " ",
+        "return_choice": "SAME_AS_PICKUP",
+        "payment_method": "CASH", "agree_terms": "on",
+    }, follow_redirects=True)
+    assert "Vui lòng nhập địa chỉ giao xe tận nơi.".encode("utf-8") in blank.data
+
+    address = "37 Hai Ba Trung, Phuong Sai Gon, TP HCM"
+    response = flask_client.post("/checkout", data={
+        "receiving_method": "DELIVERY",
+        "pickup_location": address,
+        "return_location": svc.SHOWROOM_LOCATION,  # forged client-side data ignored
+        "return_choice": "SAME_AS_PICKUP",
+        "payment_method": "CASH",  # no terms to avoid creating order
+    })
+    assert response.status_code == 302
+    with flask_client.session_transaction() as sess:
+        item = sess["rental_cart"][0]
+        assert item["pickup_location"] == address
+        assert item["return_location"] == address
+
+    totals = flask_client.post("/api/cart/summary", json={
+        "receiving_method": "DELIVERY", "selected_only": True,
+    })
+    assert totals.status_code == 200
+    assert totals.get_json()["delivery_fee"] == 100000
+
+
+def test_direct_booking_pickup_mode_forces_showroom_without_touching_cart(flask_client):
+    """Book Now enforces the same showroom rule and still isolates the cart."""
+    _login_session(flask_client)
+    direct = flask_client.post("/book-now/1", data={
+        "pickup_date": "2026-12-15", "return_date": "2026-12-17",
+    })
+    assert direct.status_code == 302
+    page = flask_client.get("/checkout?mode=now")
+    assert page.status_code == 200
+    assert 'readonly' in page.get_data(as_text=True)
+    result = flask_client.post("/checkout?mode=now", data={
+        "receiving_method": "PICKUP",
+        "pickup_location": "Client-forged address",
+        "return_choice": "SAME_AS_PICKUP",
+        "payment_method": "CASH",
+    })
+    assert result.status_code == 302
+    with flask_client.session_transaction() as sess:
+        assert sess["direct_booking"]["pickup_location"] == svc.SHOWROOM_LOCATION
+        assert not sess.get("rental_cart")
+
+    update = flask_client.post("/api/book-now/dates", json={
+        "receiving_method": "PICKUP",
+        "pickup_location": "Client-forged address",
+        "return_location": "Client-forged address",
+        "pickup_date": "2026-12-15", "return_date": "2026-12-17",
+    })
+    assert update.status_code == 200
+    with flask_client.session_transaction() as sess:
+        assert sess["direct_booking"]["pickup_location"] == svc.SHOWROOM_LOCATION
+        assert sess["direct_booking"]["return_location"] == svc.SHOWROOM_LOCATION
+        assert not sess.get("rental_cart")

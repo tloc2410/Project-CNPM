@@ -1693,3 +1693,12 @@ a {
     cursor: pointer;
     text-overflow: ellipsis;
 }
+
+/* Pickup rules: free collection is locked to Group 12's showroom.
+   A delivery address is editable only when home delivery is selected. */
+#co-pickup-location.is-showroom-locked,
+#co-pickup-location[readonly] {
+    color: #354152;
+    cursor: not-allowed;
+}
+#co-pickup-location[readonly]::placeholder { opacity: 0; }
