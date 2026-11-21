@@ -560,3 +560,26 @@ input:focus, select:focus, textarea:focus { outline: 2px solid #fde68a; border-c
   .g12-nav-seat-dropdown { grid-template-columns: repeat(2, minmax(0, 1fr)); border-radius: 18px; padding: 5px 8px; }
   .g12-nav-seat-dropdown a { font-size: 12px; }
 }
+
+
+/* Featured Vehicles: switch car recommendations in-place by brand */
+.g12-brand-tabs .g12-brand-tab {
+  flex: 1; min-width: 0; border: 0; border-radius: 999px;
+  padding: 8px 12px; margin: 0;
+  background: transparent; color: #111; font: inherit; font-size: 16px;
+  cursor: pointer; text-align: center;
+}
+.g12-brand-tabs .g12-brand-tab:hover,
+.g12-brand-tabs .g12-brand-tab.active { background: #dedede; font-weight: 700; }
+.g12-brand-tabs .g12-brand-tab:focus-visible { outline: 2px solid #d68d00; outline-offset: -3px; }
+.g12-brand-panel[hidden] { display: none !important; }
+.g12-brand-panel .g12-featured-grid { min-height: 460px; }
+.g12-featured-empty {
+  grid-column: 1 / -1; display: flex; justify-content: center;
+  align-items: center; min-height: 340px; color: #666;
+  font-size: 16px; text-align: center;
+}
+@media(max-width:730px){
+  .g12-brand-tabs .g12-brand-tab { font-size: 13px; padding: 8px 6px; }
+  .g12-brand-panel .g12-featured-grid { min-height: 300px; }
+}
