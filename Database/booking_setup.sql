@@ -1,67 +1,80 @@
--- ============================================================================
--- Module: Rental Cart & Booking (Đỗ Thu Thảo)
--- Project: Group 12 Car Rental
--- Note: File SQL riêng bổ sung cho module Cart & Booking.
---       Không sửa đổi Database/group12_car_rental.sql của nhóm.
---       Khớp 100% schema chuẩn: Users, CarTypes, Cars, Orders, Oderitem.
--- ============================================================================
+-- Group12 Car Rental - Rental Cart & Booking sample data
+-- Owner: Do Thu Thao (Issue #4)
+--
+-- IMPORTANT:
+--   Use the team's existing database and tables.
+--   Run Database/group12_car_rental.sql to create the schema ONLY if the
+--   database has never been initialized. Do not run it again on a live DB.
+--   This file creates NO database and NO tables; it only inserts sample data.
+--   Existing user accounts, cars and orders are not deleted or replaced.
+--   Safe to run multiple times because the sample car codes are unique.
 
-CREATE DATABASE IF NOT EXISTS group12_car_rental;
 USE group12_car_rental;
 
--- Đảm bảo 2 bảng Orders & Oderitem tồn tại đúng khóa ngoại chuẩn của nhóm
-CREATE TABLE IF NOT EXISTS Orders (
-    oderID INT AUTO_INCREMENT PRIMARY KEY,
-    useID INT NOT NULL,
-    orderTime DATETIME,
-    status VARCHAR(30),
-    receivingMethod VARCHAR(30),
-    deliveryFee DECIMAL(12,2),
-    deposit DECIMAL(12,2),
-    totalPrice DECIMAL(12,2),
-    paymentMethod VARCHAR(30),
-    FOREIGN KEY (useID) REFERENCES Users(UserID)
-);
+-- Reuse categories already used by the Vehicle module (Issue #3).
+-- If a category is missing, add only the category ROW, not a new table.
+INSERT INTO CarTypes (typeName, description)
+SELECT 'Sedan', 'Xe sedan 4-5 cho'
+WHERE NOT EXISTS (SELECT 1 FROM CarTypes WHERE typeName = 'Sedan');
 
-CREATE TABLE IF NOT EXISTS Oderitem (
-    OderitemID INT AUTO_INCREMENT PRIMARY KEY,
-    OderID INT NOT NULL,
-    CarID INT NOT NULL,
-    unitPrice DECIMAL(12,2),
-    rentalDays INT,
-    pickupDate DATE,
-    returnDate DATE,
-    FOREIGN KEY (OderID) REFERENCES Orders(oderID),
-    FOREIGN KEY (CarID) REFERENCES Cars(carID)
-);
+INSERT INTO CarTypes (typeName, description)
+SELECT 'Electric', 'Xe dien'
+WHERE NOT EXISTS (SELECT 1 FROM CarTypes WHERE typeName = 'Electric');
 
--- Index hỗ trợ kiểm tra trùng lịch (Overlap Check) nhanh theo CarID + [pickupDate, returnDate]
-SET @idx_exists := (
-    SELECT COUNT(*)
-    FROM information_schema.statistics
-    WHERE table_schema = DATABASE()
-      AND table_name = 'Oderitem'
-      AND index_name = 'idx_oderitem_car_dates'
-);
-SET @sql_idx := IF(
-    @idx_exists = 0,
-    'CREATE INDEX idx_oderitem_car_dates ON Oderitem (CarID, pickupDate, returnDate)',
-    'SELECT "Index idx_oderitem_car_dates already exists"'
-);
-PREPARE stmt FROM @sql_idx;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
+INSERT INTO CarTypes (typeName, description)
+SELECT 'Van', 'Xe 7 cho va xe cho nhieu hanh khach'
+WHERE NOT EXISTS (SELECT 1 FROM CarTypes WHERE typeName = 'Van');
 
--- Dữ liệu mẫu loại xe & xe (idempotent, dùng để kiểm thử Giỏ hàng & Đặt xe)
-INSERT IGNORE INTO CarTypes (typeId, typeName, description) VALUES
-(1, 'Sedan 4 chỗ', 'Xe sedan 4-5 chỗ tiết kiệm nhiên liệu, phù hợp di chuyển nội đô'),
-(2, 'Xe điện SUV', 'Xe điện thông minh, vận hành êm ái'),
-(3, 'MPV 7 chỗ', 'Xe gia đình rộng rãi cho nhóm và du lịch'),
-(4, 'Sedan hạng sang', 'Xe sang trọng phục vụ công tác và sự kiện');
+-- Add booking demo cars with NEW AUTO_INCREMENT IDs.
+-- Do not force carID=1..5: those IDs may already belong to the Vehicle module.
+-- INSERT IGNORE protects against repeated runs on the same unique code.
+INSERT IGNORE INTO Cars
+    (TypeID, code, name, pictures, description,
+     numberOfSeats, pricePerDay, status, numberOfViews)
+SELECT typeId, 'BOOK-VIOS-01', 'Toyota Vios (Booking Demo)',
+       '/static/images/booking/car_vios.svg',
+       'Automatic; Petrol; Tan Son Nhat Airport',
+       4, 600000.00, 'available', 120
+FROM CarTypes WHERE typeName = 'Sedan' LIMIT 1;
 
-INSERT IGNORE INTO Cars (carID, TypeID, code, name, pictures, description, numberOfSeats, pricePerDay, status, numberOfViews) VALUES
-(1, 1, 'CAR-VIOS-01', 'Toyota Vios', '/static/images/booking/car_vios.svg', 'Automatic · Petrol · Tan Son Nhat Airport', 4, 600000.00, 'available', 120),
-(2, 1, 'CAR-CITY-02', 'Honda City', '/static/images/booking/car_city.svg', 'Automatic · Petrol · Tan Son Nhat Airport', 4, 650000.00, 'available', 98),
-(3, 2, 'CAR-VF5-03', 'VinFast VF 5', '/static/images/booking/car_vf5.svg', 'Automatic · Electric · District 1 Showroom', 4, 700000.00, 'available', 145),
-(4, 2, 'CAR-VF3-04', 'VinFast VF 3', '/static/images/booking/car_vf3.svg', 'Automatic · Electric · District 1 Showroom', 4, 500000.00, 'available', 110),
-(5, 3, 'CAR-CARNIVAL-05', 'Kia Carnival', '/static/images/booking/car_carnival.svg', 'Automatic · Diesel · Tan Son Nhat Airport', 7, 1400000.00, 'available', 84);
+INSERT IGNORE INTO Cars
+    (TypeID, code, name, pictures, description,
+     numberOfSeats, pricePerDay, status, numberOfViews)
+SELECT typeId, 'BOOK-CITY-02', 'Honda City (Booking Demo)',
+       '/static/images/booking/car_city.svg',
+       'Automatic; Petrol; Tan Son Nhat Airport',
+       4, 650000.00, 'available', 98
+FROM CarTypes WHERE typeName = 'Sedan' LIMIT 1;
+
+INSERT IGNORE INTO Cars
+    (TypeID, code, name, pictures, description,
+     numberOfSeats, pricePerDay, status, numberOfViews)
+SELECT typeId, 'BOOK-VF5-03', 'VinFast VF 5 (Booking Demo)',
+       '/static/images/booking/car_vf5.svg',
+       'Automatic; Electric; District 1 Showroom',
+       4, 700000.00, 'available', 145
+FROM CarTypes WHERE typeName = 'Electric' LIMIT 1;
+
+INSERT IGNORE INTO Cars
+    (TypeID, code, name, pictures, description,
+     numberOfSeats, pricePerDay, status, numberOfViews)
+SELECT typeId, 'BOOK-VF3-04', 'VinFast VF 3 (Booking Demo)',
+       '/static/images/booking/car_vf3.svg',
+       'Automatic; Electric; District 1 Showroom',
+       4, 500000.00, 'available', 110
+FROM CarTypes WHERE typeName = 'Electric' LIMIT 1;
+
+INSERT IGNORE INTO Cars
+    (TypeID, code, name, pictures, description,
+     numberOfSeats, pricePerDay, status, numberOfViews)
+SELECT typeId, 'BOOK-CARNIVAL-05', 'Kia Carnival (Booking Demo)',
+       '/static/images/booking/car_carnival.svg',
+       'Automatic; Diesel; Tan Son Nhat Airport',
+       7, 1400000.00, 'available', 84
+FROM CarTypes WHERE typeName = 'Van' LIMIT 1;
+
+-- Verification: this module uses the SAME team tables Orders and Oderitem.
+SELECT carID, code, name, pricePerDay, status
+FROM Cars
+WHERE code LIKE 'BOOK-%'
+ORDER BY carID;
