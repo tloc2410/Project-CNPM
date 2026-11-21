@@ -825,7 +825,7 @@ def test_book_now_without_cart_and_api_changes_only_direct_item(flask_client, bo
     assert fees.get_json()["selected_count"] == 1
     cart = flask_client.get("/cart")
     assert cart.status_code == 200
-    assert "Your Cart (0)" in cart.get_data(as_text=True)
+    assert 'id="cart-title-count">0</span>' in cart.get_data(as_text=True)
     assert flask_client.get("/checkout?mode=now").status_code == 200
 
 
