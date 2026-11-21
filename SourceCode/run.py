@@ -256,10 +256,26 @@ def home():
     featured = []
     types = []
     spotlight = []
+    brand_cars = {brand: [] for brand in ("VinFast", "KIA", "Toyota", "BMW")}
     vehicle_showcase = []
     try:
-        all_cars, _, _, _ = vehicle_service.list_vehicles({"sort": "popular"})
+        all_cars, _, total_pages, _ = vehicle_service.list_vehicles({"sort": "popular"})
+        # Collect the remaining vehicle pages so a brand is not hidden
+        # simply because it was absent from the top twelve cars.
+        all_cars = list(all_cars)
+        for page in range(2, min(total_pages, 10) + 1):
+            next_cars, _, _, _ = vehicle_service.list_vehicles(
+                {"sort": "popular", "page": page}
+            )
+            all_cars.extend(next_cars)
         featured = all_cars[:6]
+        brands = ("VinFast", "KIA", "Toyota", "BMW")
+        brand_cars = {brand: [] for brand in brands}
+        for car in all_cars:
+            name = str(car.get("name") or "").casefold()
+            for brand in brands:
+                if brand.casefold() in name and len(brand_cars[brand]) < 2:
+                    brand_cars[brand].append(car)
         types = vehicle_service.list_car_types()
         def pick(match):
             return next((c for c in all_cars if match in c["name"].lower()), None)
@@ -285,6 +301,7 @@ def home():
 
     return render_template(
         "home.html", featured=featured, spotlight=spotlight,
+        brand_cars=brand_cars,
         vehicle_showcase=vehicle_showcase, types=types, db_error=db_error
     )
 
