@@ -1,10 +1,10 @@
 
 
-from data.database import get_db_connection
+from data import database
 
 
 def find_user_by_email(email):
-    connection = get_db_connection()
+    connection = database.get_db_connection()
     cursor = connection.cursor(dictionary=True)
 
     try:
@@ -17,7 +17,7 @@ def find_user_by_email(email):
         connection.close()
 
 def find_user_by_phone(phone):
-    connection = get_db_connection()
+    connection = database.get_db_connection()
     cursor = connection.cursor(dictionary=True)
 
     try:
@@ -33,7 +33,7 @@ def find_user_by_phone(phone):
 
 def find_user_permissions(user_id):
     """Return the current role/lock state from MySQL for backend auth checks."""
-    connection = get_db_connection()
+    connection = database.get_db_connection()
     cursor = connection.cursor(dictionary=True)
 
     try:
@@ -48,7 +48,7 @@ def find_user_permissions(user_id):
 
 
 def create_user(full_name, phone, email, password_hash):
-    connection = get_db_connection()
+    connection = database.get_db_connection()
     cursor = connection.cursor()
 
     try:
@@ -76,7 +76,7 @@ def create_user(full_name, phone, email, password_hash):
 
 def update_user_profile(user_id, full_name, phone, address):
     """Update the current user's name, phone and address, not their role/email."""
-    connection = get_db_connection()
+    connection = database.get_db_connection()
     cursor = connection.cursor(dictionary=True)
     try:
         cursor.execute(
