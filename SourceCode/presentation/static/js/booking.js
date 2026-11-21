@@ -242,6 +242,9 @@
     /* ---------------------- Checkout page logic ---------------------- */
     const checkoutRoot = document.querySelector('[data-page="checkout"]');
     if (checkoutRoot) {
+        const directMode = checkoutRoot.dataset.checkoutMode === "now";
+        const dateEndpoint = directMode ? "/api/book-now/dates" : "/api/cart/dates";
+        const summaryEndpoint = directMode ? "/api/book-now/summary" : "/api/cart/summary";
         const pickupInput = document.getElementById("co-pickup-date");
         const returnInput = document.getElementById("co-return-date");
         const pickupLocInput = document.getElementById("co-pickup-location");
@@ -340,7 +343,7 @@
 
         async function syncCheckoutDates() {
             if (datesModifiedInput) datesModifiedInput.value = "1";
-            const data = await postJson("/api/cart/dates", {
+            const data = await postJson(dateEndpoint, {
                 apply_selected: true,
                 pickup_date: pickupInput ? pickupInput.value : "",
                 return_date: returnInput ? returnInput.value : "",
@@ -352,7 +355,7 @@
         }
 
         async function syncCheckoutSummaryOnly() {
-            const data = await postJson("/api/cart/summary", {
+            const data = await postJson(summaryEndpoint, {
                 receiving_method: getSelectedReceiving(),
                 selected_only: true,
             });

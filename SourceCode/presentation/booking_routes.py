@@ -25,6 +25,8 @@ from business import booking_service as svc
 booking_bp = Blueprint("booking", __name__)
 
 CART_KEY = "rental_cart"
+DIRECT_BOOKING_KEY = "direct_booking"  # never included in rental_cart
+
 
 
 def login_required(view):
@@ -45,6 +47,15 @@ def _get_cart():
 
 def _save_cart(cart):
     session[CART_KEY] = cart
+    session.modified = True
+
+
+def _get_direct_booking():
+    return session.get(DIRECT_BOOKING_KEY)
+
+
+def _save_direct_booking(item):
+    session[DIRECT_BOOKING_KEY] = item
     session.modified = True
 
 
@@ -208,12 +219,6 @@ def cart_add(car_id):
         pickup_location=pickup_loc,
         return_location=return_loc,
     )
-    if str(payload.get("book_now", "")) == "1":
-        # Book Now must not place already-checked cart cars in the same order.
-        # Preserve all other cart entries; only change their checkbox selection.
-        # This also re-selects the target if it was already in the cart.
-        cart_items = svc.select_only_cart_item(cart_items, car_id)
-        msg = "Đã chọn xe để thuê ngay."
     _save_cart(cart_items)
 
     if request.is_json:
@@ -221,6 +226,32 @@ def cart_add(car_id):
 
     flash(msg, "success" if added else "error")
     return redirect(request.form.get("next") or url_for("booking.cart"))
+
+
+@booking_bp.route("/book-now/<int:car_id>", methods=["POST"])
+@login_required
+def book_now(car_id):
+    """Book one vehicle without reading or modifying any saved cart entry."""
+    pickup = request.form.get("pickup_date", "").strip()
+    return_ = request.form.get("return_date", "").strip()
+    if not pickup or not return_:
+        pickup, return_ = svc.default_rental_dates()
+
+    item = {
+        "car_id": car_id,
+        "pickup_date": pickup,
+        "return_date": return_,
+        "selected": True,
+        "pickup_location": svc.DEFAULT_LOCATION,
+        "return_location": svc.DEFAULT_LOCATION,
+    }
+    summary = svc.build_cart_summary([item], selected_only=True)
+    if not summary["is_valid"]:
+        flash(next((i["error"] for i in summary["items"] if i["error"]),
+                   "Không thể thuê ngay xe này."), "error")
+        return redirect(url_for("cars"))
+    _save_direct_booking(item)
+    return redirect(url_for("booking.checkout", mode="now"))
 
 
 @booking_bp.route("/cart/remove/<int:car_id>", methods=["POST"])
@@ -302,6 +333,42 @@ def api_cart_dates():
     return jsonify(_summary_json(svc.build_cart_summary(cart_items, receiving_method=receiving)))
 
 
+@booking_bp.route("/api/book-now/dates", methods=["POST"])
+@login_required
+def api_direct_booking_dates():
+    """Update instant checkout dates without changing rental_cart."""
+    item = _get_direct_booking()
+    if not item:
+        return jsonify(ok=False, message="Không có xe đang thuê ngay."), 400
+    data = request.get_json(silent=True) or {}
+    receiving = data.get("receiving_method", "PICKUP")
+    if receiving not in svc.RECEIVING_METHODS:
+        receiving = "PICKUP"
+    items = svc.update_all_selected_dates(
+        [item], data.get("pickup_date"), data.get("return_date"),
+        data.get("pickup_location"), data.get("return_location"),
+    )
+    _save_direct_booking(items[0])
+    return jsonify(_summary_json(svc.build_cart_summary(
+        items, receiving_method=receiving, selected_only=True
+    )))
+
+
+@booking_bp.route("/api/book-now/summary", methods=["POST"])
+@login_required
+def api_direct_booking_summary():
+    item = _get_direct_booking()
+    if not item:
+        return jsonify(ok=False, message="Không có xe đang thuê ngay."), 400
+    data = request.get_json(silent=True) or {}
+    receiving = data.get("receiving_method", "PICKUP")
+    if receiving not in svc.RECEIVING_METHODS:
+        receiving = "PICKUP"
+    return jsonify(_summary_json(svc.build_cart_summary(
+        [item], receiving_method=receiving, selected_only=True
+    )))
+
+
 @booking_bp.route("/api/cart/select", methods=["POST"])
 @login_required
 def api_cart_select():
@@ -340,64 +407,78 @@ def api_cart_summary():
 @booking_bp.route("/checkout", methods=["GET", "POST"])
 @login_required
 def checkout():
-    cart_items = _get_cart()
-    selected_items = svc.get_selected_cart_items(cart_items)
+    # Plain /checkout processes the selected saved cart items.
+    # /checkout?mode=now processes ONE temporary item and never changes cart.
+    direct_mode = request.values.get("mode") == "now"
+    if direct_mode:
+        item = _get_direct_booking()
+        if not item:
+            flash("Vui lòng chọn một xe để thuê ngay.", "error")
+            return redirect(url_for("cars"))
+        checkout_items = [item]
+    else:
+        checkout_items = _get_cart()
+
+    selected_items = svc.get_selected_cart_items(checkout_items)
     if not selected_items:
-        flash("Vui lòng chọn ít nhất một xe trong giỏ hàng trước khi thanh toán.", "error")
-        return redirect(url_for("booking.cart"))
+        flash("Vui lòng chọn ít nhất một xe để đặt.", "error")
+        return redirect(url_for("cars") if direct_mode else url_for("booking.cart"))
 
     receiving = request.values.get("receiving_method", "PICKUP")
     if receiving not in svc.RECEIVING_METHODS:
         receiving = "PICKUP"
+    checkout_again = url_for(
+        "booking.checkout", receiving_method=receiving,
+        **({"mode": "now"} if direct_mode else {})
+    )
 
     if request.method == "POST":
-        # Sync date/location changes from Checkout form when single-car or explicitly modified
         form_pickup = request.form.get("pickup_date", "").strip()
         form_return = request.form.get("return_date", "").strip()
         form_pickup_loc = request.form.get("pickup_location", "").strip()
         form_return_loc = request.form.get("return_location", "").strip()
         return_choice = request.form.get("return_choice")
-        # The Checkout UI accepts a user-entered pickup address and only
-        # two return destinations. Recompute on the server; never trust the
-        # hidden return_location field submitted by the browser.
+
         if return_choice is not None:
             if not form_pickup_loc:
                 flash("Vui lòng nhập địa chỉ điểm đón xe.", "error")
-                return redirect(url_for("booking.checkout", receiving_method=receiving))
+                return redirect(checkout_again)
             if len(form_pickup_loc) > 255:
                 flash("Địa chỉ điểm đón quá dài (tối đa 255 ký tự).", "error")
-                return redirect(url_for("booking.checkout", receiving_method=receiving))
+                return redirect(checkout_again)
             if return_choice not in ("SAME_AS_PICKUP", "SHOWROOM"):
                 flash("Vui lòng chọn địa điểm trả xe hợp lệ.", "error")
-                return redirect(url_for("booking.checkout", receiving_method=receiving))
-            form_return_loc = (svc.SHOWROOM_LOCATION if return_choice == "SHOWROOM"
-                               else form_pickup_loc)
-        dates_modified = request.form.get("dates_modified") == "1"
+                return redirect(checkout_again)
+            form_return_loc = (
+                svc.SHOWROOM_LOCATION if return_choice == "SHOWROOM"
+                else form_pickup_loc
+            )
 
+        dates_modified = request.form.get("dates_modified") == "1"
         if form_pickup and form_return and (len(selected_items) == 1 or dates_modified):
-            cart_items = svc.update_all_selected_dates(
-                cart_items,
-                form_pickup,
-                form_return,
-                form_pickup_loc or None,
-                form_return_loc or None,
+            checkout_items = svc.update_all_selected_dates(
+                checkout_items, form_pickup, form_return,
+                form_pickup_loc or None, form_return_loc or None,
             )
-            _save_cart(cart_items)
-            selected_items = svc.get_selected_cart_items(cart_items)
+            if direct_mode:
+                _save_direct_booking(checkout_items[0])
+            else:
+                _save_cart(checkout_items)
+            selected_items = svc.get_selected_cart_items(checkout_items)
         elif form_pickup_loc or form_return_loc:
-            cart_items = svc.update_all_selected_dates(
-                cart_items,
-                None,
-                None,
-                form_pickup_loc or None,
-                form_return_loc or None,
+            checkout_items = svc.update_all_selected_dates(
+                checkout_items, None, None,
+                form_pickup_loc or None, form_return_loc or None,
             )
-            _save_cart(cart_items)
-            selected_items = svc.get_selected_cart_items(cart_items)
+            if direct_mode:
+                _save_direct_booking(checkout_items[0])
+            else:
+                _save_cart(checkout_items)
+            selected_items = svc.get_selected_cart_items(checkout_items)
 
         if request.form.get("agree_terms") != "on":
             flash("Vui lòng đồng ý với Điều khoản và Chính sách bảo mật trước khi đặt xe.", "error")
-            return redirect(url_for("booking.checkout", receiving_method=receiving))
+            return redirect(checkout_again)
 
         payment_method = request.form.get("payment_method", "CARD")
         try:
@@ -409,32 +490,36 @@ def checkout():
             )
         except svc.BookingError as exc:
             flash(str(exc), "error")
-            return redirect(url_for("booking.checkout", receiving_method=receiving))
+            return redirect(checkout_again)
 
-        # Remove only the ordered cars from the session cart.
-        remaining = svc.remove_car_ids_from_cart(
-            cart_items, [i["car_id"] for i in selected_items]
-        )
-        _save_cart(remaining)
+        if direct_mode:
+            # Instant booking was never in rental_cart; do not remove cars.
+            session.pop(DIRECT_BOOKING_KEY, None)
+        else:
+            remaining = svc.remove_car_ids_from_cart(
+                checkout_items, [i["car_id"] for i in selected_items]
+            )
+            _save_cart(remaining)
         flash(f"Đặt xe thành công! Mã đơn hàng của bạn là #{order_id}.", "success")
         return redirect(url_for("booking.my_orders"))
 
     summary = svc.build_cart_summary(
-        cart_items, receiving_method=receiving, selected_only=True
+        checkout_items, receiving_method=receiving, selected_only=True
     )
     if not summary["is_valid"]:
         first_err = next((i["error"] for i in summary["items"] if i["error"]), "")
         flash(
-            first_err or "Vui lòng kiểm tra lại ngày nhận/trả xe trong giỏ hàng.",
+            first_err or "Vui lòng kiểm tra lại ngày nhận/trả xe.",
             "error",
         )
-        return redirect(url_for("booking.cart"))
+        return redirect(url_for("cars") if direct_mode else url_for("booking.cart"))
 
     renter = svc.get_renter_profile(session["user_id"])
     first_item = summary["items"][0]
     return render_template(
         "booking/checkout.html",
         summary=summary,
+        direct_mode=direct_mode,
         receiving=receiving,
         first_item=first_item,
         locations=svc.LOCATIONS,
