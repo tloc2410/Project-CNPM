@@ -732,7 +732,7 @@ def test_checkout_rejects_blank_pickup_and_invalid_return_option(flask_client):
         "agree_terms": "on", "payment_method": "CASH",
         "receiving_method": "DELIVERY",
     }, follow_redirects=True)
-    assert "Vui lòng nhập địa chỉ điểm đón xe.".encode("utf-8") in blank.data
+    assert "Vui lòng nhập địa chỉ giao xe tận nơi.".encode("utf-8") in blank.data
 
     invalid = flask_client.post("/checkout", data={
         "pickup_location": "123 Nguyen Hue, TP HCM",
