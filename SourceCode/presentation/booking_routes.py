@@ -125,6 +125,27 @@ def car_img_url(pictures):
     if raw:
         first = raw.replace("\n", ",").replace(";", ",").split(",")[0].strip()
         if first:
+            # Booking's original demo rows saved illustrations in the Cars
+            # table. Map those specific paths to photographs even when users
+            # have not rerun Database/booking_setup.sql on their local MySQL.
+            # Keep this in the Booking filter: its cards do not call run.car_image.
+            legacy_booking_photos = {
+                "car_vios.svg": "images/cars/toyotavios2023.webp",
+                "car_city.svg": "images/cars/hondacity2022.webp",
+                "car_vf3.svg": "images/cars/vinfast_vf3.jpg",
+                "car_carnival.svg": "images/cars/kia_carnival.jpg",
+            }
+            picture_name = first.rsplit("/", 1)[-1].lower()
+            is_booking_illustration = (
+                "images/booking/" in first.lower()
+                or first.lower().startswith("car_")
+            )
+            if is_booking_illustration:
+                if picture_name in legacy_booking_photos:
+                    return url_for("static", filename=legacy_booking_photos[picture_name])
+                if picture_name == "car_vf5.svg":
+                    # Commons CC0 photograph of an actual VinFast VF 5.
+                    return "https://commons.wikimedia.org/wiki/Special:FilePath/VinFast_VF5.jpg?width=960"
             if first.startswith(("http://", "https://", "//", "/")):
                 return first
             if first.startswith("static/"):
@@ -132,7 +153,7 @@ def car_img_url(pictures):
             if first.startswith("images/"):
                 return url_for("static", filename=first)
             return url_for("static", filename="images/cars/" + first)
-    return url_for("static", filename="images/booking/car_vios.svg")
+    return url_for("static", filename="images/cars/car-placeholder.svg")
 
 
 @booking_bp.app_context_processor

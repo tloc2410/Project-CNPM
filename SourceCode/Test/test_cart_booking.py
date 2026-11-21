@@ -601,9 +601,13 @@ def test_car_image_url_resolution(flask_client):
     with app_module.app.test_request_context():
         assert car_img_url("toyotavios2023.webp") == "/static/images/cars/toyotavios2023.webp"
         assert car_img_url("hondacity2022.webp, interior.webp") == "/static/images/cars/hondacity2022.webp"
-        assert car_img_url("/static/images/booking/car_vios.svg") == "/static/images/booking/car_vios.svg"
+        assert car_img_url("/static/images/booking/car_vios.svg") == "/static/images/cars/toyotavios2023.webp"
+        assert car_img_url("/static/images/booking/car_city.svg") == "/static/images/cars/hondacity2022.webp"
+        assert car_img_url("/static/images/booking/car_vf5.svg") == "https://commons.wikimedia.org/wiki/Special:FilePath/VinFast_VF5.jpg?width=960"
+        assert car_img_url("/static/images/booking/car_vf3.svg") == "/static/images/cars/vinfast_vf3.jpg"
+        assert car_img_url("/static/images/booking/car_carnival.svg") == "/static/images/cars/kia_carnival.jpg"
         assert car_img_url("https://example.com/car.jpg") == "https://example.com/car.jpg"
-        assert car_img_url("") == "/static/images/booking/car_vios.svg"
+        assert car_img_url("") == "/static/images/cars/car-placeholder.svg"
 
     _login_session(flask_client, user_id=1, full_name="Do Thu Thao")
     res = flask_client.get("/cart")
@@ -611,6 +615,29 @@ def test_car_image_url_resolution(flask_client):
     assert b"/static/images/cars/toyotavios2023.webp" in res.data
     assert b"/static/images/cars/hondacity2022.webp" in res.data
 
+
+
+
+def test_booking_available_cards_render_correct_vehicle_photos(flask_client, booking_db):
+    """Booking cart should not show demo illustrations for Vios, City or VF 5."""
+    raw, _ = booking_db
+    raw.execute("UPDATE Cars SET pictures = ? WHERE carID = 1",
+                ("/static/images/booking/car_vios.svg",))
+    raw.execute("UPDATE Cars SET pictures = ? WHERE carID = 2",
+                ("/static/images/booking/car_city.svg",))
+    raw.execute(
+        """INSERT INTO Cars
+           (carID, TypeID, code, name, pictures, numberOfSeats,
+            pricePerDay, status)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+        (5, 1, "BOOK-VF5-03", "VinFast VF 5",
+         "/static/images/booking/car_vf5.svg", 4, 700000, "available")
+    )
+    _login_session(flask_client)
+    body = flask_client.get("/cart").get_data(as_text=True)
+    assert 'src="/static/images/cars/toyotavios2023.webp"' in body
+    assert 'src="/static/images/cars/hondacity2022.webp"' in body
+    assert 'src="https://commons.wikimedia.org/wiki/Special:FilePath/VinFast_VF5.jpg?width=960"' in body
 
 def test_ajax_add_keeps_page_and_syncs_cart_count_on_vehicle_pages(flask_client):
     """AJAX adds and duplicate requests share one session cart across pages."""
