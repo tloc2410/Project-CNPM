@@ -174,6 +174,15 @@ def add_to_cart(
     return cart, True, "Đã thêm xe vào giỏ hàng."
 
 
+def select_only_cart_item(cart, car_id):
+    """For Book Now, select the requested car while preserving other cart items."""
+    car_id = int(car_id)
+    items = [_normalize_cart_item(item) for item in (cart or [])]
+    for item in items:
+        item["selected"] = item["car_id"] == car_id
+    return items
+
+
 def remove_from_cart(cart, car_id):
     car_id = int(car_id)
     items = [_normalize_cart_item(i) for i in (cart or [])]

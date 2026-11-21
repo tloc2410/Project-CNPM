@@ -740,3 +740,82 @@ def test_checkout_rejects_blank_pickup_and_invalid_return_option(flask_client):
         "agree_terms": "on", "payment_method": "CASH",
     }, follow_redirects=True)
     assert "Vui lòng chọn địa điểm trả xe hợp lệ.".encode("utf-8") in invalid.data
+
+
+def test_book_now_only_selects_the_requested_vehicle_and_preserves_other_cars(flask_client, booking_db):
+    """'Book a ride' goes to Checkout for ONE car, even if the cart had many selected."""
+    raw, _ = booking_db
+    _login_session(flask_client)
+
+    for car_id in (1, 2):
+        added = flask_client.post(f"/cart/add/{car_id}", data={
+            "pickup_date": "2026-12-15", "return_date": "2026-12-17",
+        })
+        assert added.status_code == 302
+
+    with flask_client.session_transaction() as sess:
+        assert [i["car_id"] for i in sess["rental_cart"] if i["selected"]] == [1, 2]
+
+    # The vehicle-detail "Book a ride" button now posts book_now=1.
+    # Ensure the vehicle detail button opts into the isolated Book Now flow.
+    from pathlib import Path
+    template = (Path(__file__).resolve().parents[1] /
+                "presentation" / "templates" / "car_detail.html").read_text(encoding="utf-8")
+    assert 'name="book_now" value="1"' in template
+
+    direct = flask_client.post("/cart/add/2", data={
+        "book_now": "1", "next": "/checkout",
+        "pickup_date": "2026-12-15", "return_date": "2026-12-17",
+    })
+    assert direct.status_code == 302
+    assert direct.headers["Location"].endswith("/checkout")
+    with flask_client.session_transaction() as sess:
+        items = sess["rental_cart"]
+        assert len(items) == 2
+        assert [i["car_id"] for i in items if i["selected"]] == [2]
+
+    checkout = flask_client.get("/checkout")
+    assert checkout.status_code == 200
+    html = checkout.get_data(as_text=True)
+    assert 'Honda City' in html
+    # Toyota is still in the session cart, but NOT in the Checkout summary.
+    assert 'Toyota Vios' not in html
+
+    placed = flask_client.post("/checkout", data={
+        "pickup_date": "2026-12-15",
+        "return_date": "2026-12-17",
+        "pickup_location": "123 Nguyen Hue, TP HCM",
+        "return_choice": "SAME_AS_PICKUP",
+        "receiving_method": "PICKUP",
+        "payment_method": "CASH",
+        "agree_terms": "on",
+    })
+    assert placed.status_code == 302
+    assert placed.headers["Location"].endswith("/orders")
+    rows = raw.execute("SELECT CarID FROM Oderitem ORDER BY CarID").fetchall()
+    assert [r[0] for r in rows] == [2]
+    with flask_client.session_transaction() as sess:
+        assert [i["car_id"] for i in sess["rental_cart"]] == [1]
+
+
+def test_book_now_reselects_existing_unchecked_car_and_normal_cart_stays_multi(flask_client):
+    _login_session(flask_client)
+    flask_client.post("/cart/add/1", data={
+        "pickup_date": "2026-12-15", "return_date": "2026-12-17",
+    })
+    flask_client.post("/cart/add/2", data={
+        "pickup_date": "2026-12-15", "return_date": "2026-12-17",
+    })
+    flask_client.post("/api/cart/select", json={"car_id": 2, "selected": False})
+
+    res = flask_client.post("/cart/add/2", data={"book_now": "1", "next": "/checkout"})
+    assert res.status_code == 302
+    with flask_client.session_transaction() as sess:
+        assert [i["car_id"] for i in sess["rental_cart"] if i["selected"]] == [2]
+
+    # When using the cart normally, re-checking both cars is still supported.
+    resp = flask_client.post("/api/cart/select", json={"select_all": True})
+    assert resp.status_code == 200
+    assert resp.get_json()["selected_count"] == 2
+    with flask_client.session_transaction() as sess:
+        assert [i["car_id"] for i in sess["rental_cart"] if i["selected"]] == [1, 2]

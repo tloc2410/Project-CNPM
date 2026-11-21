@@ -208,6 +208,12 @@ def cart_add(car_id):
         pickup_location=pickup_loc,
         return_location=return_loc,
     )
+    if str(payload.get("book_now", "")) == "1":
+        # Book Now must not place already-checked cart cars in the same order.
+        # Preserve all other cart entries; only change their checkbox selection.
+        # This also re-selects the target if it was already in the cart.
+        cart_items = svc.select_only_cart_item(cart_items, car_id)
+        msg = "Đã chọn xe để thuê ngay."
     _save_cart(cart_items)
 
     if request.is_json:

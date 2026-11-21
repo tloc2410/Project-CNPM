@@ -37,7 +37,7 @@
         <p class="g12-detail-description">{{ car.description or 'Comfortable and practical vehicle for city driving, business trips, and family travel.' }}</p>
         <div class="g12-detail-actions">
           {% if booking_enabled and car.status == 'available' %}
-            <form action="{{ url_for('booking.cart_add', car_id=car.carID) }}" method="POST"><input type="hidden" name="next" value="{{ url_for('booking.checkout') }}"><button type="submit" class="g12-detail-cta">Book a ride <span>→</span></button></form>
+            <form action="{{ url_for('booking.cart_add', car_id=car.carID) }}" method="POST"><input type="hidden" name="next" value="{{ url_for('booking.checkout') }}"><input type="hidden" name="book_now" value="1"><button type="submit" class="g12-detail-cta">Book a ride <span>→</span></button></form>
             <form action="{{ url_for('booking.cart_add', car_id=car.carID) }}" method="POST" data-ajax-add-to-cart data-login-url="{{ url_for('login') }}"><input type="hidden" name="next" value="{{ url_for('car_detail', car_id=car.carID) }}"><button type="submit" class="g12-detail-cta"><span>🛒</span> Add to cart</button></form>
           {% else %}
             <button class="g12-detail-cta" type="button" disabled title="Booking will be available once this module is integrated">Book a ride <span>→</span></button>
