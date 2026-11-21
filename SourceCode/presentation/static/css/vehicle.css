@@ -425,3 +425,65 @@ input:focus, select:focus, textarea:focus { outline: 2px solid #fde68a; border-c
 .g12-detail-amenities p span{font-weight:900;font-size:23px}
 @media(max-width:1050px){.g12-detail-overview h1{font-size:36px}.g12-detail-meta{font-size:13px;gap:7px}.g12-detail-meta svg{width:19px}.g12-detail-price{margin-top:34px}.g12-detail-price strong{font-size:27px}.g12-detail-description{font-size:16px;min-height:0}.g12-detail-cta{font-size:15px;min-height:54px;border-radius:12px}.g12-detail-primary{height:320px}.g12-detail-bottom{margin-top:80px}}
 @media(max-width:730px){.g12-detail-width{width:calc(100% - 25px)}.g12-detail-main{grid-template-columns:1fr;gap:22px}.g12-detail-breadcrumb{padding:22px 0;gap:10px}.g12-detail-primary{height:280px}.g12-detail-thumbs{margin-top:12px;gap:8px}.g12-detail-thumb{height:70px}.g12-detail-overview h1{font-size:35px}.g12-detail-meta{font-size:15px}.g12-detail-price{margin-top:26px}.g12-detail-actions{gap:8px}.g12-detail-cta{padding:10px;font-size:14px}.g12-detail-bottom{margin-top:65px;padding:14px}.g12-detail-tabs{margin:0 0 12px;gap:0}.g12-detail-tabs button{font-size:12px}.g12-detail-panel{grid-template-columns:1fr;gap:10px}.g12-detail-panel>div+div{padding:0;border-left:0}.g12-detail-page{padding-bottom:65px}}
+
+/* Figma Vehicle List — frame 138:4 at 1440 × 1100 */
+.g12-figma-site .figma-cars-page{background:#f7f7f7}
+.g12-figma-site .figma-cars-banner{height:234px;width:calc(100% - 44px);max-width:1405px;border-radius:16px;margin:0 auto;background:linear-gradient(90deg,rgba(0,0,0,.75),rgba(0,0,0,.08) 77%),url('../images/cars/bmw320i2023.webp') center 53%/cover}
+.g12-figma-site .figma-cars-banner-content{padding:25px 9%;font-size:13px;color:#eee}
+.g12-figma-site .figma-banner-benefits{display:flex;gap:25px;margin-top:26px;font-size:11px;letter-spacing:.8px}
+.g12-figma-site .figma-banner-benefits span{display:flex;align-items:center;gap:10px;line-height:1.1;padding-right:22px}
+.g12-figma-site .figma-banner-benefits b{font-size:27px;color:#f7a000}
+.g12-figma-site .figma-cars-container{width:min(1355px,calc(100% - 60px));padding-bottom:65px}
+.g12-figma-site .figma-cars-heading{margin:9px 0 26px}
+.g12-figma-site .figma-cars-heading h1{font-size:25px;font-weight:800}
+.g12-figma-site .figma-cars-heading p{font-size:12px}
+.g12-figma-site .figma-cars-layout{grid-template-columns:270px minmax(0,1fr);gap:23px}
+.g12-figma-site .figma-cars-sidebar{border-radius:15px;border:1px solid #e0e0e0;padding:20px 22px 14px}
+.g12-figma-site .figma-filter-title h2{font-size:21px}
+.g12-figma-site .figma-sidebar-form{gap:9px}
+.g12-figma-site .figma-sidebar-form>label{margin-top:7px}
+.g12-figma-site .figma-sidebar-form input[type=number],.g12-figma-site .figma-sidebar-form input[type=search]{font-size:12px}
+.g12-filter-separator{margin:8px 0 2px;height:1px;background:#eee}
+.g12-input-icon{position:relative;display:flex;align-items:center;background:#fff;border:1px solid #dcdcdc;border-radius:9px;min-width:0}
+.g12-input-icon svg{position:absolute;left:13px;pointer-events:none;color:#858585}
+.g12-input-icon input{border:0!important;width:100%;height:42px!important;border-radius:9px!important;padding-left:42px!important;background:transparent;outline:0;min-width:0}
+.g12-input-icon input:focus{outline:none!important}
+.g12-price-labels{display:flex;justify-content:space-between;font-size:11px;color:#888;margin-bottom:2px}
+.g12-price-row{display:flex;gap:10px;align-items:center}
+.g12-price-row input{min-width:0;width:calc(50% - 5px);padding:0 8px!important;height:40px!important}
+.g12-range-slider-display{position:relative;width:95%;height:2px;margin:19px auto;background:#e6e6e6}
+.g12-range-slider-display span{display:block;position:absolute;left:0;right:22%;height:2px;background:#ffb100}
+.g12-range-slider-display i{position:absolute;top:-6px;left:0;width:14px;height:14px;border:2px solid #ffb000;border-radius:50%;background:#fff}
+.g12-range-slider-display i:last-child{left:78%}
+.g12-filter-checkboxes{display:flex;flex-direction:column;gap:11px;padding:0 0 6px}
+.g12-checkbox-line{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:400!important;color:#111!important;margin:0!important;cursor:pointer}
+.g12-checkbox-line input{appearance:none;width:16px;height:16px;border:1px solid #bcbcbc;border-radius:3px;display:block;margin:0;padding:0;cursor:pointer;flex:0 0 16px}
+.g12-checkbox-line input:checked{background:#171717;border-color:#171717}
+.g12-checkbox-line input:checked:after{content:"✓";color:#fff;font-size:12px;display:grid;place-items:center;line-height:14px}
+.g12-seat-selector{display:grid;grid-template-columns:1fr 1fr;gap:14px 8px}
+.g12-seat-selector label{display:flex;align-items:center;gap:8px;font-size:12px;white-space:nowrap;cursor:pointer}
+.g12-seat-selector input{width:17px;height:17px;accent-color:#111}
+.g12-figma-site .figma-sidebar-form .figma-dark-button{margin-top:7px;width:100%;height:29px;min-height:29px;font-size:11px}
+.g12-figma-site .figma-cars-toolbar{grid-template-columns:minmax(160px,1fr) auto minmax(180px,270px) 148px;padding:14px 20px;min-height:68px;margin-bottom:17px}
+.g12-figma-site .figma-cars-toolbar .g12-input-icon input{height:42px!important}
+.g12-figma-site .figma-cars-toolbar select{min-width:0;height:42px;border-radius:8px}
+.g12-figma-site .figma-cars-toolbar .figma-dark-button{height:42px}
+.g12-figma-site .figma-cars-results-heading{margin-bottom:14px}
+.g12-figma-site .figma-cars-results-heading h2{font-size:17px;margin-bottom:2px}
+.g12-figma-site .figma-cars-results-heading p{font-size:12px}
+.g12-figma-site .figma-quick-filters a{font-size:12px;padding:6px 19px}
+.g12-figma-site .figma-cars-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.g12-figma-site .figma-cars-grid .car-card{border:1px solid #e4e4e4;border-radius:13px;box-shadow:none;overflow:hidden;min-height:225px;background:#fff}
+.g12-figma-site .figma-cars-grid .car-card-image{margin:11px 14px 0;aspect-ratio:auto;height:112px;display:block}
+.g12-figma-site .figma-cars-grid .car-card-image img{object-fit:cover;width:100%;height:100%;border-radius:9px}
+.g12-figma-site .figma-cars-grid .car-card-body{padding:9px 14px 12px}
+.g12-figma-site .figma-cars-grid .car-name{font-size:16px;font-weight:800;margin:0 0 1px;line-height:1.3}
+.g12-card-review{display:flex;align-items:center;gap:6px;font-size:11px;color:#999}
+.g12-card-stars{font-size:17px;letter-spacing:-1px;color:#ffad05;line-height:1}
+.g12-figma-site .figma-cars-grid .car-card-footer{display:flex;justify-content:space-between;gap:5px;border:0;padding:2px 0 0}
+.g12-card-details{font-size:12px;color:#888;display:flex;gap:5px;flex-wrap:wrap}
+.g12-figma-site .figma-cars-grid .car-price strong{font-size:16px;color:#131313;white-space:nowrap}
+.g12-figma-site .figma-cars-grid .car-card:hover{box-shadow:0 6px 16px #0001}
+@media(max-width:1150px){.g12-figma-site .figma-cars-layout{grid-template-columns:240px minmax(0,1fr)}.g12-figma-site .figma-cars-toolbar{grid-template-columns:1fr 1fr}.g12-figma-site .figma-cars-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:730px){.g12-figma-site .figma-cars-container{width:calc(100% - 28px)}.g12-figma-site .figma-cars-layout{grid-template-columns:1fr}.g12-figma-site .figma-cars-banner{width:calc(100% - 20px);height:165px}.g12-figma-site .figma-cars-toolbar{grid-template-columns:1fr 1fr}.g12-figma-site .figma-cars-toolbar .g12-input-icon{grid-column:1/-1}.g12-figma-site .figma-cars-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:480px){.g12-figma-site .figma-cars-grid{grid-template-columns:1fr}.g12-figma-site .figma-cars-toolbar{grid-template-columns:1fr}.g12-figma-site .figma-cars-toolbar .g12-input-icon{grid-column:auto}.g12-figma-site .figma-cars-banner-content{padding:20px}.g12-figma-site .figma-banner-benefits{gap:8px;font-size:9px}}
