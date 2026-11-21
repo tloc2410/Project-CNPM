@@ -17,11 +17,12 @@ python run.py
 ```
 
 Module xe (Issue #3) gồm `data/car_repository.py`, `business/vehicle_service.py`,
-các template trong `presentation/templates/` và test trong `tests/`.
+các template trong `presentation/templates/` và 2 file test Vehicle trong `Test/` (cùng thư mục với `test_auth.py`).
 Xem hướng dẫn chi tiết tại `docs/VEHICLE_MODULE.md` (ở gốc repo).
 
 Chạy test:
 
 ```bash
-python -m unittest discover -s tests -v
+python -m unittest discover -s Test -p "test_vehicle_*.py" -v
+# Kiểm thử Authentication riêng: python -m pytest Test/test_auth.py -v
 ```

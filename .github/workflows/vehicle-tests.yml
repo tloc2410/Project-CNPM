@@ -35,4 +35,4 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Run vehicle module unit tests
-        run: python -m unittest discover -s tests -v
+        run: python -m unittest discover -s Test -p "test_vehicle_*.py" -v

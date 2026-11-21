@@ -12,7 +12,8 @@ Admin vehicle-management routes, corresponding templates, and admin-only CRUD se
 
 Run from `SourceCode/`:
 ```powershell
-py -m unittest discover -s tests -v
+py -m unittest discover -s Test -p "test_vehicle_*.py" -v
+py -m pytest Test/test_auth.py -v
 py run.py
 ```
 
