@@ -1030,11 +1030,11 @@ def test_account_login_required_and_shows_real_profile(flask_client):
     assert "My Account" in body
     assert "Do Thu Thao" in body
     assert "thao@group12.vn" in body
-    assert "Đơn thuê xe của tôi" in body
-    assert "Tất cả" in body and "Chờ xác nhận" in body
-    assert "Đã xác nhận" in body and "Hoàn thành" in body
-    assert "Đang thuê" in body and "Đã hủy" in body
-    assert "Bạn chưa có đơn thuê xe nào" in body
+    assert "My Rental Orders" in body
+    assert "All Orders" in body and "Pending" in body
+    assert "Confirmed" in body and "Completed" in body
+    assert "Renting" in body and "Cancelled" in body
+    assert "You haven\'t rented a car yet" in body
 
 
 def test_account_orders_filter_search_and_rebook_link(flask_client, booking_db):
@@ -1061,24 +1061,24 @@ def test_account_orders_filter_search_and_rebook_link(flask_client, booking_db):
     )
 
     all_page = flask_client.get("/dashboard").get_data(as_text=True)
-    assert "ĐƠN THUÊ #101" in all_page
-    assert "ĐƠN THUÊ #102" in all_page
-    assert "ĐƠN THUÊ #103" not in all_page   # user owns only 101 and 102
+    assert "RENTAL ORDER #101" in all_page
+    assert "RENTAL ORDER #102" in all_page
+    assert "RENTAL ORDER #103" not in all_page   # user owns only 101 and 102
     assert "/cars/1" in all_page and "/cars/2" in all_page
 
     pending = flask_client.get("/dashboard?status=pending").get_data(as_text=True)
-    assert "ĐƠN THUÊ #101" in pending
-    assert "ĐƠN THUÊ #102" not in pending
-    assert "Hủy đơn" in pending
+    assert "RENTAL ORDER #101" in pending
+    assert "RENTAL ORDER #102" not in pending
+    assert "Cancel Order" in pending
     completed = flask_client.get("/dashboard?status=completed").get_data(as_text=True)
-    assert "ĐƠN THUÊ #102" in completed
-    assert "ĐƠN THUÊ #101" not in completed
-    assert "Hủy đơn" not in completed
+    assert "RENTAL ORDER #102" in completed
+    assert "RENTAL ORDER #101" not in completed
+    assert "Cancel Order" not in completed
 
     search = flask_client.get("/dashboard?q=Honda+City").get_data(as_text=True)
-    assert "ĐƠN THUÊ #102" in search and "ĐƠN THUÊ #101" not in search
+    assert "RENTAL ORDER #102" in search and "RENTAL ORDER #101" not in search
     search_number = flask_client.get("/dashboard?q=101").get_data(as_text=True)
-    assert "ĐƠN THUÊ #101" in search_number and "ĐƠN THUÊ #102" not in search_number
+    assert "RENTAL ORDER #101" in search_number and "RENTAL ORDER #102" not in search_number
 
 
 def test_account_profile_edits_only_signed_in_user(flask_client, booking_db):
@@ -1087,7 +1087,7 @@ def test_account_profile_edits_only_signed_in_user(flask_client, booking_db):
     page = flask_client.get("/dashboard?section=profile")
     assert page.status_code == 200
     html = page.get_data(as_text=True)
-    assert "Hồ sơ của tôi" in html and "thao@group12.vn" in html
+    assert "My Profile" in html and "thao@group12.vn" in html
     assert 'name="csrf_token"' in html
     assert 'id="account-email"' in html
     assert 'readonly' in html
@@ -1127,13 +1127,25 @@ def test_account_profile_blocks_csrf_duplicates_and_bad_phone(flask_client, book
     bad = flask_client.post("/account/profile", data={
         "csrf_token": csrf, "full_name": "Do Thu Thao", "phone": "123",
     }, follow_redirects=True)
-    assert "Số điện thoại không hợp lệ." in bad.get_data(as_text=True)
+    assert "Please enter a valid phone number." in bad.get_data(as_text=True)
 
     duplicate = flask_client.post("/account/profile", data={
         "csrf_token": csrf, "full_name": "Do Thu Thao",
         "phone": "0987654321", "address": "Other",
     }, follow_redirects=True)
-    assert "Số điện thoại đã được tài khoản khác sử dụng." in duplicate.get_data(as_text=True)
+    assert "This phone number is already used by another account." in duplicate.get_data(as_text=True)
     row = raw.execute("SELECT phone, address FROM Users WHERE UserID=1").fetchone()
     assert row["phone"] == "0912345678"
     assert row["address"] is None
+
+
+def test_account_static_copy_is_english_only():
+    """Every literal display string in the My Account template uses English."""
+    from pathlib import Path
+    import re
+    template = (Path(__file__).resolve().parents[1] /
+                "presentation" / "templates" / "dashboard.html").read_text(encoding="utf-8")
+    assert not re.search(r"[À-ÖØ-öø-ỹ]", template)
+    assert "My Rental Orders" in template
+    assert "Pick up at Showroom" in template
+    assert "Your profile has been updated" not in template

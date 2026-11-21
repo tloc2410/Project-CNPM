@@ -84,7 +84,7 @@ def update_user_profile(user_id, full_name, phone, address):
             (phone, user_id),
         )
         if cursor.fetchone():
-            return False, "Số điện thoại đã được tài khoản khác sử dụng."
+            return False, "This phone number is already used by another account."
         cursor.execute(
             """UPDATE Users
                SET fullName = %s, phone = %s, address = %s
@@ -93,8 +93,8 @@ def update_user_profile(user_id, full_name, phone, address):
         )
         changed = cursor.rowcount
         connection.commit()
-        return (True, "Cập nhật thông tin tài khoản thành công.") if changed else (
-            False, "Không tìm thấy tài khoản để cập nhật."
+        return (True, "Your profile has been updated successfully.") if changed else (
+            False, "Account not found. No changes were saved."
         )
     except Exception:
         connection.rollback()
