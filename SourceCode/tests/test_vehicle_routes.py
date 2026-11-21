@@ -43,6 +43,33 @@ class VehicleRouteTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("Toyota Vios 2023", response.get_data(as_text=True))
 
+    def test_featured_brands_render_as_switchable_tabs(self):
+        cars = [
+            {**CAR, "carID": 10, "name": "VinFast VF 5"},
+            {**CAR, "carID": 11, "name": "VinFast VF 3"},
+            {**CAR, "carID": 12, "name": "Kia Carnival"},
+            {**CAR, "carID": 13, "name": "Toyota Vios"},
+            {**CAR, "carID": 14, "name": "BMW 320i"},
+        ]
+        with patch.object(vehicle_service, "list_vehicles",
+                          return_value=(cars, len(cars), 1, FILTERS)), \
+             patch.object(vehicle_service, "list_car_types", return_value=[TYPE]):
+            response = self.client.get("/")
+        self.assertEqual(response.status_code, 200)
+        body = response.get_data(as_text=True)
+        for brand in ("VinFast", "KIA", "Toyota", "BMW"):
+            self.assertIn(">" + brand + "</button>", body)
+        self.assertIn('id="brand-panel-1"', body)
+        self.assertIn('id="brand-panel-4"', body)
+        self.assertIn('data-brand-index="1"', body)
+        self.assertIn('aria-selected="true"', body)
+        self.assertIn("VINFAST VF 5", body)
+        self.assertIn("VINFAST VF 3", body)
+        self.assertIn("KIA CARNIVAL", body)
+        self.assertIn("TOYOTA VIOS", body)
+        self.assertIn("BMW 320I", body)
+        self.assertNotIn("href=\"/cars?q=VinFast\"", body)
+
     def test_nav_vehicle_dropdown_and_car_rental_without_arrow(self):
         with patch.object(vehicle_service, "list_vehicles",
                           return_value=([CAR], 1, 1, FILTERS)), \
