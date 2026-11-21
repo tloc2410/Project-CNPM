@@ -2,69 +2,97 @@
 {% block title %}{{ car.name }} – Group12 Car Rental{% endblock %}
 
 {% block content %}
-<section class="container section">
-    <nav class="breadcrumb" aria-label="Breadcrumb">
-        <a href="{{ url_for('home') }}">Trang chủ</a><span>/</span>
-        <a href="{{ url_for('cars') }}">Danh sách xe</a><span>/</span>
-        <span>{{ car.name }}</span>
+<main class="g12-detail-page">
+  <div class="g12-detail-width">
+    <nav class="g12-detail-breadcrumb" aria-label="Breadcrumb">
+      <a href="{{ url_for('home') }}" aria-label="Home"><svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="m12 3-10 9h3v9h6v-6h4v6h6v-9h3z"/></svg></a>
+      <a href="{{ url_for('cars') }}">VEHICLE LIST</a>
+      <span aria-hidden="true">›</span>
+      <span>{{ car.name }}</span>
     </nav>
 
-    <div class="detail-layout">
-        <div class="detail-gallery">
-            <div class="detail-image">
-                <img src="{{ car_image(car) }}" alt="{{ car.name }}"
-                     onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/cars/car-placeholder.svg') }}'">
-                <span class="status-badge status-{{ car.status }}">{{ status_label(car.status) }}</span>
-            </div>
-            <p class="gallery-hint">Hình ảnh minh họa. Liên hệ nhóm để cập nhật ảnh thật cho xe.</p>
+    <div class="g12-detail-main">
+      <div class="g12-detail-gallery">
+        <div class="g12-detail-primary">
+          <img id="g12-main-car-photo" src="{{ gallery[0] if gallery else car_image(car) }}" alt="{{ car.name }}" data-fallback="{{ url_for('static', filename='images/cars/car-placeholder.svg') }}" onerror="this.onerror=null;this.src=this.dataset.fallback">
         </div>
-
-        <div class="detail-info">
-            <p class="eyebrow">MÃ XE · {{ car.code }}</p>
-            <h1>{{ car.name }}</h1>
-            <p class="detail-type">{{ car.typeName or 'Chưa phân loại' }}</p>
-
-            <div class="detail-specs">
-                <div class="spec-item"><span>Số chỗ</span><strong>{{ car.numberOfSeats or '—' }} người</strong></div>
-                <div class="spec-item"><span>Lượt xem</span><strong>{{ car.numberOfViews or 0 }}</strong></div>
-                <div class="spec-item"><span>Lượt thuê</span><strong>{{ car.rentalCount or 0 }}</strong></div>
-                <div class="spec-item"><span>Trạng thái</span><strong>{{ status_label(car.status) }}</strong></div>
-            </div>
-
-            <div class="detail-description">
-                <h2>Mô tả xe</h2>
-                <p>{{ car.description or 'Chưa có mô tả chi tiết cho xe này.' }}</p>
-            </div>
-
-            <div class="booking-card">
-                <div>
-                    <p class="booking-label">Giá thuê mỗi ngày</p>
-                    <p class="booking-price">{{ format_price(car.pricePerDay) }}<span> / ngày</span></p>
-                </div>
-                <div class="booking-action">
-                    <button class="btn btn-primary" type="button" disabled title="Module đặt xe đang phát triển">Đặt xe</button>
-                    <small>Chức năng đặt xe sẽ hoạt động sau khi module Booking hoàn tất.</small>
-                </div>
-            </div>
+        <div class="g12-detail-thumbs">
+          {% for image in (gallery[:3] if gallery else [car_image(car)]) %}
+            <button type="button" class="g12-detail-thumb {% if loop.first %}is-active{% endif %}" data-src="{{ image }}" aria-label="View vehicle photo {{ loop.index }}">
+              <img src="{{ image }}" alt="{{ car.name }} – photo {{ loop.index }}" data-fallback="{{ url_for('static', filename='images/cars/car-placeholder.svg') }}" onerror="this.onerror=null;this.src=this.dataset.fallback">
+            </button>
+          {% endfor %}
         </div>
+      </div>
+
+      <div class="g12-detail-overview">
+        <h1>{{ car.name }}</h1>
+        <div class="g12-detail-review"><span class="g12-stars" aria-label="Sample design rating">★★★★★</span><span class="g12-review-hint">Vehicle information</span></div>
+        <div class="g12-detail-meta">
+          <span><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="6.5" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>{{ car.numberOfSeats or '—' }} seats</span>
+          <span><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3v7l3 3-3 3v5M16 3v7l3 3-3 3v5"/></svg>Automatic</span>
+          <span><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h9v18H6zM9 7h3v4H9zM15 7h4l2 3v8a2 2 0 0 1-4 0v-4"/></svg>{{ 'Electric' if 'Electric' in (car.typeName or '') else 'Gasoline' }}</span>
+        </div>
+        <div class="g12-detail-price"><strong>{{ format_price(car.pricePerDay) }}</strong> <span>/ Day</span></div>
+        <p class="g12-detail-description">{{ car.description or 'Comfortable and practical vehicle for city driving, business trips, and family travel.' }}</p>
+        <div class="g12-detail-actions">
+          {% if booking_enabled and car.status == 'available' %}
+            <form action="{{ url_for('booking.cart_add', car_id=car.carID) }}" method="POST"><input type="hidden" name="next" value="{{ url_for('booking.checkout') }}"><button type="submit" class="g12-detail-cta">Book a ride <span>→</span></button></form>
+            <form action="{{ url_for('booking.cart_add', car_id=car.carID) }}" method="POST"><input type="hidden" name="next" value="{{ url_for('booking.cart') }}"><button type="submit" class="g12-detail-cta"><span>🛒</span> Add to cart</button></form>
+          {% else %}
+            <button class="g12-detail-cta" type="button" disabled title="Booking will be available once this module is integrated">Book a ride <span>→</span></button>
+            <button class="g12-detail-cta" type="button" disabled title="Cart will be available after Booking is integrated"><span>🛒</span> Add to cart</button>
+          {% endif %}
+        </div>
+        {% if not booking_enabled %}<p class="g12-booking-note">Booking &amp; cart buttons will activate when the Booking branch is integrated.</p>{% endif %}
+      </div>
     </div>
-</section>
 
-{% if related %}
-<section class="container section">
-    <div class="section-heading">
+    <section class="g12-detail-bottom" aria-label="Vehicle details">
+      <div class="g12-detail-tabs" role="tablist" aria-label="Vehicle information tabs">
+        <button type="button" role="tab" aria-selected="true" data-tab="info" class="active">Vehicle information</button>
+        <button type="button" role="tab" aria-selected="false" data-tab="policy">Car Rental Policy</button>
+        <button type="button" role="tab" aria-selected="false" data-tab="reviews">Reviews</button>
+      </div>
+      <div data-panel="info" class="g12-detail-panel">
         <div>
-            <p class="eyebrow">GỢI Ý THÊM</p>
-            <h2>Xe cùng loại</h2>
+          <h2>Describe</h2>
+          <p>{{ car.description or 'The vehicle features a modern design, offers reliable performance and a comfortable interior. It is suitable for city driving, business trips, and family travel.' }}</p>
         </div>
-        <a class="btn btn-ghost" href="{{ url_for('cars', type_id=car.TypeID) }}">Xem loại này →</a>
-    </div>
-    <div class="car-grid">
-        {% for item in related %}
-            {% set car = item %}
-            {% include '_car_card.html' %}
-        {% endfor %}
-    </div>
-</section>
-{% endif %}
+        <div class="g12-detail-amenities">
+          <h2>Amenities</h2>
+          <p><span>✓</span> Air conditioner</p>
+          <p><span>✓</span> Entertainment screen</p>
+          <p><span>✓</span> Comfortable interior</p>
+        </div>
+      </div>
+      <div data-panel="policy" class="g12-detail-panel" hidden><div><h2>Car Rental Policy</h2><p>Rental details and requirements are confirmed during booking. Please check your dates and vehicle status before reserving.</p></div></div>
+      <div data-panel="reviews" class="g12-detail-panel" hidden><div><h2>Reviews</h2><p>Customer reviews will be displayed when the review functionality is available.</p></div></div>
+    </section>
+  </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const main = document.getElementById('g12-main-car-photo');
+  document.querySelectorAll('.g12-detail-thumb').forEach(function (thumb) {
+    thumb.addEventListener('click', function () {
+      if (main) main.src = thumb.dataset.src;
+      document.querySelectorAll('.g12-detail-thumb').forEach(function (other) { other.classList.remove('is-active'); });
+      thumb.classList.add('is-active');
+    });
+  });
+  document.querySelectorAll('.g12-detail-tabs button').forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      document.querySelectorAll('.g12-detail-tabs button').forEach(function (other) {
+        other.classList.remove('active');other.setAttribute('aria-selected','false');
+      });
+      tab.classList.add('active');tab.setAttribute('aria-selected','true');
+      document.querySelectorAll('.g12-detail-panel').forEach(function (panel) { panel.hidden = panel.dataset.panel !== tab.dataset.tab; });
+    });
+  });
+});
+</script>
 {% endblock %}
