@@ -1,8 +1,3 @@
--- Sample data for the vehicle module (Issue #3 - Vehicle Management).
--- Chay sau Database/group12_car_rental.sql.
--- Du lieu minh hoa, khong chua thong tin khach hang that.
--- INSERT IGNORE giup chay file nay nhieu lan ma khong bi trung khoa chinh.
-
 USE group12_car_rental;
 
 INSERT IGNORE INTO CarTypes (typeId, typeName, description) VALUES

@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" fill="none">
+  <defs>
+    <linearGradient id="bgCity" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#374151"/>
+      <stop offset="56%" stop-color="#4B5563"/>
+      <stop offset="57%" stop-color="#D1D5DB"/>
+      <stop offset="100%" stop-color="#9CA3AF"/>
+    </linearGradient>
+    <linearGradient id="bodyCity" x1="0" y1="0" x2="1" y2="0.4">
+      <stop offset="0%" stop-color="#F8FAFC"/>
+      <stop offset="60%" stop-color="#E2E8F0"/>
+      <stop offset="100%" stop-color="#CBD5E1"/>
+    </linearGradient>
+  </defs>
+  <rect width="320" height="200" rx="18" fill="url(#bgCity)"/>
+  <ellipse cx="162" cy="158" rx="114" ry="13" fill="#111827" opacity="0.32"/>
+  <path d="M52 130 C56 111, 78 102, 98 99 L134 75 C154 66, 200 67, 224 80 L254 101 C271 106, 278 118, 278 133 L275 147 C274 150, 269 152, 261 152 L62 152 C54 152, 50 147, 52 130 Z" fill="url(#bodyCity)" stroke="#CBD5E1" stroke-width="1.5"/>
+  <path d="M110 98 L138 79 C155 73, 196 73, 214 83 L236 98 Z" fill="#0F172A"/>
+  <path d="M170 76 L168 98" stroke="#94A3B8" stroke-width="3"/>
+  <rect x="254" y="114" width="18" height="7" rx="3.5" fill="#FDE047"/>
+  <rect x="55" y="115" width="14" height="7" rx="3" fill="#DC2626"/>
+  <circle cx="102" cy="148" r="21" fill="#111827"/>
+  <circle cx="102" cy="148" r="12" fill="#CBD5E1"/>
+  <circle cx="102" cy="148" r="5" fill="#111827"/>
+  <circle cx="230" cy="148" r="21" fill="#111827"/>
+  <circle cx="230" cy="148" r="12" fill="#CBD5E1"/>
+  <circle cx="230" cy="148" r="5" fill="#111827"/>
+  <text x="18" y="28" font-family="Inter, Arial, sans-serif" font-size="11" font-weight="700" fill="#FFFFFF" opacity="0.9">HONDA CITY</text>
+</svg>
