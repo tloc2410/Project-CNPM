@@ -384,5 +384,11 @@ def internal_error(error):
     ), 500
 
 
+# Register Thu Thao's rental cart and booking routes in the shared Flask app.
+# The customer Figma pages, authentication routes and MySQL connection stay intact.
+from presentation.booking_routes import booking_bp
+app.register_blueprint(booking_bp)
+
+
 if __name__ == "__main__":
     app.run(debug=True)

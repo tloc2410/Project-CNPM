@@ -32,7 +32,13 @@ jobs:
           cache-dependency-path: SourceCode/requirements.txt
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install -r requirements.txt pytest
 
-      - name: Run vehicle module unit tests
+      - name: Run Vehicle tests (17)
         run: python -m unittest discover -s Test -p "test_vehicle_*.py" -v
+
+      - name: Run Authentication tests (15)
+        run: python -m pytest Test/test_auth.py -v
+
+      - name: Run Rental Cart and Booking tests (13)
+        run: python -m pytest Test/test_cart_booking.py -v

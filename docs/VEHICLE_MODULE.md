@@ -18,3 +18,9 @@ py run.py
 ```
 
 Uses the shared `group12_car_rental` MySQL schema. `Database/sample_data_vehicles.sql` remains available for demo data. No schema or MySQL rows are deleted by this branch.
+
+## Cart + Booking integration
+
+The Vehicle Figma branch now registers `presentation.booking_routes.booking_bp` in the same `SourceCode/run.py`, preserving customer vehicle pages. After login, users can add cars from details to the cart (`POST /cart/add/<car_id>`), manage rentals (`/cart`), checkout (`/checkout`), and see orders (`/orders`). All data uses the shared MySQL tables.
+
+Additional tests: `py -m pytest Test/test_cart_booking.py -v` and `py -m pytest Test/test_auth.py -v`.
