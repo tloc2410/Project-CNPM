@@ -16,9 +16,7 @@
 
         <div class="nav-links">
             <a href="{{ url_for('home') }}" class="nav-link {% if request.endpoint == 'home' %}active{% endif %}">Trang chủ</a>
-            <a href="{{ url_for('cars') }}" class="nav-link {% if request.endpoint in ['cars', 'car_detail'] %}active{% endif %}">Danh sách xe</a>
-            {% if is_admin() %}
-                <a href="{{ url_for('admin_cars') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('admin_') %}active{% endif %}">Quản lý xe</a>
+            <a href="{{ url_for('cars') }}" class="nav-link {% if request.endpoint in ['cars', 'car_detail'] %}active{% endif %}">Danh sách xe</a>">Quản lý xe</a>
                 <a href="{{ url_for('admin_car_types') }}" class="nav-link">Loại xe</a>
             {% endif %}
         </div>

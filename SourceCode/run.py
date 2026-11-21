@@ -48,17 +48,10 @@ def format_price(value):
 @app.context_processor
 def inject_vehicle_helpers():
     return {
-        "is_admin": lambda: vehicle_service.can_manage_vehicles(session),
         "car_image": car_image,
         "format_price": format_price,
         "status_label": vehicle_service.status_label,
     }
-
-
-def _require_admin():
-    """Backend permission check; never rely on the session role alone."""
-    if not vehicle_service.can_manage_vehicles(session):
-        abort(403)
 
 
 def _car_types_or_empty():
@@ -286,152 +279,7 @@ def car_detail(car_id):
 
 
 # ---------------------------------------------------------------------------
-# Admin vehicle management
-# ---------------------------------------------------------------------------
-@app.route("/admin/cars")
-def admin_cars():
-    _require_admin()
-    results, total, total_pages, filters = vehicle_service.list_vehicles(
-        request.args
-    )
-    return render_template(
-        "admin/cars.html",
-        cars=results,
-        total=total,
-        total_pages=total_pages,
-        filters=filters,
-        types=_car_types_or_empty(),
-        sorts=vehicle_service.SORT_OPTIONS,
-        statuses=vehicle_service.CAR_STATUSES,
-    )
-
-
-@app.route("/admin/cars/new", methods=["GET", "POST"])
-def admin_car_new():
-    _require_admin()
-    form = {"status": "available"}
-    errors = {}
-
-    if request.method == "POST":
-        success, message, errors = vehicle_service.create_vehicle(request.form)
-        flash(message, "success" if success else "error")
-        if success:
-            return redirect(url_for("admin_cars"))
-        form = request.form
-
-    return render_template(
-        "admin/car_form.html",
-        heading="Thêm xe mới",
-        form=form,
-        errors=errors,
-        car=None,
-        form_action=url_for("admin_car_new"),
-        types=_car_types_or_empty(),
-        statuses=vehicle_service.CAR_STATUSES,
-    )
-
-
-@app.route("/admin/cars/<int:car_id>/edit", methods=["GET", "POST"])
-def admin_car_edit(car_id):
-    _require_admin()
-    car = vehicle_service.get_vehicle(car_id)
-    if not car:
-        abort(404)
-
-    errors = {}
-    if request.method == "POST":
-        success, message, errors = vehicle_service.update_vehicle(
-            car_id, request.form
-        )
-        flash(message, "success" if success else "error")
-        form = request.form
-        if success:
-            return redirect(url_for("admin_cars"))
-    else:
-        form = {
-            "code": car["code"],
-            "name": car["name"],
-            "type_id": car["TypeID"],
-            "seats": car["numberOfSeats"],
-            "price": car["pricePerDay"],
-            "status": car["status"],
-            "pictures": car["pictures"] or "",
-            "description": car["description"] or "",
-        }
-
-    return render_template(
-        "admin/car_form.html",
-        heading=f"Sửa xe {car['code']}",
-        form=form,
-        errors=errors,
-        car=car,
-        form_action=url_for("admin_car_edit", car_id=car_id),
-        types=_car_types_or_empty(),
-        statuses=vehicle_service.CAR_STATUSES,
-    )
-
-
-@app.route("/admin/cars/<int:car_id>/delete", methods=["POST"])
-def admin_car_delete(car_id):
-    _require_admin()
-    success, message = vehicle_service.delete_vehicle(car_id)
-    flash(message, "success" if success else "error")
-    return redirect(url_for("admin_cars"))
-
-
-@app.route("/admin/cars/<int:car_id>/status", methods=["POST"])
-def admin_car_status(car_id):
-    _require_admin()
-    success, message = vehicle_service.set_vehicle_status(
-        car_id, request.form.get("status")
-    )
-    flash(message, "success" if success else "error")
-    return redirect(url_for("admin_cars"))
-
-
-@app.route("/admin/car-types", methods=["GET", "POST"])
-def admin_car_types():
-    _require_admin()
-    form = {}
-    errors = {}
-
-    if request.method == "POST":
-        success, message, errors = vehicle_service.create_car_type(request.form)
-        flash(message, "success" if success else "error")
-        if success:
-            return redirect(url_for("admin_car_types"))
-        form = request.form
-
-    types = []
-    try:
-        types = vehicle_service.list_car_types_with_counts()
-    except Exception:
-        app.logger.exception("Could not load car types")
-
-    return render_template(
-        "admin/car_types.html", types=types, form=form, errors=errors
-    )
-
-
-@app.route("/admin/car-types/<int:type_id>/edit", methods=["POST"])
-def admin_car_type_edit(type_id):
-    _require_admin()
-    success, message, errors = vehicle_service.update_car_type(
-        type_id, request.form
-    )
-    flash(message, "success" if success else "error")
-    if errors:
-        for value in errors.values():
-            flash(value, "error")
-    return redirect(url_for("admin_car_types"))
-
-
-@app.route("/admin/car-types/<int:type_id>/delete", methods=["POST"])
-def admin_car_type_delete(type_id):
-    _require_admin()
-    success, message = vehicle_service.delete_car_type(type_id)
-    flash(message, "success" if success else "error")
-    return redirect(url_for("admin_car_types"))
+# Admin vehicle management removed: assigned to a separate module.
 
 
 # ---------------------------------------------------------------------------

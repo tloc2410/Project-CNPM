@@ -181,34 +181,8 @@ input:focus, select:focus, textarea:focus { outline: 2px solid #fde68a; border-c
 .booking-action { display: grid; gap: 6px; justify-items: end; }
 .booking-action small { color: var(--muted); max-width: 230px; text-align: right; font-size: 11px; }
 
-/* Admin tables + forms */
-.table-wrap { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow-x: auto; }
-.data-table { width: 100%; border-collapse: collapse; min-width: 820px; }
-.data-table th, .data-table td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: middle; }
-.data-table th { background: var(--bg); color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.4px; }
-.data-table tbody tr:last-child td { border-bottom: 0; }
-.data-table small { display: block; color: var(--muted); }
-.actions-col, .table-actions { text-align: right; }
-.table-actions { display: flex; gap: 14px; justify-content: flex-end; align-items: center; }
-.table-car { display: flex; align-items: center; gap: 10px; }
-.table-car img { width: 58px; height: 42px; object-fit: cover; border-radius: 8px; background: var(--bg); }
-.status-select { width: auto; padding: 6px 10px; font-size: 12px; border-radius: 999px; font-weight: 600; background: var(--surface); }
-.count-pill { display: inline-grid; place-items: center; min-width: 30px; height: 28px; padding: 0 8px; background: #fff7ed; color: var(--primary-dark); border-radius: 999px; font-weight: 700; }
-.edit-row td { background: #fcfdff; }
-.inline-form { display: flex; gap: 8px; align-items: center; margin: 6px 0; flex-wrap: wrap; }
-.inline-form input:first-child { width: 180px; }
-.inline-form input:nth-child(2) { flex: 1; min-width: 180px; }
-.admin-two-col { display: grid; grid-template-columns: 340px 1fr; gap: 20px; align-items: start; }
+/* Shared authenticated dashboard styles (customer) */
 .form-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 28px; box-shadow: var(--shadow); }
-.form-card h1, .form-card h2 { margin-bottom: 8px; }
-.admin-form { display: grid; gap: 16px; margin-top: 20px; }
-.form-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
-.form-field { display: grid; gap: 6px; }
-.form-field label { font-size: 12px; font-weight: 700; color: var(--body); }
-.required { color: #e11d48; }
-.field-error { color: var(--danger); font-size: 12px; }
-.field-hint { color: var(--muted); font-size: 11px; }
-.form-actions { display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--line); padding-top: 16px; }
 .dashboard-links { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
 
 @media (max-width: 900px) {
