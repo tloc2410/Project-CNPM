@@ -246,6 +246,24 @@
         const returnInput = document.getElementById("co-return-date");
         const pickupLocInput = document.getElementById("co-pickup-location");
         const returnLocInput = document.getElementById("co-return-location");
+        const returnChoiceInput = document.getElementById("co-return-choice");
+        const returnPreview = document.getElementById("co-return-location-preview");
+        const showroomLocation = checkoutRoot.dataset.showroomLocation || "Group 12 Showroom - District 1";
+
+        function resolveReturnLocation() {
+            const pickupAddress = pickupLocInput ? pickupLocInput.value.trim() : "";
+            const atShowroom = returnChoiceInput && returnChoiceInput.value === "SHOWROOM";
+            const returnAddress = atShowroom ? showroomLocation : pickupAddress;
+            if (returnLocInput) returnLocInput.value = returnAddress;
+            if (returnPreview) {
+                returnPreview.textContent = atShowroom
+                    ? "Địa chỉ trả xe: " + showroomLocation
+                    : (pickupAddress ? "Địa chỉ trả xe: " + pickupAddress
+                        : "Điền địa chỉ đón để xác định điểm trả.");
+            }
+            return returnAddress;
+        }
+        resolveReturnLocation();
         const datesModifiedInput = document.getElementById("co-dates-modified");
         const errBanner = document.getElementById("checkout-error-banner");
         const errText = document.getElementById("checkout-error-text");
@@ -344,20 +362,24 @@
         if (pickupInput) pickupInput.addEventListener("change", syncCheckoutDates);
         if (returnInput) returnInput.addEventListener("change", syncCheckoutDates);
         if (pickupLocInput) {
+            pickupLocInput.addEventListener("input", resolveReturnLocation);
             pickupLocInput.addEventListener("change", () => {
-                if (pickupLocInput.value === "Home Delivery") {
-                    const delRadio = checkoutRoot.querySelector(
-                        'input[name="receiving_method"][value="DELIVERY"]'
-                    );
-                    if (delRadio) {
-                        delRadio.checked = true;
-                        updateReceivingPills();
-                    }
-                }
-                syncCheckoutDates();
+                resolveReturnLocation();
+                if (pickupLocInput.value.trim()) syncCheckoutDates();
             });
         }
-        if (returnLocInput) returnLocInput.addEventListener("change", syncCheckoutDates);
+        if (returnChoiceInput) {
+            returnChoiceInput.addEventListener("change", () => {
+                resolveReturnLocation();
+                if (pickupLocInput && pickupLocInput.value.trim()) syncCheckoutDates();
+            });
+        }
+        const checkoutForm = document.getElementById("checkout-form");
+        if (checkoutForm) {
+            checkoutForm.addEventListener("submit", function () {
+                resolveReturnLocation();
+            });
+        }
 
         function updateReceivingPills() {
             checkoutRoot.querySelectorAll(".receiving-pill").forEach((pill) => {

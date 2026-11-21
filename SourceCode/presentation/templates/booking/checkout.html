@@ -3,7 +3,7 @@
 {% block body_class %}booking-page page-checkout{% endblock %}
 
 {% block content %}
-<div class="checkout-container" data-page="checkout">
+<div class="checkout-container" data-page="checkout" data-showroom-location="{{ showroom_location }}">
     <!-- 3-Step Progress Stepper (Figma: 1 Cart (done) -> 2 Checkout (active) -> 3 Payment) -->
     <div class="checkout-stepper" aria-label="Checkout progress">
         <a href="{{ url_for('booking.cart') }}" class="step-item is-done">
@@ -97,11 +97,16 @@
                             </svg>
                             Pickup Location
                         </label>
-                        <select id="co-pickup-location" name="pickup_location" class="info-input-control">
-                            {% for loc in locations %}
-                                <option value="{{ loc }}" {% if first_item.pickup_location == loc %}selected{% endif %}>{{ loc }}</option>
-                            {% endfor %}
-                        </select>
+                        <input id="co-pickup-location"
+                               name="pickup_location"
+                               type="text"
+                               class="info-input-control"
+                               maxlength="255"
+                               autocomplete="street-address"
+                               placeholder="Nhập số nhà, tên đường, phường/quận, tỉnh/thành..."
+                               value="{{ first_item.pickup_location if first_item.pickup_location not in locations else '' }}"
+                               required>
+                        <small class="location-help-text">Khách hàng tự nhập địa chỉ nhận xe cụ thể.</small>
                     </div>
 
                     <div class="info-input-box">
@@ -112,11 +117,13 @@
                             </svg>
                             Return Location
                         </label>
-                        <select id="co-return-location" name="return_location" class="info-input-control">
-                            {% for loc in locations %}
-                                <option value="{{ loc }}" {% if first_item.return_location == loc %}selected{% endif %}>{{ loc }}</option>
-                            {% endfor %}
+                        <select id="co-return-choice" name="return_choice" class="info-input-control" required>
+                            <option value="SAME_AS_PICKUP" {% if first_item.return_location != showroom_location %}selected{% endif %}>Trả tại điểm đón</option>
+                            <option value="SHOWROOM" {% if first_item.return_location == showroom_location %}selected{% endif %}>Trả tại showroom Group 12</option>
                         </select>
+                        <input type="hidden" id="co-return-location" name="return_location"
+                               value="{{ showroom_location if first_item.return_location == showroom_location else (first_item.pickup_location if first_item.pickup_location not in locations else '') }}">
+                        <small id="co-return-location-preview" class="location-help-text" aria-live="polite"></small>
                     </div>
                 </div>
 

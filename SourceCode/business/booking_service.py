@@ -50,6 +50,7 @@ LOCATIONS = (
     "Home Delivery",
 )
 
+SHOWROOM_LOCATION = "Group 12 Showroom - District 1"
 DEFAULT_LOCATION = "Tan Son Nhat Airport"
 DEPOSIT_RATE = Decimal("0.30")
 MAX_RENTAL_DAYS = 60

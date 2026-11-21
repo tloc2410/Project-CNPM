@@ -654,3 +654,62 @@ def test_ajax_add_keeps_page_and_syncs_cart_count_on_vehicle_pages(flask_client)
         detail = flask_client.get("/cars/1").get_data(as_text=True)
         assert 'data-ajax-add-to-cart' in detail
         assert 'data-login-url="/login"' in detail
+
+
+def test_checkout_custom_pickup_and_return_options(flask_client):
+    """Pickup is free text; return can only be pickup address or showroom."""
+    _login_session(flask_client)
+    flask_client.post("/cart/add/1", data={
+        "pickup_date": "2026-12-10", "return_date": "2026-12-12"
+    })
+    res = flask_client.get("/checkout")
+    assert res.status_code == 200
+    body = res.get_data(as_text=True)
+    assert 'id="co-pickup-location"' in body
+    assert 'name="pickup_location"' in body
+    assert 'type="text"' in body
+    assert 'id="co-return-choice"' in body
+    assert 'value="SAME_AS_PICKUP"' in body
+    assert 'value="SHOWROOM"' in body
+    assert 'data-showroom-location="Group 12 Showroom - District 1"' in body
+
+    address = "123 Nguyen Hue, Phuong Sai Gon, TP HCM"
+    response = flask_client.post("/checkout", data={
+        "pickup_location": address, "return_choice": "SAME_AS_PICKUP",
+        "return_location": "Attacker-controlled value", "payment_method": "CASH",
+        # No terms: do not create an order, but save valid locations to the cart.
+    })
+    assert response.status_code == 302
+    with flask_client.session_transaction() as sess:
+        assert sess["rental_cart"][0]["pickup_location"] == address
+        assert sess["rental_cart"][0]["return_location"] == address
+
+    response = flask_client.post("/checkout", data={
+        "pickup_location": address, "return_choice": "SHOWROOM",
+        "return_location": "Ignored", "payment_method": "CASH",
+    })
+    assert response.status_code == 302
+    with flask_client.session_transaction() as sess:
+        assert sess["rental_cart"][0]["pickup_location"] == address
+        assert sess["rental_cart"][0]["return_location"] == "Group 12 Showroom - District 1"
+
+
+def test_checkout_rejects_blank_pickup_and_invalid_return_option(flask_client):
+    """Server rejects bypassing required pickup and tampering with return choice."""
+    _login_session(flask_client)
+    flask_client.post("/cart/add/1", data={
+        "pickup_date": "2026-12-10", "return_date": "2026-12-12"
+    })
+    blank = flask_client.post("/checkout", data={
+        "pickup_location": " ", "return_choice": "SAME_AS_PICKUP",
+        "agree_terms": "on", "payment_method": "CASH",
+    }, follow_redirects=True)
+    assert "Vui lòng nhập địa chỉ điểm đón xe.".encode("utf-8") in blank.data
+
+    invalid = flask_client.post("/checkout", data={
+        "pickup_location": "123 Nguyen Hue, TP HCM",
+        "return_choice": "UNTRUSTED_ADDRESS",
+        "return_location": "Unknown location",
+        "agree_terms": "on", "payment_method": "CASH",
+    }, follow_redirects=True)
+    assert "Vui lòng chọn địa điểm trả xe hợp lệ.".encode("utf-8") in invalid.data

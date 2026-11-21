@@ -329,6 +329,22 @@ def checkout():
         form_return = request.form.get("return_date", "").strip()
         form_pickup_loc = request.form.get("pickup_location", "").strip()
         form_return_loc = request.form.get("return_location", "").strip()
+        return_choice = request.form.get("return_choice")
+        # The Checkout UI accepts a user-entered pickup address and only
+        # two return destinations. Recompute on the server; never trust the
+        # hidden return_location field submitted by the browser.
+        if return_choice is not None:
+            if not form_pickup_loc:
+                flash("Vui lòng nhập địa chỉ điểm đón xe.", "error")
+                return redirect(url_for("booking.checkout", receiving_method=receiving))
+            if len(form_pickup_loc) > 255:
+                flash("Địa chỉ điểm đón quá dài (tối đa 255 ký tự).", "error")
+                return redirect(url_for("booking.checkout", receiving_method=receiving))
+            if return_choice not in ("SAME_AS_PICKUP", "SHOWROOM"):
+                flash("Vui lòng chọn địa điểm trả xe hợp lệ.", "error")
+                return redirect(url_for("booking.checkout", receiving_method=receiving))
+            form_return_loc = (svc.SHOWROOM_LOCATION if return_choice == "SHOWROOM"
+                               else form_pickup_loc)
         dates_modified = request.form.get("dates_modified") == "1"
 
         if form_pickup and form_return and (len(selected_items) == 1 or dates_modified):
@@ -395,6 +411,7 @@ def checkout():
         receiving=receiving,
         first_item=first_item,
         locations=svc.LOCATIONS,
+        showroom_location=svc.SHOWROOM_LOCATION,
         renter=renter,
         full_name=session.get("full_name", ""),
         free_delivery_threshold=int(svc.FREE_DELIVERY_THRESHOLD),
