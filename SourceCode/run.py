@@ -29,14 +29,53 @@ if app.secret_key == "dev-only-change-me":
 # Shared presentation helpers
 # ---------------------------------------------------------------------------
 def car_image(car):
-    """Resolve the first stored picture to a usable URL."""
-    name = vehicle_service.primary_picture_name(car)
-    if not name:
-        return url_for("static", filename="images/cars/car-placeholder.svg")
-    if name.startswith(("http://", "https://", "//", "/")):
-        return name
-    return url_for("static", filename="images/cars/" + name)
+    """Resolve a vehicle photo, including legacy image paths from booking demo rows."""
+    image = vehicle_service.primary_picture_name(car)
+    fallback = url_for("static", filename="images/cars/car-placeholder.svg")
+    if image:
+        image = str(image).strip()
+        if image.startswith(("http://", "https://")):
+            return image
+        if image.startswith("/static/"):
+            rel = image.removeprefix("/static/")
+        elif image.startswith("static/"):
+            rel = image.removeprefix("static/")
+        elif image.startswith("images/"):
+            rel = image
+        else:
+            rel = "images/cars/" + image
+        # Old Booking rows may point to SVG assets that are not part of this branch.
+        if os.path.isfile(os.path.join(app.static_folder, rel.replace("/", os.sep))):
+            return url_for("static", filename=rel)
 
+    name = str((car or {}).get("name", "")).lower()
+    for keyword, filename in (
+        ("toyota vios", "toyotavios2023.webp"),
+        ("honda city", "hondacity2022.webp"),
+        ("kia morning", "kiamorning2022.webp"),
+        ("mercedes", "marcedesc200202022.webp"),
+        ("bmw", "bmw320i2023.webp"),
+        ("mazda", "mazdacx-52023.webp"),
+        ("toyota corolla", "toyotacorollacross.webp"),
+        ("hyundai", "hyundaii102023.webp"),
+        ("vinfast", "vinfastVFe34.webp"),
+    ):
+        if keyword in name:
+            return url_for("static", filename="images/cars/" + filename)
+    return fallback
+
+
+def car_gallery(car):
+    """Expose every stored car image without inventing missing photo angles."""
+    import re
+    raw = str((car or {}).get("pictures") or "")
+    photos = []
+    for name in re.split(r"[\n,;]+", raw):
+        if name.strip():
+            photo = car_image({**car, "pictures": name.strip()})
+            if photo not in photos:
+                photos.append(photo)
+    return photos or [car_image(car)]
 
 def format_price(value):
     try:
@@ -49,6 +88,7 @@ def format_price(value):
 def inject_vehicle_helpers():
     return {
         "car_image": car_image,
+        "booking_enabled": "booking.cart_add" in app.view_functions,
         "format_price": format_price,
         "status_label": vehicle_service.status_label,
     }
@@ -215,16 +255,37 @@ def home():
     db_error = None
     featured = []
     types = []
+    spotlight = []
+    vehicle_showcase = []
     try:
-        cars, _, _, _ = vehicle_service.list_vehicles({"sort": "popular"})
-        featured = cars[:6]
+        all_cars, _, _, _ = vehicle_service.list_vehicles({"sort": "popular"})
+        featured = all_cars[:6]
         types = vehicle_service.list_car_types()
+        def pick(match):
+            return next((c for c in all_cars if match in c["name"].lower()), None)
+        spotlight = [c for c in (pick("vinfast vf 5"), pick("vinfast vf 3")) if c]
+        for car in all_cars:
+            if len(spotlight) >= 2:
+                break
+            if car not in spotlight:
+                spotlight.append(car)
+        for fragment in ("toyota vios", "honda city", "vinfast vf 5",
+                         "hyundai accent", "mazda 3", "kia morning"):
+            selected = pick(fragment)
+            if selected and selected not in vehicle_showcase:
+                vehicle_showcase.append(selected)
+        for car in all_cars:
+            if len(vehicle_showcase) >= 6:
+                break
+            if car not in vehicle_showcase:
+                vehicle_showcase.append(car)
     except Exception as exc:
         app.logger.exception("Home vehicle query failed")
         db_error = str(exc)
 
     return render_template(
-        "home.html", featured=featured, types=types, db_error=db_error
+        "home.html", featured=featured, spotlight=spotlight,
+        vehicle_showcase=vehicle_showcase, types=types, db_error=db_error
     )
 
 
@@ -275,7 +336,7 @@ def car_detail(car_id):
     except Exception:
         app.logger.exception("Could not load related cars")
 
-    return render_template("car_detail.html", car=car, related=related)
+    return render_template("car_detail.html", car=car, related=related, gallery=car_gallery(car))
 
 
 # ---------------------------------------------------------------------------
