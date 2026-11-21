@@ -878,3 +878,27 @@ def test_legacy_book_now_flag_does_not_reselect_cart(flask_client):
     with flask_client.session_transaction() as sess:
         assert [i["car_id"] for i in sess["rental_cart"] if i["selected"]] == [1]
     assert flask_client.post("/api/cart/select", json={"select_all": True}).get_json()["selected_count"] == 2
+
+
+def test_cart_and_checkout_do_not_display_default_pickup_location(flask_client):
+    """Cart cards and checkout summary hide default address, while pickup input remains."""
+    _login_session(flask_client)
+    resp = flask_client.post("/cart/add/1", data={
+        "pickup_date": "2026-12-15", "return_date": "2026-12-17",
+    })
+    assert resp.status_code == 302
+
+    cart = flask_client.get("/cart")
+    assert cart.status_code == 200
+    cart_html = cart.get_data(as_text=True)
+    assert "Tan Son Nhat Airport" not in cart_html
+    assert "cart-car-location" not in cart_html
+
+    checkout = flask_client.get("/checkout")
+    assert checkout.status_code == 200
+    html = checkout.get_data(as_text=True)
+    assert "Tan Son Nhat Airport" not in html
+    assert "data-co-loc=" not in html
+    assert 'id="co-pickup-location"' in html
+    assert 'name="pickup_location"' in html
+    assert 'id="co-return-choice"' in html

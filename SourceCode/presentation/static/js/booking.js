@@ -323,10 +323,6 @@
                         item.return_date
                     )} (${item.rental_days} ${dayWord})`;
                 }
-                const locSpan = checkoutRoot.querySelector(`[data-co-loc="${item.car_id}"]`);
-                if (locSpan && item.pickup_location) {
-                    locSpan.textContent = item.pickup_location;
-                }
             });
 
             const firstErr = (data.items || []).find((i) => i.error);
