@@ -2,10 +2,12 @@
 {% block title %}Vehicle List – Group12 Car Rental{% endblock %}
 {% block content %}
 <div class="figma-cars-page">
-  <section class="figma-cars-banner" aria-label="Car rental">
+  <section class="figma-cars-banner" aria-label="Group12 Car Rental">
     <div class="figma-cars-banner-content">
       <span>THUÊ XE DỄ DÀNG - HÀNH TRÌNH VỮNG BƯỚC</span>
-      <div class="figma-banner-benefits"><span>♧ Đa dạng xe</span><span>◇ An toàn uy tín</span><span>◷ Thủ tục nhanh gọn</span></div>
+      <div class="figma-banner-benefits">
+        <span><b>♧</b> ĐA DẠNG<br>XE</span><span><b>♢</b> AN TOÀN<br>UY TÍN</span><span><b>◷</b> THỦ TỤC<br>NHANH GỌN</span>
+      </div>
     </div>
   </section>
   <div class="container figma-cars-container">
@@ -13,46 +15,74 @@
       <h1>Find Your Rental Car</h1>
       <p>Browse our cars and choose the best option for your trip.</p>
     </div>
-    {% if db_error %}<div class="notice notice-warning">Không thể truy vấn MySQL: {{ db_error }}</div>{% endif %}
+    {% if db_error %}<div class="notice notice-warning">MySQL connection problem: {{ db_error }}</div>{% endif %}
     <div class="figma-cars-layout">
       <aside class="figma-cars-sidebar" aria-label="Filters">
         <div class="figma-filter-title"><h2>Filters</h2><a href="{{ url_for('cars') }}">Reset</a></div>
-        <form method="GET" action="{{ url_for('cars') }}" class="figma-sidebar-form">
+        <form id="figma-side-filter" method="GET" action="{{ url_for('cars') }}" class="figma-sidebar-form">
           <label for="side-search">Search by name</label>
-          <input id="side-search" type="search" name="q" value="{{ filters.keyword }}" placeholder="e.g. Toyota Vios">
-          <label for="side-type">Car type</label>
-          <select id="side-type" name="type_id">
-            <option value="">All types</option>
-            {% for type in types %}<option value="{{ type.typeId }}" {% if filters.type_id == type.typeId %}selected{% endif %}>{{ type.typeName }}</option>{% endfor %}
-          </select>
-          <label>Seats</label>
-          <div class="figma-seats-fields">
-            <input type="number" aria-label="Minimum seats" name="seats_min" min="2" max="55" placeholder="Min" value="{{ filters.seats_min or '' }}">
-            <span>—</span>
-            <input type="number" aria-label="Maximum seats" name="seats_max" min="2" max="55" placeholder="Max" value="{{ filters.seats_max or '' }}">
+          <div class="g12-input-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="18" height="18" stroke-width="1.6"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg>
+            <input id="side-search" type="search" name="q" value="{{ filters.keyword }}" placeholder="e.g. Toyota Vios">
           </div>
+          <div class="g12-filter-separator"></div>
+          <label for="price-min">Price range</label>
+          <div class="g12-price-labels"><span>Min price</span><span>Max price</span></div>
+          <div class="g12-price-row">
+            <input id="price-min" type="number" name="price_min" min="0" step="10000" placeholder="0₫" value="{{ filters.price_min if filters.price_min is not none else '' }}">
+            <input id="price-max" type="number" name="price_max" min="0" step="10000" placeholder="2.000.000₫" value="{{ filters.price_max if filters.price_max is not none else '' }}">
+          </div>
+          <div class="g12-range-slider-display"><span></span><i></i><i></i></div>
+          <div class="g12-filter-separator"></div>
+          <label for="g12-filter-type">Car type</label>
+          <div class="g12-filter-checkboxes">
+            {% for type in types %}
+            <label class="g12-checkbox-line"><input type="radio" name="type_id" value="{{ type.typeId }}" {% if filters.type_id == type.typeId %}checked{% endif %}><span>{{ type.typeName }}</span></label>
+            {% endfor %}
+            <label class="g12-checkbox-line"><input type="radio" name="type_id" value="" {% if not filters.type_id %}checked{% endif %}><span>All types</span></label>
+          </div>
+          <div class="g12-filter-separator"></div>
+          <label>Seats</label>
+          <div class="g12-seat-selector">
+            <label><input type="radio" name="seat_choice" value="4" {% if filters.seats_min == 4 and filters.seats_max == 4 %}checked{% endif %}><span>4 seats</span></label>
+            <label><input type="radio" name="seat_choice" value="5" {% if filters.seats_min == 5 and filters.seats_max == 5 %}checked{% endif %}><span>5 seats</span></label>
+            <label><input type="radio" name="seat_choice" value="7" {% if filters.seats_min == 7 and not filters.seats_max %}checked{% endif %}><span>7 seats+</span></label>
+          </div>
+          <input id="side-seats-min" name="seats_min" type="hidden" value="{{ filters.seats_min or '' }}">
+          <input id="side-seats-max" name="seats_max" type="hidden" value="{{ filters.seats_max or '' }}">
           <input type="hidden" name="sort" value="{{ filters.sort }}">
           <button type="submit" class="figma-dark-button">Apply Filters</button>
         </form>
       </aside>
       <section class="figma-cars-results" aria-label="Available vehicles">
         <form class="figma-cars-toolbar" method="GET" action="{{ url_for('cars') }}">
-          <input type="search" name="q" value="{{ filters.keyword }}" aria-label="Search vehicles" placeholder="Search car name, brand...">
+          <div class="g12-input-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="20" height="20" stroke-width="1.6"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg>
+            <input type="search" name="q" value="{{ filters.keyword }}" aria-label="Search vehicles" placeholder="Search car name, brand...">
+          </div>
           <input type="hidden" name="type_id" value="{{ filters.type_id or '' }}">
           <input type="hidden" name="seats_min" value="{{ filters.seats_min or '' }}">
           <input type="hidden" name="seats_max" value="{{ filters.seats_max or '' }}">
+          <input type="hidden" name="price_min" value="{{ filters.price_min if filters.price_min is not none else '' }}">
+          <input type="hidden" name="price_max" value="{{ filters.price_max if filters.price_max is not none else '' }}">
           <label for="figma-sort">Sort by</label>
           <select id="figma-sort" name="sort">
-            {% for value, label in sorts %}<option value="{{ value }}" {% if filters.sort == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+            <option value="price_asc" {% if filters.sort == 'price_asc' %}selected{% endif %}>Price: Low to High</option>
+            <option value="price_desc" {% if filters.sort == 'price_desc' %}selected{% endif %}>Price: High to Low</option>
+            <option value="newest" {% if filters.sort == 'newest' %}selected{% endif %}>Newest</option>
+            <option value="popular" {% if filters.sort == 'popular' %}selected{% endif %}>Most Viewed</option>
+            <option value="rentals_desc" {% if filters.sort == 'rentals_desc' %}selected{% endif %}>Most Rented</option>
           </select>
           <button class="figma-dark-button" type="submit">Search</button>
         </form>
         <div class="figma-cars-results-heading">
           <div><h2>Available Cars</h2><p>Showing {{ cars|length }} of {{ total }} vehicles</p></div>
           <div class="figma-quick-filters">
-            <a class="{% if not filters.type_id and not filters.seats_min %}selected{% endif %}" href="{{ url_for('cars', q=filters.keyword, sort=filters.sort) }}">All Cars</a>
-            <a class="{% if filters.seats_min == 4 and filters.seats_max == 4 %}selected{% endif %}" href="{{ url_for('cars', q=filters.keyword, seats_min=4, seats_max=4, sort=filters.sort) }}">4 Seats</a>
-            <a class="{% if filters.seats_min == 5 and filters.seats_max == 5 %}selected{% endif %}" href="{{ url_for('cars', q=filters.keyword, seats_min=5, seats_max=5, sort=filters.sort) }}">5 Seats</a>
+            <a class="{% if not filters.type_id and not filters.seats_min %}selected{% endif %}" href="{{ url_for('cars', q=filters.keyword, sort=filters.sort, price_min=filters.price_min, price_max=filters.price_max) }}">All Cars</a>
+            <a class="{% if filters.seats_min == 4 and filters.seats_max == 4 %}selected{% endif %}" href="{{ url_for('cars', q=filters.keyword, seats_min=4, seats_max=4, sort=filters.sort, price_min=filters.price_min, price_max=filters.price_max) }}">4 Seats</a>
+            <a class="{% if filters.seats_min == 5 and filters.seats_max == 5 %}selected{% endif %}" href="{{ url_for('cars', q=filters.keyword, seats_min=5, seats_max=5, sort=filters.sort, price_min=filters.price_min, price_max=filters.price_max) }}">5 Seats</a>
+            {% set suv_type = (types|selectattr('typeName', 'equalto', 'SUV')|list|first) %}
+            {% if suv_type %}<a class="{% if filters.type_id == suv_type.typeId %}selected{% endif %}" href="{{ url_for('cars', type_id=suv_type.typeId, q=filters.keyword, sort=filters.sort) }}">SUV</a>{% endif %}
           </div>
         </div>
         {% if cars %}
@@ -60,21 +90,36 @@
           {% for car in cars %}{% include '_car_card.html' %}{% endfor %}
         </div>
         {% if total_pages > 1 %}
-          <nav class="pagination" aria-label="Pagination">
-            {% if filters.page > 1 %}<a class="page-btn" href="{{ url_for('cars', q=filters.keyword, type_id=filters.type_id, seats_min=filters.seats_min, seats_max=filters.seats_max, sort=filters.sort, page=filters.page - 1) }}">← Previous</a>{% endif %}
-            {% for p in range(1, total_pages + 1) %}
-            {% if p == 1 or p == total_pages or (p >= filters.page - 2 and p <= filters.page + 2) %}
-            <a class="page-btn {% if p == filters.page %}active{% endif %}" href="{{ url_for('cars', q=filters.keyword, type_id=filters.type_id, seats_min=filters.seats_min, seats_max=filters.seats_max, sort=filters.sort, page=p) }}">{{ p }}</a>
-            {% endif %}
-            {% endfor %}
-            {% if filters.page < total_pages %}<a class="page-btn" href="{{ url_for('cars', q=filters.keyword, type_id=filters.type_id, seats_min=filters.seats_min, seats_max=filters.seats_max, sort=filters.sort, page=filters.page + 1) }}">Next →</a>{% endif %}
-          </nav>
+        <nav class="pagination" aria-label="Pagination">
+          {% if filters.page > 1 %}<a class="page-btn" href="{{ url_for('cars', q=filters.keyword, type_id=filters.type_id, seats_min=filters.seats_min, seats_max=filters.seats_max, price_min=filters.price_min, price_max=filters.price_max, sort=filters.sort, page=filters.page-1) }}">← Previous</a>{% endif %}
+          {% for p in range(1,total_pages+1) %}
+          {% if p==1 or p==total_pages or (p >= filters.page-2 and p <= filters.page+2) %}
+          <a class="page-btn {% if p == filters.page %}active{% endif %}" href="{{ url_for('cars', q=filters.keyword, type_id=filters.type_id, seats_min=filters.seats_min, seats_max=filters.seats_max, price_min=filters.price_min, price_max=filters.price_max, sort=filters.sort, page=p) }}">{{ p }}</a>
+          {% endif %}
+          {% endfor %}
+          {% if filters.page < total_pages %}<a class="page-btn" href="{{ url_for('cars', q=filters.keyword, type_id=filters.type_id, seats_min=filters.seats_min, seats_max=filters.seats_max, price_min=filters.price_min, price_max=filters.price_max, sort=filters.sort, page=filters.page+1) }}">Next →</a>{% endif %}
+        </nav>
         {% endif %}
         {% else %}
-          <div class="empty-state"><h3>Không tìm thấy xe phù hợp</h3><p>Thử đổi bộ lọc hoặc tên xe.</p><a href="{{ url_for('cars') }}" class="figma-dark-button">View all cars</a></div>
+        <div class="empty-state"><h3>No matching vehicles</h3><p>Try a different search, type or price range.</p><a href="{{ url_for('cars') }}" class="figma-dark-button">View all cars</a></div>
         {% endif %}
       </section>
     </div>
   </div>
 </div>
+{% endblock %}
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded',function(){
+  const form=document.getElementById('figma-side-filter');
+  if(!form)return;
+  form.querySelectorAll('input[name="seat_choice"]').forEach(function(input){
+    input.addEventListener('change',function(){
+      const v=Number(input.value);
+      document.getElementById('side-seats-min').value=v;
+      document.getElementById('side-seats-max').value=v===7?'':v;
+    });
+  });
+});
+</script>
 {% endblock %}
