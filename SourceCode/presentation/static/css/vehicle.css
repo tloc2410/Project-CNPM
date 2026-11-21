@@ -428,7 +428,21 @@ input:focus, select:focus, textarea:focus { outline: 2px solid #fde68a; border-c
 
 /* Figma Vehicle List — frame 138:4 at 1440 × 1100 */
 .g12-figma-site .figma-cars-page{background:#f7f7f7}
-.g12-figma-site .figma-cars-banner{height:234px;width:calc(100% - 44px);max-width:1405px;border-radius:16px;margin:0 auto;background:linear-gradient(90deg,rgba(0,0,0,.75),rgba(0,0,0,.08) 77%),url('../images/cars/bmw320i2023.webp') center 53%/cover}
+.g12-figma-site .figma-cars-banner {
+    height: 234px;
+    width: calc(100% - 44px);
+    max-width: 1405px;
+    border-radius: 16px;
+    margin: 0 auto;
+
+    background:
+        linear-gradient(
+            90deg,
+            rgba(0, 0, 0, 0.65),
+            rgba(0, 0, 0, 0.10)
+        ),
+        url('../images/cars/banner-car.png') center / cover;
+}
 .g12-figma-site .figma-cars-banner-content{padding:25px 9%;font-size:13px;color:#eee}
 .g12-figma-site .figma-banner-benefits{display:flex;gap:25px;margin-top:26px;font-size:11px;letter-spacing:.8px}
 .g12-figma-site .figma-banner-benefits span{display:flex;align-items:center;gap:10px;line-height:1.1;padding-right:22px}
@@ -487,3 +501,25 @@ input:focus, select:focus, textarea:focus { outline: 2px solid #fde68a; border-c
 @media(max-width:1150px){.g12-figma-site .figma-cars-layout{grid-template-columns:240px minmax(0,1fr)}.g12-figma-site .figma-cars-toolbar{grid-template-columns:1fr 1fr}.g12-figma-site .figma-cars-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:730px){.g12-figma-site .figma-cars-container{width:calc(100% - 28px)}.g12-figma-site .figma-cars-layout{grid-template-columns:1fr}.g12-figma-site .figma-cars-banner{width:calc(100% - 20px);height:165px}.g12-figma-site .figma-cars-toolbar{grid-template-columns:1fr 1fr}.g12-figma-site .figma-cars-toolbar .g12-input-icon{grid-column:1/-1}.g12-figma-site .figma-cars-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:480px){.g12-figma-site .figma-cars-grid{grid-template-columns:1fr}.g12-figma-site .figma-cars-toolbar{grid-template-columns:1fr}.g12-figma-site .figma-cars-toolbar .g12-input-icon{grid-column:auto}.g12-figma-site .figma-cars-banner-content{padding:20px}.g12-figma-site .figma-banner-benefits{gap:8px;font-size:9px}}
+/* Banner trang chủ */
+.g12-home-hero {
+    background: #121b23;
+}
+
+.g12-home-hero::before {
+    background-image: url('../images/cars/banner-car.png');
+    background-position: center center;
+    background-size: cover;
+    opacity: 1;
+    mix-blend-mode: normal;
+}
+
+/* Ẩn chữ trên banner Trang chủ */
+.g12-home-hero .g12-hero-copy {
+    display: none !important;
+}
+
+/* Ẩn chữ và biểu tượng trên banner Danh sách xe */
+.figma-cars-banner-content {
+    display: none !important;
+}
