@@ -523,3 +523,40 @@ input:focus, select:focus, textarea:focus { outline: 2px solid #fde68a; border-c
 .figma-cars-banner-content {
     display: none !important;
 }
+
+/* Figma nav: Vehicle List expands to a four-seat pill navigation bar. */
+.g12-site-nav { position: relative; }
+.g12-nav-vehicle-group { display: inline-flex; align-items: center; gap: 3px; }
+.g12-nav-seat-toggle {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 24px; height: 32px; padding: 0 3px;
+  background: transparent; border: 0; color: #111; cursor: pointer;
+  border-radius: 5px;
+}
+.g12-nav-seat-toggle:hover,
+.g12-nav-seat-toggle[aria-expanded="true"] { color: #e99400; background: #fff7e7; }
+.g12-nav-seat-toggle:focus-visible { outline: 2px solid #db9200; outline-offset: 2px; }
+.g12-nav-seat-toggle .g12-chevron { display: inline-block; transition: transform .15s ease; }
+.g12-nav-seat-toggle[aria-expanded="true"] .g12-chevron { transform: rotate(180deg); }
+.g12-nav-seat-dropdown {
+  position: absolute; z-index: 100; left: 50%; top: calc(100% - 3px);
+  transform: translateX(-50%);
+  width: min(760px, calc(100vw - 38px));
+  min-height: 38px; padding: 0 8px;
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: center; background: #eaeaea;
+  border: 1px solid #dfdfdf; border-radius: 999px;
+  box-shadow: 0 8px 20px rgba(0,0,0,.12);
+}
+.g12-nav-seat-dropdown[hidden] { display: none !important; }
+.g12-nav-seat-dropdown a {
+  text-align: center; display: block; padding: 9px 5px;
+  color: #111; font-size: 13px; font-weight: 500;
+  border-radius: 999px; white-space: nowrap;
+}
+.g12-nav-seat-dropdown a:hover,
+.g12-nav-seat-dropdown a:focus-visible { background: #fff; color: #111; outline: none; }
+@media(max-width: 640px) {
+  .g12-nav-seat-dropdown { grid-template-columns: repeat(2, minmax(0, 1fr)); border-radius: 18px; padding: 5px 8px; }
+  .g12-nav-seat-dropdown a { font-size: 12px; }
+}
