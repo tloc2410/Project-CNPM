@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thanh toán đơn hàng #{{ order_id }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/payment.css') }}">
+</head>
+<body>
+    <div class="payment-container">
+        <h1>Thanh toán đơn thuê xe #{{ order_id }}</h1>
+        <p class="amount">Số tiền cần thanh toán: <strong>{{ amount }}</strong></p>
+
+        {% if message %}
+            <div class="alert success">{{ message }}</div>
+        {% endif %}
+
+        {% if error %}
+            <div class="alert error">{{ error }}</div>
+        {% endif %}
+
+        <form method="POST" class="payment-form">
+            <div class="form-group">
+                <label>Chọn phương thức thanh toán:</label>
+                <label class="radio-option">
+                    <input type="radio" name="payment_method" value="cash_on_pickup" checked>
+                    Tiền mặt khi nhận xe
+                </label>
+                <label class="radio-option">
+                    <input type="radio" name="payment_method" value="online_sim">
+                    Trực tuyến (chế độ mô phỏng)
+                </label>
+            </div>
+
+            <div class="form-group">
+                <label for="sim_outcome">Kết quả mô phỏng (nếu chọn trực tuyến):</label>
+                <select id="sim_outcome" name="sim_outcome">
+                    <option value="success">Thành công (Success)</option>
+                    <option value="failed">Thất bại (Failed)</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn-submit">Xác nhận thanh toán</button>
+        </form>
+    </div>
+</body>
+</html>
