@@ -303,7 +303,6 @@
         const depositEl = document.getElementById("co-deposit");
         const totalEl = document.getElementById("co-total");
 
-        const cardDetailsPanel = document.getElementById("card-details-panel");
         const altPaymentNote = document.getElementById("alt-payment-note");
 
         const ALT_PAYMENT_HINTS = {
@@ -430,46 +429,21 @@
             });
         });
 
-        // Payment Method 4-card selector
+        // Payment method selector: E-Wallet, Bank Transfer, Cash.
         checkoutRoot.querySelectorAll(".pay-card").forEach((card) => {
+            const radio = card.querySelector('input[type="radio"]');
             card.addEventListener("click", () => {
-                const radio = card.querySelector('input[type="radio"]');
                 if (!radio) return;
                 radio.checked = true;
                 checkoutRoot.querySelectorAll(".pay-card").forEach((c) => {
                     c.classList.toggle("is-selected", c === card);
                 });
-
-                const method = radio.value;
-                if (method === "CARD") {
-                    if (cardDetailsPanel) cardDetailsPanel.removeAttribute("hidden");
-                    if (altPaymentNote) altPaymentNote.setAttribute("hidden", "");
-                } else {
-                    if (cardDetailsPanel) cardDetailsPanel.setAttribute("hidden", "");
-                    if (altPaymentNote) {
-                        altPaymentNote.textContent = ALT_PAYMENT_HINTS[method] || "";
-                        altPaymentNote.removeAttribute("hidden");
-                    }
+                if (altPaymentNote) {
+                    altPaymentNote.textContent = ALT_PAYMENT_HINTS[radio.value] || "";
+                    altPaymentNote.removeAttribute("hidden");
                 }
             });
         });
-
-        // Format card number & expiry neatly
-        const cardNumInput = document.getElementById("card-number");
-        if (cardNumInput) {
-            cardNumInput.addEventListener("input", () => {
-                const digits = cardNumInput.value.replace(/\D/g, "").slice(0, 16);
-                cardNumInput.value = digits.replace(/(\d{4})(?=\d)/g, "$1 ");
-            });
-        }
-        const cardExpInput = document.getElementById("card-expiry");
-        if (cardExpInput) {
-            cardExpInput.addEventListener("input", () => {
-                const digits = cardExpInput.value.replace(/\D/g, "").slice(0, 4);
-                cardExpInput.value =
-                    digits.length > 2 ? `${digits.slice(0, 2)} / ${digits.slice(2)}` : digits;
-            });
-        }
     }
 
     /* ---------------------- Orders page confirmation ---------------------- */
