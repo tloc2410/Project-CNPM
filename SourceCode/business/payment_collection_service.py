@@ -215,6 +215,12 @@ def confirm_collection(payment_id):
 
         if not payment_repo.mark_payment_paid(cursor, payment_id, datetime.now()):
             raise CollectionError("This payment was already processed.")
+        # Once staff verifies the required deposit, the reservation can move
+        # from pending to confirmed. Do not overwrite Renting/Completed states.
+        verified_total = overview["paid_amount"] + _money(payment["amount"])
+        if (str(order.get("status") or "").upper() in ("PENDING", "NEW")
+                and verified_total >= _money(order.get("deposit"))):
+            booking_repo.update_order_status(cursor, order_id, "CONFIRMED")
         conn.commit()
         return order_id
     except CollectionError:
