@@ -43,7 +43,9 @@ jobs:
       - name: Run Rental Cart and Booking tests (25)
         run: python -m pytest Test/test_cart_booking.py -v
 
-      - name: Run Payment tests (independent suite)
+      - name: Run Payment tests (student demo mode)
+        env:
+          DEMO_PAYMENT_MODE: "1"
         run: python -m pytest Test/test_payment_flow.py -v
 
       - name: Run Admin integration tests
