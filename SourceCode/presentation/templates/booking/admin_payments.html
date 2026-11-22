@@ -1,0 +1,64 @@
+{% extends "booking/base_booking.html" %}
+{% block title %}Admin - Payment Verification | Group 12{% endblock %}
+{% block body_class %}booking-page{% endblock %}
+{% block extra_head %}
+<style>
+.g12-adminpay{max-width:1170px;margin:35px auto 70px;padding:0 18px;color:#172033}
+.g12-adminpay h1{font-size:30px;margin:7px 0}.g12-adminpay .sub{font-size:14px;color:#64748b;margin-bottom:22px}
+.g12-admin-panel{background:white;border:1px solid #e2e8f0;border-radius:15px;overflow:hidden;box-shadow:0 6px 27px #1720330d}
+.g12-admin-table{width:100%;border-collapse:collapse;font-size:13px;text-align:left}
+.g12-admin-table th{background:#f8fafc;padding:15px 13px;white-space:nowrap}
+.g12-admin-table td{padding:14px 13px;border-top:1px solid #e2e8f0;vertical-align:top}
+.g12-admin-meta{display:block;font-size:12px;color:#64748b;margin-top:5px;overflow-wrap:anywhere}
+.g12-admin-confirm{border:0;background:#fbbf24;padding:10px 12px;border-radius:9px;cursor:pointer;font-weight:800;color:#111827}
+.g12-admin-confirm:hover{background:#f59e0b}
+.g12-admin-verify{display:flex;align-items:flex-start;gap:6px;font-size:12px;line-height:1.35;margin-bottom:8px;max-width:185px}
+.g12-admin-verify input{margin-top:2px}
+.g12-admin-alert{background:#fffbeb;border:1px solid #fcd34d;color:#92400e;border-radius:10px;padding:14px;font-size:13px;margin:18px 0}
+.g12-admin-empty{padding:34px;text-align:center;color:#475569}
+@media(max-width:900px){.g12-admin-panel{overflow-x:auto}.g12-admin-table{min-width:850px}}
+</style>
+{% endblock %}
+{% block content %}
+<main class="g12-adminpay">
+  <p class="sub" style="color:#b45309;font-weight:750;letter-spacing:.12em;">GROUP 12 · ADMIN</p>
+  <h1>Payment Verification</h1>
+  <p class="sub">Confirm deposits, remaining balances and cash received for rental orders.</p>
+  <div class="g12-admin-alert">
+    Check the actual receipt in the bank account, MoMo business ledger or cash register <strong>before</strong> confirming any payment.
+    This page cannot check transfers automatically. A customer's screenshot or QR scan alone is not proof.
+  </div>
+  <section class="g12-admin-panel">
+    {% if pending %}
+    <table class="g12-admin-table">
+      <thead><tr><th>Payment / Order</th><th>Customer</th><th>Method</th><th>Amount to verify</th><th>Reference</th><th>Action</th></tr></thead>
+      <tbody>
+      {% for item in pending %}
+      <tr>
+        <td><strong>Payment #{{ item.paymentID }}</strong><span class="g12-admin-meta">Booking #{{ item.oderID }}</span><span class="g12-admin-meta">{{ item.orderStatus }}</span></td>
+        <td><strong>{{ item.customerName }}</strong><span class="g12-admin-meta">{{ item.customerEmail }}</span></td>
+        <td>
+          <strong>{{ 'E-Wallet (MoMo)' if item.paymentMethod == 'E_WALLET' else 'Bank Transfer' if item.paymentMethod == 'BANK_TRANSFER' else 'Cash' }}</strong>
+          <span class="g12-admin-meta">{{ 'Remaining balance' if item.transactionCode.startswith('BAL-') else 'Initial deposit / cash amount' }}</span>
+        </td>
+        <td><strong>{{ item.amount|vnd }}</strong><span class="g12-admin-meta">Order total {{ item.totalPrice|vnd }}</span></td>
+        <td><code style="overflow-wrap:anywhere;">{{ item.transactionCode }}</code></td>
+        <td>
+          <form method="POST" action="{{ url_for('booking.admin_confirm_payment', payment_id=item.paymentID) }}"
+                onsubmit="return confirm('Confirm that the full amount has ACTUALLY been received for payment #{{ item.paymentID }}?');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <label class="g12-admin-verify"><input type="checkbox" name="verified" value="yes" required><span>I verified the actual money received.</span></label>
+            <button type="submit" class="g12-admin-confirm">Confirm Received</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="g12-admin-empty"><h2>No pending payments</h2><p>New deposit or remaining-balance requests will appear here.</p></div>
+    {% endif %}
+  </section>
+  <p class="sub" style="margin-top:18px;">Only accounts with an active ADMIN role can access this screen.</p>
+</main>
+{% endblock %}
