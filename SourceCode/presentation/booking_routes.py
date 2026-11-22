@@ -613,6 +613,10 @@ def payment_page():
         action = request.form.get("payment_action")
         if action == "declined":
             payment_error = "Demo payment declined. No order was placed. Please try again."
+        elif action == "confirm" and draft["payment_method"] == "E_WALLET" and not (
+            demo_mode or current_app.testing
+        ):
+            payment_error = "Online wallet payment is unavailable without an official gateway."
         elif action != "confirm":
             return "Invalid payment action.", 400
         else:
@@ -684,6 +688,7 @@ def payment_page():
         qr_kind=qr_kind,
         bank_details=bank_details,
         demo_mode=demo_mode,
+        testing_mode=current_app.testing,
         direct_mode=draft["direct_mode"],
     )
 
@@ -757,7 +762,7 @@ def pay_remaining(order_id):
     qr_image = None
     qr_type = None
     bank_details = None
-    if payment:
+    if payment and not _demo_payment_enabled():
         if payment["paymentMethod"] == "BANK_TRANSFER":
             qr_image = payment_qr.bank_transfer_qr(
                 payment["amount"], payment["transactionCode"]
