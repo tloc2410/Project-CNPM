@@ -71,6 +71,10 @@
                         <div class="order-meta-summary">
                             <span>Nhận xe: <strong>{{ order.receiving_label }}</strong></span>
                             <span>Thanh toán: <strong>{{ order.payment_label }}</strong></span>
+                            <span>Payment status: <strong>{{ order.payment_status }}</strong></span>
+                            <span>Remaining balance: <strong>{{ order.balance_due|vnd }}</strong></span>
+                            <a href="{{ url_for('booking.payment_receipt', order_id=order.oderID) }}"
+                               style="color:#b45309; font-weight:700;">View Payment Receipt</a>
                             <span>Phí giao xe: <strong>{{ 'Miễn phí' if (order.deliveryFee or 0) == 0 else order.deliveryFee|vnd }}</strong></span>
                             <span>Đặt cọc (30%): <strong>{{ order.deposit|vnd }}</strong></span>
                         </div>
