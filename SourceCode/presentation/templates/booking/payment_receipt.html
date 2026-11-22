@@ -20,7 +20,7 @@
       <tbody>
         <tr><th style="padding:12px 0;">Total rental amount</th><td style="text-align:right;">{{ order.totalPrice|vnd }}</td></tr>
         <tr><th style="padding:12px 0;">Deposit required (30%)</th><td style="text-align:right;">{{ order.deposit|vnd }}</td></tr>
-        <tr><th style="padding:12px 0;">Verified paid</th><td style="text-align:right;color:#15803d;font-weight:700;">{{ order.paid_amount|vnd }}</td></tr>
+        <tr><th style="padding:12px 0;">{{ "Simulated paid" if demo_mode else "Verified paid" }}</th><td style="text-align:right;color:#15803d;font-weight:700;">{{ order.paid_amount|vnd }}</td></tr>
         <tr><th style="padding:12px 0;">Pending verification</th><td style="text-align:right;">{{ order.pending_amount|vnd }}</td></tr>
         <tr><th style="padding:12px 0;">Remaining balance</th><td style="text-align:right;"><strong>{{ order.balance_due|vnd }}</strong></td></tr>
       </tbody>
