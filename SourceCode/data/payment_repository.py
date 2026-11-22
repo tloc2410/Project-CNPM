@@ -44,3 +44,32 @@ def update_payment_status(cursor, payment_id, status):
         (status, payment_id),
     )
     return cursor.rowcount > 0
+
+
+
+def list_pending_collections(cursor):
+    """Review queue for staff: deposit, remaining-balance and cash requests."""
+    cursor.execute(
+        """
+        SELECT p.paymentID, p.oderID, p.amount, p.paymentMethod, p.paymentStatus,
+               p.transactionCode, p.paidAt, o.status AS orderStatus,
+               o.totalPrice, o.deposit, u.fullName AS customerName,
+               u.email AS customerEmail
+        FROM Payments p
+        JOIN Orders o ON o.oderID = p.oderID
+        JOIN Users u ON u.UserID = o.useID
+        WHERE p.paymentStatus = 'Pending'
+          AND UPPER(o.status) NOT IN ('CANCELLED', 'CANCELED')
+        ORDER BY p.paymentID ASC
+        """
+    )
+    return cursor.fetchall()
+
+
+def mark_payment_paid(cursor, payment_id, paid_at):
+    cursor.execute(
+        """UPDATE Payments SET paymentStatus = 'Paid', paidAt = %s
+           WHERE paymentID = %s AND paymentStatus = 'Pending'""",
+        (paid_at, payment_id),
+    )
+    return cursor.rowcount == 1
