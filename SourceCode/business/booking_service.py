@@ -30,10 +30,9 @@ RECEIVING_METHODS = {
     "DELIVERY": STANDARD_DELIVERY_FEE,    # Giao xe tận nơi (miễn phí từ 2.000.000đ)
 }
 
-PAYMENT_METHODS = ("CARD", "E_WALLET", "BANK_TRANSFER", "CASH")
+PAYMENT_METHODS = ("E_WALLET", "BANK_TRANSFER", "CASH")
 
 PAYMENT_METHOD_LABELS = {
-    "CARD": "Credit / Debit Card",
     "E_WALLET": "E-Wallet",
     "BANK_TRANSFER": "Bank Transfer",
     "CASH": "Cash on Delivery",
@@ -371,7 +370,7 @@ def place_order(
     user_id,
     cart,
     receiving_method="PICKUP",
-    payment_method="CARD",
+    payment_method="E_WALLET",
     today=None,
     now=None,
     demo_outcome="success",
