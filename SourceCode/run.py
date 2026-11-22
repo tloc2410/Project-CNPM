@@ -1,6 +1,7 @@
 import os
 import re
 import secrets
+from urllib.parse import unquote, urlsplit
 
 from flask import Flask, abort, flash, redirect, render_template, request, session, url_for
 from dotenv import load_dotenv
@@ -131,8 +132,22 @@ def _car_types_or_empty():
         return []
 
 
+def _safe_auth_next(value):
+    """Accept local paths only, never an external authentication redirect."""
+    target = str(value or "").strip()
+    if not target or len(target) > 1024:
+        return ""
+    decoded = unquote(target)
+    if (not decoded.startswith("/") or decoded.startswith("//")
+            or "\\" in decoded or any(ord(ch) < 32 for ch in decoded)):
+        return ""
+    parts = urlsplit(decoded)
+    return target if not parts.scheme and not parts.netloc else ""
+
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
+    return_to = _safe_auth_next(request.values.get("next"))
     if request.method == "POST":
         email = request.form.get("email", "")
         password = request.form.get("password", "")
@@ -145,15 +160,19 @@ def login():
             session["full_name"] = user["fullName"]
             session["role"] = user["role"]
 
-            return redirect(url_for("admin.dashboard") if str(user.get("role") or "").upper() == "ADMIN" else url_for("dashboard"))
+            return redirect(return_to or (
+                url_for("admin.dashboard") if str(user.get("role") or "").upper() == "ADMIN"
+                else url_for("dashboard")
+            ))
 
-        return render_template("login.html", error=message)
+        return render_template("login.html", error=message, next_path=return_to)
 
-    return render_template("login.html")
+    return render_template("login.html", next_path=return_to)
 
 
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
+    return_to = _safe_auth_next(request.values.get("next"))
     if request.method == "POST":
         full_name = request.form.get("full_name", "")
         email = request.form.get("email", "")
@@ -164,13 +183,13 @@ def signup():
         if password != confirm_password:
             return render_template(
                 "signup.html",
-                error="Mật khẩu xác nhận không khớp."
+                error="Mật khẩu xác nhận không khớp.", next_path=return_to
             )
 
         if request.form.get("agree_terms") != "on":
             return render_template(
                 "signup.html",
-                error="Vui lòng đồng ý với điều khoản."
+                error="Vui lòng đồng ý với điều khoản.", next_path=return_to
             )
 
         success, message = register_user(
@@ -178,11 +197,11 @@ def signup():
         )
 
         if success:
-            return redirect(url_for("login"))
+            return redirect(url_for("login", next=return_to) if return_to else url_for("login"))
 
-        return render_template("signup.html", error=message)
+        return render_template("signup.html", error=message, next_path=return_to)
 
-    return render_template("signup.html")
+    return render_template("signup.html", next_path=return_to)
 
 
 @app.route("/logout")

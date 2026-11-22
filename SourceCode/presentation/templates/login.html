@@ -16,6 +16,7 @@
 </div>
 
 <form class="login-form" method="POST" action="{{ url_for('login') }}">
+    <input type="hidden" name="next" value="{{ next_path|default('') }}">
     {% if error %}<p role="alert" style="color:#dc2626;text-align:center;margin:0 0 12px">{{ error }}</p>{% endif %}
     <div class="div-3">
         <div class="div-2"><label class="label" for="input-1">Email or phone number</label></div>

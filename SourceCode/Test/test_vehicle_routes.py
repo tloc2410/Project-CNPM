@@ -132,8 +132,8 @@ class VehicleRouteTests(unittest.TestCase):
                 guest = self.client.get(url)
                 self.assertEqual(guest.status_code, 200, url)
                 html = guest.get_data(as_text=True)
-                self.assertIn('href="/login"', html)
-                self.assertIn('href="/signup"', html)
+                self.assertIn('href="/login?next=', html)
+                self.assertIn('href="/signup?next=', html)
                 self.assertIn('class="g12-user-pill">Login</span>', html)
                 self.assertNotIn('id="user-menu-dropdown"', html)
 
@@ -150,6 +150,60 @@ class VehicleRouteTests(unittest.TestCase):
                 self.assertIn('href="/logout"', html)
                 self.assertNotIn('href="/signup"', html)
                 self.assertNotIn('class="g12-user-pill">Login</span>', html)
+
+    def test_sign_in_from_vehicle_detail_returns_to_car_and_syncs_header(self):
+        account = {
+            "UserID": 42, "fullName": "Nguyen Minh",
+            "role": "CUSTOMER", "isLocked": False,
+        }
+        with patch.object(vehicle_service, "list_vehicles",
+                          return_value=([CAR], 1, 1, FILTERS)), \
+             patch.object(vehicle_service, "list_car_types",
+                          return_value=[TYPE]), \
+             patch.object(vehicle_service, "get_vehicle",
+                          return_value=dict(CAR)), \
+             patch.object(run, "login_user",
+                          return_value=(True, "Login successful", account)):
+            guest = self.client.get("/cars/1")
+            self.assertIn('href="/login?next=', guest.get_data(as_text=True))
+            login_page = self.client.get("/login?next=/cars/1")
+            self.assertIn('name="next" value="/cars/1"', login_page.get_data(as_text=True))
+
+            sign_in = self.client.post("/login", data={
+                "email": "nguyen@example.com", "password": "demo-password",
+                "next": "/cars/1",
+            })
+            self.assertEqual(sign_in.status_code, 302)
+            self.assertEqual(sign_in.headers["Location"], "/cars/1")
+            self.assertTrue(sign_in.headers.get("Set-Cookie"))
+
+            for url in ("/", "/cars", "/cars/1"):
+                page = self.client.get(url)
+                self.assertEqual(page.status_code, 200, url)
+                html = page.get_data(as_text=True)
+                self.assertIn('class="g12-user-pill">Nguyen Minh</span>', html)
+                self.assertIn('href="/logout"', html)
+                self.assertNotIn('class="g12-user-pill">Login</span>', html)
+                self.assertNotIn('href="/signup?next=', html)
+
+            self.client.get("/logout")
+            after = self.client.get("/cars/1").get_data(as_text=True)
+            self.assertIn('class="g12-user-pill">Login</span>', after)
+
+    def test_auth_next_rejects_external_redirects(self):
+        account = {
+            "UserID": 42, "fullName": "Nguyen Minh", "role": "CUSTOMER",
+        }
+        with patch.object(run, "login_user",
+                          return_value=(True, "OK", account)):
+            for unsafe in ("https://example.com", "//example.com",
+                           "/%2Fexample.com", "/%5Cexample.com"):
+                signed_in = self.client.post("/login", data={
+                    "email": "nguyen@example.com", "password": "demo-password",
+                    "next": unsafe,
+                })
+                self.assertEqual(signed_in.status_code, 302)
+                self.assertEqual(signed_in.headers["Location"], "/dashboard")
 
     def test_booking_demo_vehicles_use_real_model_photos(self):
         with run.app.test_request_context():
