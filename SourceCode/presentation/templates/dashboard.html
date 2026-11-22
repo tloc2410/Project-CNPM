@@ -83,7 +83,7 @@
               <p>Track your rental orders and get ready for your next journey.</p>
             </div>
             <div class="g12-account-stat"><span>Total Rentals</span><strong>{{ order_counts.all }}</strong><small>Across your account</small></div>
-            <div class="g12-account-stat"><span>In Progress</span><strong>{{ order_counts.pending + order_counts.confirmed }}</strong><small>Pending / Confirmed</small></div>
+            <div class="g12-account-stat"><span>In Progress</span><strong>{{ order_counts.pending + order_counts.confirmed + order_counts.renting }}</strong><small>Pending / Confirmed / Renting</small></div>
           </div>
 
           <section class="g12-account-panel g12-account-orders-panel">

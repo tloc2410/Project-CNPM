@@ -288,7 +288,7 @@ def reset_password(token):
 _ACCOUNT_ORDER_GROUPS = {
     "PENDING": "pending", "NEW": "pending",
     "CONFIRMED": "confirmed",
-    "RENTED": "renting", "ONGOING": "renting",
+    "RENTING": "renting", "RENTED": "renting", "ONGOING": "renting",
     "IN_PROGRESS": "renting", "IN_USE": "renting",
     "PICKED_UP": "renting", "ACTIVE": "renting",
     "COMPLETED": "completed", "RETURNED": "completed",

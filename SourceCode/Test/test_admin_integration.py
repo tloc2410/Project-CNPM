@@ -275,3 +275,53 @@ def test_admin_payment_verification_stays_in_admin_layout(flask_client, booking_
     assert 'class="g12-nav"' not in html
     assert 'href="/admin/orders"' in html
 
+
+def test_admin_renting_status_appears_on_customer_rentals_and_orders(
+    flask_client, booking_db
+):
+    raw, _ = booking_db
+    order_id = _order(method="E_WALLET")
+    _admin(flask_client, raw)
+    assert flask_client.get("/admin/orders").status_code == 200
+    csrf = _csrf(flask_client)
+    for next_status in ("CONFIRMED", "RENTING"):
+        result = flask_client.post(
+            f"/admin/orders/{order_id}/status",
+            data={"csrf_token": csrf, "status": next_status},
+        )
+        assert result.status_code == 302
+        assert "error=" not in result.headers["Location"]
+        assert raw.execute(
+            "SELECT status FROM Orders WHERE oderID=?", (order_id,)
+        ).fetchone()[0] == next_status
+
+    _login_session(flask_client, user_id=1, full_name="Do Thu Thao")
+    renting_page = flask_client.get(
+        "/dashboard?section=orders&status=renting"
+    )
+    assert renting_page.status_code == 200
+    renting_html = renting_page.get_data(as_text=True)
+    assert f"RENTAL ORDER #{order_id}" in renting_html
+    assert "Currently Renting" in renting_html
+    assert "No orders in this category yet" not in renting_html
+    assert "Cancel Order" not in renting_html
+
+    confirmed_html = flask_client.get(
+        "/dashboard?status=confirmed"
+    ).get_data(as_text=True)
+    assert f"RENTAL ORDER #{order_id}" not in confirmed_html
+
+    account_html = flask_client.get("/dashboard").get_data(as_text=True)
+    assert f"RENTAL ORDER #{order_id}" in account_html
+    assert "Pending / Confirmed / Renting" in account_html
+    assert "Currently Renting" in account_html
+    assert '<span>In Progress</span><strong>1</strong>' in account_html
+
+    orders_html = flask_client.get("/orders").get_data(as_text=True)
+    assert f"Đơn hàng #{order_id}" in orders_html
+    assert "Đang thuê xe" in orders_html
+    payment_html = flask_client.get(
+        f"/orders/{order_id}/payment"
+    ).get_data(as_text=True)
+    assert "RENTING" in payment_html
+

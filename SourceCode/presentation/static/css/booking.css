@@ -1444,6 +1444,13 @@ a {
     color: #1E40AF;
 }
 
+.status-renting,
+.status-rented,
+.status-ongoing {
+    background: #E2FAF0;
+    color: #18784D;
+}
+
 .status-cancelled {
     background: #FEE2E2;
     color: #991B1B;

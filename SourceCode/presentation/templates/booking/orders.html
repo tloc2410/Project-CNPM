@@ -32,6 +32,8 @@
                                 Chờ xác nhận ({{ st }})
                             {% elif st == 'CONFIRMED' %}
                                 Đã xác nhận
+                            {% elif st in ('RENTING', 'RENTED', 'ONGOING') %}
+                                Đang thuê xe
                             {% elif st == 'CANCELLED' %}
                                 Đã hủy
                             {% elif st in ('COMPLETED', 'RETURNED') %}
