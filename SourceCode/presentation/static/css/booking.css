@@ -211,17 +211,24 @@ a {
 
 .g12-user-menu {
     position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 34px;
 }
 
 .g12-user-trigger {
     display: inline-flex;
     align-items: center;
     gap: 10px;
+    height: 34px;
+    flex-shrink: 0;
     background: transparent;
     border: none;
     padding: 0;
     cursor: pointer;
     font-family: inherit;
+    text-decoration: none;
 }
 
 .g12-avatar-circle {
@@ -1621,6 +1628,13 @@ a {
 #co-pickup-location[readonly]::placeholder { opacity: 0; }
 
 .g12-signup-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 34px;
+    padding: 0 2px;
+    margin: 0;
+    line-height: 1;
     font-size: 13px;
     font-weight: 600;
     color: #111827;

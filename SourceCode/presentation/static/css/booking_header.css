@@ -155,18 +155,25 @@ width: 1px;
 }
 
 .g12-figma-site .g12-user-menu {
-position: relative;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 34px;
 }
 
 .g12-figma-site .g12-user-trigger {
-display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    background: transparent;
-    border: none;
-    padding: 0;
-    cursor: pointer;
-    font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 34px;
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
+  text-decoration: none;
 }
 
 .g12-figma-site .g12-avatar-circle {
@@ -240,7 +247,18 @@ background: #F3F4F6;
 .g12-figma-site .g12-cart-badge { top:-2px; right:-4px; }
 .g12-figma-site .g12-header-cart { position:relative; }
 .g12-figma-site .g12-signup-link {
-  font-size:13px; font-weight:600; color:#111827; white-space:nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 34px;
+  padding: 0 2px;
+  margin: 0;
+  line-height: 1;
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+  white-space: nowrap;
+  text-decoration: none;
 }
 .g12-figma-site .g12-signup-link:hover { color:var(--amber-border); }
 .g12-figma-site .g12-user-trigger:focus-visible,
