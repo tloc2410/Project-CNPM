@@ -84,3 +84,61 @@ Docs:
 - https://www.vietqr.io/qr-dong
 - https://developers.momo.vn/v3/docs/payment/guides/static-qrcode/
 - https://developers.momo.vn/v3/docs/payment/api/wallet/onetime/
+
+
+## Second payment: remaining 70% (integrated feature)
+
+The existing `Payments` table stores more than one row per rental booking:
+the initial deposit (30%), then a separate remaining-balance payment request.
+No new MySQL schema is required; do not re-run the original database setup.
+
+**Customer flow:**
+
+1. Make a booking. E-wallet **demo** deposit is recorded Paid. Bank transfer
+   deposit is Pending until staff verifies actual receipt. For Cash on Delivery,
+   the full amount is Pending until collected at pickup.
+2. From **My Account → My Rentals**, **My Orders**, or the receipt, open
+   **Pay Remaining Balance** (`/orders/<id>/pay-remaining`).
+3. The form becomes available only after the deposit has been verified as Paid,
+   the booking is active and no other payment request is pending.
+4. Choose **E-Wallet (MoMo)**, **Bank Transfer (VietQR)**, or **Cash at Pickup**.
+   Submit to create an exact-balance **Pending** payment row (reference `BAL-...`).
+   VietQR includes the remaining amount and unique reference; MoMo uses the
+   authorized merchant image (manual amount entry); Cash is collected in person.
+5. Pending transfers do **not** count as Paid. Admin must verify receipt.
+   Customers can cancel an unverified balance request to change the method.
+6. The receipt shows the deposit, paid sum, pending sum, remaining amount, and
+   both payment records. Fully received orders display **Paid in Full**.
+
+**Administrator flow:**
+
+1. Sign into a real account with `role='ADMIN'` and `isLocked=0` in Users.
+2. In the user menu choose **Admin Payments**, or navigate to
+   `/admin/payments`.
+3. The queue shows pending initial deposits, cash payments and `BAL-...`
+   remaining requests, including customer, amount and transfer reference.
+4. Confirm the exact amount in the actual bank/wallet/cash ledger first.
+5. Tick verification acknowledgement and click **Confirm Received**.
+6. The backend locks the order, checks payment is still Pending and total paid
+   will not exceed the order total, marks only that payment Paid with timestamp,
+   and commits. Verifying the first deposit also confirms a pending booking.
+   Repeated confirmations cannot credit the transaction twice.
+
+**Business example:** Rental = 500,000 VND; deposit = 150,000 VND; after
+verification the remaining payment request is 350,000 VND. When the admin
+verifies the 350,000 VND, paid total becomes 500,000 VND, outstanding = 0.
+
+**Limitations:** Customer and admin pages cannot check a live bank/MoMo
+transaction automatically. A screenshot, scanned QR, or clicking "I paid" is
+not bank reconciliation. Admin confirmation is a manual demo workflow.
+Cash collection is physically checked by staff. The initial E-Wallet deposit
+may still be a sandbox simulated Paid amount; it must not be represented as
+real funds. Production must replace mock approvals with signed provider
+callbacks, ledger reconciliation, refund handling and audited staff actions.
+Cancellation marks verified payments `Refund Pending` (not automatically
+refunded); pending requests become `Cancelled`.
+
+**Test:** from `SourceCode` run
+`py -m pytest Test/test_cart_booking.py -v`. Payment, admin permissions, role
+recheck, cross-account access, duplicate request/confirmation, QR amounts,
+cancellation and rollback are covered by SQLite-backed integration tests.
