@@ -573,6 +573,16 @@ def checkout():
     )
 
 
+def _demo_payment_enabled():
+    """Local development only; never enable simulated receipts on public servers."""
+    flag = os.getenv("DEMO_PAYMENT_MODE", "1" if current_app.debug else "0")
+    return (
+        (current_app.debug or current_app.testing)
+        and str(flag).strip().lower() in ("1", "true", "yes", "on")
+        and request.remote_addr in ("127.0.0.1", "::1")
+    )
+
+
 @booking_bp.route("/payment", methods=["GET", "POST"])
 @login_required
 def payment_page():
@@ -593,6 +603,7 @@ def payment_page():
         ))
 
     payment_error = None
+    demo_mode = _demo_payment_enabled()
     if request.method == "POST":
         token = str(request.form.get("payment_csrf") or "")
         expected = str(draft.get("csrf") or "")
@@ -638,7 +649,7 @@ def payment_page():
     qr_image = None
     qr_kind = None
     bank_details = None
-    if draft["payment_method"] == "BANK_TRANSFER":
+    if not demo_mode and draft["payment_method"] == "BANK_TRANSFER":
         qr_image = payment_qr.bank_transfer_qr(
             summary["deposit"], draft["transfer_reference"]
         )
@@ -649,7 +660,7 @@ def payment_page():
                 "account": os.getenv("PAYMENT_BANK_ACCOUNT", "").strip(),
                 "holder": os.getenv("PAYMENT_BANK_HOLDER", "").strip(),
             }
-    elif draft["payment_method"] == "E_WALLET":
+    elif not demo_mode and draft["payment_method"] == "E_WALLET":
         qr_file = payment_qr.momo_merchant_qr_filename()
         if qr_file:
             relative_file = os.path.join("images", "payments", qr_file)
@@ -672,6 +683,7 @@ def payment_page():
         qr_image=qr_image,
         qr_kind=qr_kind,
         bank_details=bank_details,
+        demo_mode=demo_mode,
         direct_mode=draft["direct_mode"],
     )
 
@@ -715,6 +727,21 @@ def pay_remaining(order_id):
             elif action == "cancel_pending":
                 collection_service.cancel_remaining_request(session["user_id"], order_id)
                 flash("Pending request cancelled. You may choose another method.", "success")
+            elif action in ("demo_success", "demo_failed"):
+                if not _demo_payment_enabled():
+                    abort(404)
+                order = svc.get_order_payment_details(session["user_id"], order_id)
+                payment = order.get("pending_balance_request")
+                if not payment:
+                    raise collection_service.CollectionError("No remaining payment is awaiting a demo result.")
+                outcome = "success" if action == "demo_success" else "failed"
+                collection_service.simulate_collection(
+                    session["user_id"], order_id, payment["paymentID"], outcome
+                )
+                if outcome == "success":
+                    flash("DEMO ONLY: Remaining balance marked paid. No money moved.", "success")
+                    return redirect(url_for("booking.payment_receipt", order_id=order_id))
+                flash("Demo payment failed. You can choose a method and retry.", "error")
             else:
                 abort(400)
         except collection_service.CollectionError as exc:
@@ -755,6 +782,7 @@ def pay_remaining(order_id):
         qr_type=qr_type,
         bank_details=bank_details,
         payment_methods=collection_service.SUPPORTED_BALANCE_METHODS,
+        demo_mode=_demo_payment_enabled(),
         csrf_token=_collection_csrf("collection_csrf"),
     )
 
@@ -811,7 +839,41 @@ def payment_receipt(order_id):
         order = svc.get_order_payment_details(session["user_id"], order_id)
     except svc.BookingError:
         return render_template("error.html", error_code="404", error_message="Order not found."), 404
-    return render_template("booking/payment_receipt.html", order=order)
+    return render_template(
+        "booking/payment_receipt.html", order=order,
+        demo_mode=_demo_payment_enabled(),
+        demo_csrf=_collection_csrf("demo_payment_csrf"),
+    )
+
+
+@booking_bp.route("/orders/<int:order_id>/payment/demo", methods=["POST"])
+@login_required
+def demo_receive_initial_payment(order_id):
+    if not _demo_payment_enabled():
+        abort(404)
+    _require_collection_csrf("demo_payment_csrf")
+    if request.form.get("action") != "success":
+        abort(400)
+    try:
+        order = svc.get_order_payment_details(session["user_id"], order_id)
+    except svc.BookingError:
+        abort(404)
+    payment = next(
+        (p for p in order["payments"]
+         if p["paymentStatus"] == "Pending"
+         and not str(p.get("transactionCode") or "").startswith("BAL-")), None
+    )
+    if not payment:
+        flash("There is no pending initial payment to simulate.", "error")
+        return redirect(url_for("booking.payment_receipt", order_id=order_id))
+    try:
+        collection_service.simulate_collection(
+            session["user_id"], order_id, payment["paymentID"], "success"
+        )
+        flash("DEMO ONLY: Payment marked received. No real money moved.", "success")
+    except collection_service.CollectionError as exc:
+        flash(str(exc), "error")
+    return redirect(url_for("booking.payment_receipt", order_id=order_id))
 
 
 @booking_bp.route("/orders/<int:order_id>/cancel", methods=["POST"])
