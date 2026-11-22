@@ -483,3 +483,21 @@ def test_demo_routes_disabled_and_customer_ownership_enforced(
     assert raw.execute(
         "SELECT paymentStatus FROM Payments LIMIT 1"
     ).fetchone()[0] == "Pending"
+
+
+@pytest.mark.parametrize("method", ["E_WALLET", "BANK_TRANSFER"])
+def test_payment_demo_qr_does_not_require_real_account(
+    flask_client, booking_db, monkeypatch, method
+):
+    monkeypatch.setenv("DEMO_PAYMENT_MODE", "1")
+    monkeypatch.setenv("MOMO_MERCHANT_QR_FILENAME", "")
+    monkeypatch.setenv("PAYMENT_BANK_BIN", "")
+    monkeypatch.setenv("PAYMENT_BANK_ACCOUNT", "")
+    monkeypatch.setenv("PAYMENT_BANK_HOLDER", "")
+    _checkout(flask_client, method)
+    page = flask_client.get("/payment").get_data(as_text=True)
+    assert "DEMO QR" in page
+    assert "NOT SCANNABLE" in page
+    assert "img.vietqr.io/image/" not in page
+    assert "MoMo QR is not configured yet" not in page
+    assert "Bank QR is not configured yet" not in page
