@@ -53,6 +53,12 @@ def _payment_draft():
     if not valid:
         session.pop(PAYMENT_DRAFT_KEY, None)
         return None
+    # Upgrading an in-progress checkout created by an older app version.
+    if not draft.get("transfer_reference"):
+        draft = dict(draft)
+        draft["transfer_reference"] = "G12" + secrets.token_hex(6).upper()
+        session[PAYMENT_DRAFT_KEY] = draft
+        session.modified = True
     return draft
 
 
