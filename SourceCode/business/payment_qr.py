@@ -17,7 +17,7 @@ def bank_transfer_qr(amount, reference):
         return None
     if not re.fullmatch(r"[A-Za-z0-9]{5,32}", account):
         return None
-    if not re.fullmatch(r"[A-Za-z0-9]{3,32}", reference or ""):
+    if not re.fullmatch(r"[A-Za-z0-9-]{3,40}", reference or ""):
         return None
     try:
         amount_int = int(amount)
