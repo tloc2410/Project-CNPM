@@ -252,3 +252,26 @@ def test_admin_header_displays_signed_in_full_name_on_every_page(flask_client, b
         assert '<div class="profile-name">Nguyen Dinh Chanh</div>' in html
         assert '<div class="profile-avatar">N</div>' in html
 
+
+
+def test_admin_payment_verification_stays_in_admin_layout(flask_client, booking_db):
+    raw, _ = booking_db
+    _order(method="BANK_TRANSFER")
+    _admin(flask_client, raw)
+    with flask_client.session_transaction() as sess:
+        sess["full_name"] = "Admin Demo"
+    response = flask_client.get("/admin/payments")
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert '<aside class="sidebar">' in html
+    assert 'class="nav-link active" aria-current="page">Payment Verification</a>' in html
+    assert '<div class="topbar-title">Payment Verification</div>' in html
+    assert '<div class="profile-name">Admin Demo</div>' in html
+    assert '<div class="profile-avatar">A</div>' in html
+    assert "Confirm Received" in html
+    assert "Bank Transfer" in html
+    assert "booking/admin_payments" not in html
+    assert 'class="g12-header"' not in html
+    assert 'class="g12-nav"' not in html
+    assert 'href="/admin/orders"' in html
+
