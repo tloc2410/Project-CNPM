@@ -30,3 +30,6 @@ temp/
 *.dump
 *.bak
 *.backup
+
+# Flask debug-only persistent session signing key (never commit)
+SourceCode/.flask_dev_secret

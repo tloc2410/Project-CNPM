@@ -1619,3 +1619,19 @@ a {
     cursor: not-allowed;
 }
 #co-pickup-location[readonly]::placeholder { opacity: 0; }
+
+.g12-signup-link {
+    font-size: 13px;
+    font-weight: 600;
+    color: #111827;
+    white-space: nowrap;
+    text-decoration: none;
+}
+
+.g12-signup-link:hover {
+    color: var(--amber-border);
+}
+
+.g12-user-dropdown[hidden] {
+    display: none !important;
+}

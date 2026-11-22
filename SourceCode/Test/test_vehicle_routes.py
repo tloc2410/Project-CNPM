@@ -121,6 +121,36 @@ class VehicleRouteTests(unittest.TestCase):
                 self.assertIn("js/vehicle_cart.js", body)
                 self.assertNotIn("g12-site-header", body)
 
+    def test_login_signup_header_is_consistent_on_home_list_and_detail(self):
+        with patch.object(vehicle_service, "list_vehicles",
+                          return_value=([CAR], 1, 1, FILTERS)), \
+             patch.object(vehicle_service, "list_car_types",
+                          return_value=[TYPE]), \
+             patch.object(vehicle_service, "get_vehicle",
+                          return_value=dict(CAR)):
+            for url in ("/", "/cars", "/cars/1"):
+                guest = self.client.get(url)
+                self.assertEqual(guest.status_code, 200, url)
+                html = guest.get_data(as_text=True)
+                self.assertIn('href="/login"', html)
+                self.assertIn('href="/signup"', html)
+                self.assertIn('class="g12-user-pill">Login</span>', html)
+                self.assertNotIn('id="user-menu-dropdown"', html)
+
+            with self.client.session_transaction() as sess:
+                sess["user_id"] = 7
+                sess["full_name"] = "Nguyen Minh"
+                sess["role"] = "CUSTOMER"
+            for url in ("/", "/cars", "/cars/1"):
+                logged = self.client.get(url)
+                self.assertEqual(logged.status_code, 200, url)
+                html = logged.get_data(as_text=True)
+                self.assertIn('class="g12-user-pill">Nguyen Minh</span>', html)
+                self.assertIn('id="user-menu-dropdown"', html)
+                self.assertIn('href="/logout"', html)
+                self.assertNotIn('href="/signup"', html)
+                self.assertNotIn('class="g12-user-pill">Login</span>', html)
+
     def test_booking_demo_vehicles_use_real_model_photos(self):
         with run.app.test_request_context():
             example = dict(CAR)

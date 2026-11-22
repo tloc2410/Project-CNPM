@@ -22,10 +22,28 @@ app = Flask(
     template_folder="presentation/templates",
     static_folder="presentation/static",
 )
+def _local_session_secret():
+    """Keep the development session key stable across Flask debug reloads."""
+    secret_path = os.path.join(os.path.dirname(__file__), ".flask_dev_secret")
+    try:
+        fd = os.open(secret_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+    except FileExistsError:
+        pass
+    else:
+        with os.fdopen(fd, "w", encoding="utf-8") as secret_file:
+            secret_file.write(secrets.token_urlsafe(48))
+    try:
+        with open(secret_path, encoding="utf-8") as secret_file:
+            return secret_file.read().strip() or secrets.token_urlsafe(48)
+    except OSError:
+        app.logger.warning("Could not read local Flask session key; sessions may reset on reload.")
+        return secrets.token_urlsafe(48)
+
+
 _configured_secret = os.getenv("SECRET_KEY", "").strip()
-app.secret_key = _configured_secret or secrets.token_urlsafe(48)
+app.secret_key = _configured_secret or _local_session_secret()
 if not _configured_secret:
-    app.logger.warning("SECRET_KEY is unset; using a random session key for this process. Set SECRET_KEY in .env before deployment.")
+    app.logger.warning("SECRET_KEY is unset; using a generated local-only session key. Set SECRET_KEY in .env before deployment.")
 
 
 def car_image(car):

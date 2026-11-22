@@ -1,0 +1,36 @@
+<div class="g12-user-menu">
+    {% if session.get('user_id') %}
+    <button type="button" class="g12-user-trigger" id="user-menu-trigger"
+            aria-expanded="false" aria-controls="user-menu-dropdown"
+            aria-label="Account menu for {{ session.get('full_name') or 'My Account' }}">
+        <span class="g12-avatar-circle" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" width="18" height="18">
+                <circle cx="12" cy="8.5" r="3.5" stroke="#FFFFFF" stroke-width="2"/>
+                <path d="M5.5 19.2c1.4-3 3.9-4.5 6.5-4.5s5.1 1.5 6.5 4.5" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+        </span>
+        <span class="g12-user-pill">{{ session.get('full_name') or 'My Account' }}</span>
+    </button>
+    <div class="g12-user-dropdown" id="user-menu-dropdown" hidden>
+        <a href="{{ url_for('dashboard') }}" class="g12-dropdown-item">My Account</a>
+        <a href="{{ url_for('booking.cart') }}" class="g12-dropdown-item">Rental Cart</a>
+        <a href="{{ url_for('booking.my_orders') }}" class="g12-dropdown-item">My Orders</a>
+        {% if session.get('role', '')|upper == 'ADMIN' %}
+        <a href="{{ url_for('admin.dashboard') }}" class="g12-dropdown-item">Admin Dashboard</a>
+        <a href="{{ url_for('booking.admin_payments') }}" class="g12-dropdown-item">Admin Payments</a>
+        {% endif %}
+        <a href="{{ url_for('logout') }}" class="g12-dropdown-item">Log out</a>
+    </div>
+    {% else %}
+    <a class="g12-user-trigger" href="{{ url_for('login') }}" aria-label="Log in">
+        <span class="g12-avatar-circle" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" width="18" height="18">
+                <circle cx="12" cy="8.5" r="3.5" stroke="#FFFFFF" stroke-width="2"/>
+                <path d="M5.5 19.2c1.4-3 3.9-4.5 6.5-4.5s5.1 1.5 6.5 4.5" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+        </span>
+        <span class="g12-user-pill">Login</span>
+    </a>
+    <a class="g12-signup-link" href="{{ url_for('signup') }}">Sign up</a>
+    {% endif %}
+</div>

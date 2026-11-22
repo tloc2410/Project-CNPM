@@ -464,6 +464,21 @@ def _login_session(client, user_id=1, full_name="Do Thu Thao"):
 
 # Flask routes and Checkout
 
+def test_booking_header_uses_same_account_state_as_public_pages(flask_client):
+    _login_session(flask_client, user_id=1, full_name="Do Thu Thao")
+    for url in ("/cart", "/orders"):
+        response = flask_client.get(url)
+        assert response.status_code == 200
+        html = response.get_data(as_text=True)
+        assert 'class="g12-user-pill">Do Thu Thao</span>' in html
+        assert 'id="user-menu-dropdown"' in html
+        assert 'href="/logout"' in html
+        assert 'href="/signup"' not in html
+    flask_client.get("/logout")
+    with flask_client.session_transaction() as sess:
+        assert "user_id" not in sess
+
+
 def test_routes_require_login(flask_client):
     res = flask_client.get("/cart")
     assert res.status_code == 302
