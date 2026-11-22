@@ -43,7 +43,7 @@
     <section class="payment-panel">
       <h2>Payment method</h2>
       <span class="payment-label">{{ payment_method_label }}</span>
-      {% if draft.payment_method in ('CARD', 'E_WALLET', 'BANK_TRANSFER') %}
+      {% if draft.payment_method in ('E_WALLET', 'BANK_TRANSFER') %}
         <div class="payment-amount">{{ summary.deposit|vnd }}</div>
         <p class="pay-muted">Booking deposit due: 30% of the order total. The remainder is payable under your rental agreement.</p>
       {% else %}
@@ -51,12 +51,7 @@
         <p class="pay-muted">Total amount payable in cash when you collect the vehicle or receive your delivery.</p>
       {% endif %}
 
-      {% if draft.payment_method == 'CARD' %}
-      <div class="payment-message">
-        <strong>Credit / Debit Card — Demo Gateway</strong>
-        <p class="pay-muted">Click "Simulate Successful Payment" to approve a mock card deposit. No real payment or card data is collected.</p>
-      </div>
-      {% elif draft.payment_method == 'E_WALLET' %}
+      {% if draft.payment_method == 'E_WALLET' %}
       <div class="payment-message">
         <strong>E-Wallet — Demo Gateway</strong>
         <p class="pay-muted">Simulate confirmation from MoMo / ZaloPay. No wallet connection or real funds transfer takes place.</p>
@@ -72,7 +67,7 @@
         <p class="pay-muted">No online payment is required. Confirm the rental request; payment remains <strong>Pending</strong> until cash is collected in person.</p>
       </div>
       {% endif %}
-      <div class="payment-warning">Project demonstration only — never enter real card numbers, security codes, bank logins or wallet credentials.</div>
+      <div class="payment-warning">Project demonstration only — never enter real bank logins or wallet credentials.</div>
       {% if payment_error %}
         <div class="payment-error" role="alert">{{ payment_error }}</div>
       {% endif %}
@@ -80,14 +75,14 @@
         <input type="hidden" name="payment_csrf" value="{{ draft.csrf }}">
         <input type="hidden" name="payment_action" value="confirm">
         <button type="submit" class="pay-action" id="confirm-demo-payment">
-          {% if draft.payment_method in ('CARD', 'E_WALLET') %}
+          {% if draft.payment_method in ('E_WALLET',) %}
             Simulate Successful Payment
           {% else %}
             Confirm Rental Request (Payment Pending)
           {% endif %}
         </button>
       </form>
-      {% if draft.payment_method in ('CARD', 'E_WALLET') %}
+      {% if draft.payment_method in ('E_WALLET',) %}
       <form method="POST" action="{{ url_for('booking.payment_page') }}">
         <input type="hidden" name="payment_csrf" value="{{ draft.csrf }}">
         <input type="hidden" name="payment_action" value="declined">
