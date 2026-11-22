@@ -52,7 +52,16 @@
       {% endif %}
 
       {% if draft.payment_method in ('E_WALLET', 'BANK_TRANSFER') %}
-        {% if qr_image %}
+        {% if demo_mode %}
+        <div class="payment-message payment-qr" style="text-align:center;">
+          <div style="width:216px;min-height:190px;margin:12px auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;border:3px dashed #f59e0b;border-radius:14px;background:#fffbeb;">
+            <span style="font-size:68px;line-height:1;" aria-hidden="true">▦</span>
+            <strong style="font-size:15px;color:#92400e;">DEMO QR — NOT SCANNABLE</strong>
+          </div>
+          <p class="pay-muted">This is an illustration only. No bank account, merchant wallet or QR configuration is required.</p>
+          <p class="pay-muted">Simulated deposit: <strong>{{ summary.deposit|vnd }}</strong> (30%).</p>
+        </div>
+        {% elif qr_image %}
         <div class="payment-message payment-qr" style="text-align:center;">
           <strong>
             {% if qr_kind == 'BANK_TRANSFER' %}
@@ -106,7 +115,11 @@
         <p class="pay-muted">No online payment is required. Confirm the rental request; payment remains <strong>Pending</strong> until cash is collected in person.</p>
       </div>
       {% endif %}
-      <div class="payment-warning">Scanning a QR code does not confirm a payment in Group12. This demo does not read MoMo or bank transaction callbacks. The buttons below simulate confirmation or record a pending request; do not treat them as evidence that money was received. Never enter real bank or wallet credentials on this website.</div>
+      {% if demo_mode %}
+      <div class="payment-warning"><strong>STUDENT DEMO MODE:</strong> No real QR, bank connection or money transfer. E-Wallet simulates a paid deposit. Bank Transfer and Cash create Pending requests; you can simulate receiving the money on the next page without an Admin account.</div>
+      {% else %}
+      <div class="payment-warning">QR display is not payment verification. Bank and cash requests remain Pending until an authorized Admin confirms real receipt. Never enter bank login credentials here.</div>
+      {% endif %}
       {% if payment_error %}
         <div class="payment-error" role="alert">{{ payment_error }}</div>
       {% endif %}
@@ -121,7 +134,7 @@
           {% endif %}
         </button>
       </form>
-      {% if draft.payment_method in ('E_WALLET',) %}
+      {% if demo_mode or draft.payment_method == 'E_WALLET' %}
       <form method="POST" action="{{ url_for('booking.payment_page') }}">
         <input type="hidden" name="payment_csrf" value="{{ draft.csrf }}">
         <input type="hidden" name="payment_action" value="declined">
