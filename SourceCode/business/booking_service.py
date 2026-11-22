@@ -460,8 +460,7 @@ def place_order(
                 return_date=r_date,
             )
 
-        # Record the payment in the SAME transaction. No independent commit:
-        # a declined demo or DB failure rolls back the entire rental order.
+        # Payment and booking share a transaction; failure rolls back both.
         plan = payment_service.plan_payment(
             payment_method, order_id, totals["total"], totals["deposit"],
             demo_outcome, transfer_reference=transfer_reference,
@@ -504,9 +503,7 @@ def cancel_order(user_id, order_id):
             raise BookingError("Đơn hàng này không thể hủy ở trạng thái hiện tại.")
 
         repo.update_order_status(cursor, order_id, ORDER_STATUS_CANCELLED)
-        # Cancel ALL pending requests, not only the most recent one.
-        # A received payment needs a separate verified refund; do not pretend
-        # that updating the DB transferred the money back to the customer.
+        # Cancel all Pending payments; Paid amounts require a real refund.
         for payment in payment_repository.list_payments_for_orders(cursor, [order_id]):
             state = str(payment.get("paymentStatus") or "")
             if state == "Paid":
