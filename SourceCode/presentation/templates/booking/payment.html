@@ -1,0 +1,123 @@
+{% extends "booking/base_booking.html" %}
+{% block title %}Payment - Group 12 Car Rental{% endblock %}
+{% block body_class %}booking-page page-checkout page-payment{% endblock %}
+{% block extra_head %}
+<style>
+.payment-wrap{max-width:1120px;margin:24px auto 65px;padding:0 18px;color:#172033}
+.pay-progress{display:flex;justify-content:center;align-items:center;gap:12px;padding:10px 0 28px;font-size:14px;font-weight:700}
+.pay-progress .done{color:#c38103}.pay-progress .now{background:#fbbf24;border-radius:30px;padding:10px 18px;color:#111827}
+.pay-progress .line{height:2px;background:#fbbf24;min-width:32px;width:8%}
+.pay-title{text-align:center;font-size:27px;margin:8px 0 6px}
+.pay-subtitle{text-align:center;color:#64748b;margin:0 0 24px}
+.payment-columns{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(300px,.85fr);align-items:start;gap:22px}
+.payment-panel{background:white;border:1px solid #e2e8f0;border-radius:16px;padding:26px;box-shadow:0 8px 30px #1720330c}
+.payment-panel h2{font-size:19px;margin:0 0 15px}
+.payment-label{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;background:#fff5d5;border:1px solid #ffd26b;border-radius:24px;color:#6f4800;font-weight:750}
+.payment-amount{font-size:34px;letter-spacing:-.8px;margin:14px 0 6px;font-weight:850}
+.pay-muted{color:#64748b;font-size:13px;line-height:1.65}
+.payment-message{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:18px;margin:21px 0}
+.payment-message strong{display:block;margin-bottom:6px}
+.payment-warning{border:1px solid #fbd38d;background:#fff9e8;color:#78530c;padding:13px;border-radius:10px;font-size:13px;margin:14px 0}
+.payment-error{border:1px solid #fecaca;background:#fff1f2;color:#9f1239;padding:14px;border-radius:10px;margin:12px 0}
+.pay-action{display:block;background:#fbbf24;color:#111827;padding:15px 16px;text-align:center;border:0;border-radius:10px;font-size:15px;font-weight:800;width:100%;cursor:pointer}
+.pay-action:hover{background:#f59e0b}.pay-decline{margin-top:13px;background:white;color:#9f1239;border:1px solid #fecaca;padding:12px 16px;border-radius:10px;font-weight:700;width:100%;cursor:pointer}
+.pay-back{display:block;color:#475569;text-align:center;margin-top:19px;text-decoration:none}
+.pay-line{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;border-bottom:1px solid #edf2f7;font-size:14px}
+.pay-line:last-child{border:0}.pay-line .val{text-align:right;font-weight:700}
+.pay-cars{padding:12px 0;border-bottom:1px solid #edf2f7;font-size:13px}
+.pay-cars strong{display:block;font-size:14px}
+@media(max-width:800px){.payment-columns{grid-template-columns:1fr}.payment-panel{padding:20px}.pay-title{font-size:23px}}
+</style>
+{% endblock %}
+{% block content %}
+<main class="payment-wrap">
+  <div class="pay-progress" aria-label="Checkout progress">
+    <span class="done">✓ Cart</span><span class="line"></span>
+    <span class="done">✓ Checkout</span><span class="line"></span>
+    <span class="now">3 Payment</span>
+  </div>
+  <h1 class="pay-title">Complete Your Payment</h1>
+  <p class="pay-subtitle">Review the rental details and confirm the selected payment method.</p>
+
+  <div class="payment-columns">
+    <section class="payment-panel">
+      <h2>Payment method</h2>
+      <span class="payment-label">{{ payment_method_label }}</span>
+      {% if draft.payment_method in ('CARD', 'E_WALLET', 'BANK_TRANSFER') %}
+        <div class="payment-amount">{{ summary.deposit|vnd }}</div>
+        <p class="pay-muted">Booking deposit due: 30% of the order total. The remainder is payable under your rental agreement.</p>
+      {% else %}
+        <div class="payment-amount">{{ summary.total|vnd }}</div>
+        <p class="pay-muted">Total amount payable in cash when you collect the vehicle or receive your delivery.</p>
+      {% endif %}
+
+      {% if draft.payment_method == 'CARD' %}
+      <div class="payment-message">
+        <strong>Credit / Debit Card — Demo Gateway</strong>
+        <p class="pay-muted">Click "Simulate Successful Payment" to approve a mock card deposit. No real payment or card data is collected.</p>
+      </div>
+      {% elif draft.payment_method == 'E_WALLET' %}
+      <div class="payment-message">
+        <strong>E-Wallet — Demo Gateway</strong>
+        <p class="pay-muted">Simulate confirmation from MoMo / ZaloPay. No wallet connection or real funds transfer takes place.</p>
+      </div>
+      {% elif draft.payment_method == 'BANK_TRANSFER' %}
+      <div class="payment-message">
+        <strong>Bank transfer — Manual verification</strong>
+        <p class="pay-muted">This project does not have a connected bank account or transfer verification. You can submit a rental request, but the deposit remains <strong>Pending</strong> until manually verified. This does not count as successful payment.</p>
+      </div>
+      {% else %}
+      <div class="payment-message">
+        <strong>Cash on Delivery / Pickup</strong>
+        <p class="pay-muted">No online payment is required. Confirm the rental request; payment remains <strong>Pending</strong> until cash is collected in person.</p>
+      </div>
+      {% endif %}
+      <div class="payment-warning">Project demonstration only — never enter real card numbers, security codes, bank logins or wallet credentials.</div>
+      {% if payment_error %}
+        <div class="payment-error" role="alert">{{ payment_error }}</div>
+      {% endif %}
+      <form method="POST" action="{{ url_for('booking.payment_page') }}" id="payment-confirm-form">
+        <input type="hidden" name="payment_csrf" value="{{ draft.csrf }}">
+        <input type="hidden" name="payment_action" value="confirm">
+        <button type="submit" class="pay-action" id="confirm-demo-payment">
+          {% if draft.payment_method in ('CARD', 'E_WALLET') %}
+            Simulate Successful Payment
+          {% else %}
+            Confirm Rental Request (Payment Pending)
+          {% endif %}
+        </button>
+      </form>
+      {% if draft.payment_method in ('CARD', 'E_WALLET') %}
+      <form method="POST" action="{{ url_for('booking.payment_page') }}">
+        <input type="hidden" name="payment_csrf" value="{{ draft.csrf }}">
+        <input type="hidden" name="payment_action" value="declined">
+        <button type="submit" class="pay-decline">Simulate Failed Payment</button>
+      </form>
+      {% endif %}
+      <a href="{{ url_for('booking.checkout', mode='now') if direct_mode else url_for('booking.checkout') }}" class="pay-back">← Back to Checkout</a>
+    </section>
+
+    <aside class="payment-panel">
+      <h2>Order Summary</h2>
+      {% for item in summary['items'] %}
+      <div class="pay-cars">
+        <strong>{{ item.car.name }}</strong>
+        {{ item.pickup_date|vn_date }} – {{ item.return_date|vn_date }} · {{ item.rental_days }} day(s)
+        <div class="pay-line" style="padding-bottom:0"><span>Rental</span><span class="val">{{ item.line_total|vnd }}</span></div>
+      </div>
+      {% endfor %}
+      <div class="pay-line"><span>Rental subtotal</span><span class="val">{{ summary.subtotal|vnd }}</span></div>
+      <div class="pay-line"><span>Delivery</span><span class="val">{{ summary.delivery_fee|vnd }}</span></div>
+      <div class="pay-line"><span>Deposit (30%)</span><span class="val">{{ summary.deposit|vnd }}</span></div>
+      <div class="pay-line" style="font-size:18px"><strong>Total</strong><strong class="val">{{ summary.total|vnd }}</strong></div>
+      <p class="pay-muted">Availability and totals are checked again on confirmation. No order has been created at this step.</p>
+    </aside>
+  </div>
+</main>
+<script>
+  document.getElementById('payment-confirm-form')?.addEventListener('submit', function () {
+    const btn = document.getElementById('confirm-demo-payment');
+    if (btn) { btn.disabled = true; btn.textContent = 'Processing…'; }
+  });
+</script>
+{% endblock %}
