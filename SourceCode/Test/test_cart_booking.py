@@ -1689,7 +1689,7 @@ def test_pay_remaining_ui_qr_and_access_control(flask_client, booking_db, monkey
     assert "amount=420000" in body
     assert "Awaiting Verification" in body
     assert "BAL-" in body
-    assert "Pay Remaining Balance" in flask_client.get("/dashboard").get_data(as_text=True)
+    assert "Review Payment" in flask_client.get("/dashboard").get_data(as_text=True)
     assert raw.execute(
         "SELECT COUNT(*) FROM Payments WHERE paymentStatus = 'Paid'"
     ).fetchone()[0] == 1
