@@ -347,3 +347,137 @@ def test_payment_20_failed_remaining_insert_leaves_original_deposit_unchanged(
     assert raw.execute(
         "SELECT COUNT(*) FROM Payments WHERE oderID = ?", (order_id,),
     ).fetchone()[0] == initial
+
+
+
+def test_demo_bank_deposit_without_admin_unlocks_remaining_payment(
+    flask_client, booking_db, monkeypatch
+):
+    monkeypatch.setenv("DEMO_PAYMENT_MODE", "1")
+    token = _checkout(flask_client, "BANK_TRANSFER")
+    page = flask_client.get("/payment").get_data(as_text=True)
+    assert "DEMO QR" in page
+    assert "NOT SCANNABLE" in page
+    assert "Bank QR is not configured yet" not in page
+    confirm = flask_client.post("/payment", data={
+        "payment_csrf": token, "payment_action": "confirm",
+    })
+    assert confirm.status_code == 302
+    raw, _ = booking_db
+    assert raw.execute(
+        "SELECT paymentStatus FROM Payments LIMIT 1"
+    ).fetchone()[0] == "Pending"
+    view = flask_client.get("/orders/1/payment").get_data(as_text=True)
+    assert "Simulate Deposit Received" in view
+    with flask_client.session_transaction() as sess:
+        csrf = sess["demo_payment_csrf"]
+    result = flask_client.post("/orders/1/payment/demo", data={
+        "csrf_token": csrf, "action": "success",
+    })
+    assert result.status_code == 302
+    order = booking.get_order_payment_details(1, 1)
+    assert order["paid_amount"] == 180000
+    assert order["balance_due"] == 420000
+    assert order["can_pay_remaining"]
+    assert order["payment_status"] == "Partially Paid"
+    payment = raw.execute(
+        "SELECT transactionCode FROM Payments LIMIT 1"
+    ).fetchone()[0]
+    assert payment.endswith("-DEMO")
+
+
+def test_demo_remaining_failure_retry_and_paid_in_full(
+    flask_client, booking_db, monkeypatch
+):
+    monkeypatch.setenv("DEMO_PAYMENT_MODE", "1")
+    raw, _ = booking_db
+    order_id = _order()
+    _login_session(flask_client)
+    url = f"/orders/{order_id}/pay-remaining"
+    assert flask_client.get(url).status_code == 200
+    with flask_client.session_transaction() as sess:
+        csrf = sess["collection_csrf"]
+    request1 = flask_client.post(url, data={
+        "csrf_token": csrf, "action": "request",
+        "payment_method": "BANK_TRANSFER",
+    })
+    assert request1.status_code == 302
+    page = flask_client.get(url).get_data(as_text=True)
+    assert "DEMO QR" in page and "Simulate Failed Payment" in page
+    failed = flask_client.post(url, data={
+        "csrf_token": csrf, "action": "demo_failed",
+    })
+    assert failed.status_code == 302
+    row = raw.execute(
+        "SELECT paymentStatus FROM Payments WHERE transactionCode LIKE 'BAL-%'"
+    ).fetchone()
+    assert row["paymentStatus"] == "Failed"
+    assert booking.get_order_payment_details(1, order_id)["can_pay_remaining"]
+
+    request2 = flask_client.post(url, data={
+        "csrf_token": csrf, "action": "request",
+        "payment_method": "E_WALLET",
+    })
+    assert request2.status_code == 302
+    completed = flask_client.post(url, data={
+        "csrf_token": csrf, "action": "demo_success",
+    })
+    assert completed.status_code == 302
+    assert completed.headers["Location"].endswith(f"/orders/{order_id}/payment")
+    order = booking.get_order_payment_details(1, order_id)
+    assert order["paid_amount"] == 600000
+    assert order["balance_due"] == 0
+    assert order["payment_status"] == "Paid in Full"
+    assert [p["paymentStatus"] for p in order["payments"]].count("Paid") == 2
+    assert [p["paymentStatus"] for p in order["payments"]].count("Failed") == 1
+    flask_client.post(url, data={
+        "csrf_token": csrf, "action": "demo_success",
+    })
+    assert booking.get_order_payment_details(1, order_id)["paid_amount"] == 600000
+
+
+def test_demo_cash_payment_collected_at_pickup(flask_client, booking_db, monkeypatch):
+    monkeypatch.setenv("DEMO_PAYMENT_MODE", "1")
+    order_id = _order("CASH")
+    _login_session(flask_client)
+    page = flask_client.get(f"/orders/{order_id}/payment")
+    assert b"Simulate Cash Collected at Pickup" in page.data
+    with flask_client.session_transaction() as sess:
+        csrf = sess["demo_payment_csrf"]
+    result = flask_client.post(f"/orders/{order_id}/payment/demo", data={
+        "csrf_token": csrf, "action": "success",
+    })
+    assert result.status_code == 302
+    overview = booking.get_order_payment_details(1, order_id)
+    assert overview["paid_amount"] == 600000
+    assert overview["balance_due"] == 0
+    assert overview["payment_status"] == "Paid in Full"
+
+
+def test_demo_routes_disabled_and_customer_ownership_enforced(
+    flask_client, booking_db, monkeypatch
+):
+    order_id = _order("BANK_TRANSFER")
+    _login_session(flask_client, user_id=1)
+    flask_client.get(f"/orders/{order_id}/payment")
+    with flask_client.session_transaction() as sess:
+        csrf = sess["demo_payment_csrf"]
+    monkeypatch.setenv("DEMO_PAYMENT_MODE", "0")
+    rejected = flask_client.post(f"/orders/{order_id}/payment/demo", data={
+        "csrf_token": csrf, "action": "success",
+    })
+    assert rejected.status_code == 404
+    monkeypatch.setenv("DEMO_PAYMENT_MODE", "1")
+    forged = flask_client.post(f"/orders/{order_id}/payment/demo", data={
+        "csrf_token": "invalid", "action": "success",
+    })
+    assert forged.status_code == 400
+    _login_session(flask_client, user_id=2)
+    denied = flask_client.post(f"/orders/{order_id}/payment/demo", data={
+        "csrf_token": csrf, "action": "success",
+    })
+    assert denied.status_code == 404
+    raw, _ = booking_db
+    assert raw.execute(
+        "SELECT paymentStatus FROM Payments LIMIT 1"
+    ).fetchone()[0] == "Pending"
