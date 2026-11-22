@@ -5,7 +5,12 @@
   <section style="background:#fff;padding:30px;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 8px 28px #1520350b;">
     <p style="color:#b45309;font-weight:700;letter-spacing:.12em;">GROUP 12 · RENTAL PAYMENTS</p>
     <h1 style="margin:12px 0;">Booking #{{ order.oderID }}</h1>
-    <p style="color:#64748b;">The amount marked Paid represents verified records (or sandbox demo approvals). Pending QR requests do not count as received money.</p>
+    {% if demo_mode %}
+    <div style="border:1px solid #fcd34d;background:#fffbeb;color:#92400e;border-radius:11px;padding:13px 16px;margin:12px 0;">
+      <strong>STUDENT DEMO MODE</strong> — Payment statuses marked through simulation do not represent real money. No bank or MoMo account is needed.
+    </div>
+    {% endif %}
+    <p style="color:#64748b;">Only Paid records count toward the balance. Pending requests are not yet credited.</p>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin:22px 0;">
       <div style="padding:18px;background:#f8fafc;border-radius:10px;"><div>Order status</div><strong>{{ order.status }}</strong></div>
       <div style="padding:18px;background:#f8fafc;border-radius:10px;"><div>Payment status</div><strong>{{ order.payment_status }}</strong></div>
@@ -20,6 +25,17 @@
         <tr><th style="padding:12px 0;">Remaining balance</th><td style="text-align:right;"><strong>{{ order.balance_due|vnd }}</strong></td></tr>
       </tbody>
     </table>
+    {% if demo_mode and order.pending_payment and not order.pending_balance_request
+          and (order.status or '')|upper != 'CANCELLED' %}
+    <form method="POST" action="{{ url_for('booking.demo_receive_initial_payment', order_id=order.oderID) }}" style="margin-top:18px;">
+      <input type="hidden" name="csrf_token" value="{{ demo_csrf }}">
+      <input type="hidden" name="action" value="success">
+      <button type="submit" style="background:#fbbf24;border:0;border-radius:10px;padding:13px 20px;cursor:pointer;font-weight:800;color:#111827;">
+        {{ 'Simulate Cash Collected at Pickup' if order.pending_payment.paymentMethod == 'CASH' else 'Simulate Deposit Received (30%)' }}
+      </button>
+    </form>
+    <p style="font-size:12px;color:#92400e;">Demo only. This marks the pending amount as simulated Paid without receiving money.</p>
+    {% endif %}
     {% if order.can_pay_remaining or order.pending_balance_request %}
     <a href="{{ url_for('booking.pay_remaining', order_id=order.oderID) }}"
        style="display:inline-block;background:#fbbf24;color:#111827;border-radius:10px;padding:13px 20px;font-weight:800;text-decoration:none;margin-top:18px;">
