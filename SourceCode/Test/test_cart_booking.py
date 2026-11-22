@@ -1243,7 +1243,7 @@ def test_offline_payment_statuses_and_cancellation(booking_db):
     assert payment["paymentStatus"] == "Cancelled"
 
 
-def test_paid_demo_order_cancel_marks_demo_refund(booking_db):
+def test_paid_demo_order_cancel_requires_real_refund(booking_db):
     raw, tracker = booking_db
     from datetime import timedelta
     start = date.today() + timedelta(days=38)
@@ -1254,7 +1254,7 @@ def test_paid_demo_order_cancel_marks_demo_refund(booking_db):
     svc.cancel_order(1, order_id)
     assert raw.execute(
         "SELECT paymentStatus FROM Payments WHERE oderID = ?", (order_id,)
-    ).fetchone()[0] == "Refunded"
+    ).fetchone()[0] == "Refund Pending"
 
 
 def test_payment_receipt_is_customer_scoped(flask_client, booking_db):
@@ -1546,3 +1546,246 @@ def test_bank_transfer_payment_page_shows_vietqr_when_configured(flask_client, b
     ).fetchone()
     assert saved["transactionCode"] == reference
     assert saved["paymentStatus"] == "Pending"
+
+
+
+# ===========================================================================
+# Two-stage payments: 30% verified deposit + 70% remaining amount.
+# ===========================================================================
+def _customer_order_for_balance():
+    from datetime import timedelta
+    start = date.today() + timedelta(days=23)
+    end = start + timedelta(days=1)
+    return [{
+        "car_id": 1, "pickup_date": start.isoformat(),
+        "return_date": end.isoformat(), "selected": True,
+    }]
+
+
+def _seed_admin(raw):
+    raw.execute(
+        """INSERT INTO Users
+           (UserID, fullName, phone, email, passwordHash, role, isLocked)
+           VALUES (?, ?, ?, ?, ?, ?, ?)""",
+        (3, "Payment Admin", "0900000000", "admin@group12.vn", "hash", "ADMIN", 0),
+    )
+
+
+def test_remaining_requires_verified_deposit_and_does_not_double_count(booking_db):
+    from business import payment_collection_service as col
+    raw, tracker = booking_db
+    order_id = svc.place_order(1, _customer_order_for_balance(), "PICKUP", "BANK_TRANSFER")
+    # Original bank deposit exists as Pending, so the customer cannot collect 70% yet.
+    with pytest.raises(col.CollectionError, match="deposit must be verified"):
+        col.request_remaining_payment(1, order_id, "CASH")
+    assert raw.execute("SELECT COUNT(*) FROM Payments").fetchone()[0] == 1
+
+    deposit_id = raw.execute(
+        "SELECT paymentID FROM Payments WHERE oderID = ?", (order_id,)
+    ).fetchone()[0]
+    col.confirm_collection(deposit_id)
+    overview = svc.get_order_payment_details(1, order_id)
+    assert overview["paid_amount"] == Decimal("180000")
+    assert overview["pending_amount"] == Decimal("0")
+    assert overview["balance_due"] == Decimal("420000")
+    assert overview["can_pay_remaining"]
+    assert overview["payment_status"] == "Partially Paid"
+
+    payment_id = col.request_remaining_payment(1, order_id, "CASH")
+    with pytest.raises(col.CollectionError, match="awaiting verification"):
+        col.request_remaining_payment(1, order_id, "BANK_TRANSFER")
+    row = raw.execute(
+        "SELECT amount, paymentMethod, paymentStatus FROM Payments WHERE paymentID = ?",
+        (payment_id,),
+    ).fetchone()
+    assert row["amount"] == 420000
+    assert row["paymentMethod"] == "CASH"
+    assert row["paymentStatus"] == "Pending"
+    view = svc.get_order_payment_details(1, order_id)
+    assert view["paid_amount"] == Decimal("180000")
+    assert view["pending_amount"] == Decimal("420000")
+    assert view["balance_due"] == Decimal("420000")
+    assert view["pending_balance_request"]
+
+
+def test_staff_confirmation_pays_full_balance_only_once(booking_db):
+    from business import payment_collection_service as col
+    raw, _ = booking_db
+    order_id = svc.place_order(1, _customer_order_for_balance(), "PICKUP", "E_WALLET")
+    payment_id = col.request_remaining_payment(1, order_id, "BANK_TRANSFER")
+
+    queue = col.list_pending_collections()
+    assert len(queue) == 1
+    assert queue[0]["paymentID"] == payment_id
+    assert queue[0]["customerName"] == "Do Thu Thao"
+    assert queue[0]["amount"] == 420000
+
+    assert col.confirm_collection(payment_id) == order_id
+    with pytest.raises(col.CollectionError, match="not Pending"):
+        col.confirm_collection(payment_id)
+    view = svc.get_order_payment_details(1, order_id)
+    assert view["paid_amount"] == Decimal("600000")
+    assert view["balance_due"] == Decimal("0")
+    assert view["payment_status"] == "Paid in Full"
+    assert not view["can_pay_remaining"]
+    assert len(view["payments"]) == 2
+    with pytest.raises(col.CollectionError, match="deposit must be verified"):
+        col.request_remaining_payment(1, order_id, "E_WALLET")
+
+
+def test_balance_change_method_cancels_only_pending_balance_request(booking_db):
+    from business import payment_collection_service as col
+    raw, _ = booking_db
+    order_id = svc.place_order(1, _customer_order_for_balance(), "PICKUP", "E_WALLET")
+    pending_id = col.request_remaining_payment(1, order_id, "E_WALLET")
+    assert col.cancel_remaining_request(1, order_id)
+    assert raw.execute(
+        "SELECT paymentStatus FROM Payments WHERE paymentID = ?", (pending_id,)
+    ).fetchone()[0] == "Cancelled"
+    assert raw.execute(
+        "SELECT paymentStatus FROM Payments WHERE oderID = ? ORDER BY paymentID ASC",
+        (order_id,),
+    ).fetchone()[0] == "Paid"
+    new_id = col.request_remaining_payment(1, order_id, "CASH")
+    assert new_id != pending_id
+    assert raw.execute("SELECT COUNT(*) FROM Payments").fetchone()[0] == 3
+    with pytest.raises(col.CollectionError, match="not found"):
+        col.cancel_remaining_request(2, order_id)
+
+
+def test_pay_remaining_ui_qr_and_access_control(flask_client, booking_db, monkeypatch):
+    from business import payment_collection_service as col
+    raw, _ = booking_db
+    monkeypatch.setenv("PAYMENT_BANK_BIN", "970436")
+    monkeypatch.setenv("PAYMENT_BANK_ACCOUNT", "0000000000")  # test-only account
+    monkeypatch.setenv("PAYMENT_BANK_HOLDER", "GROUP 12 TEST")
+
+    order_id = svc.place_order(1, _customer_order_for_balance(), "PICKUP", "E_WALLET")
+    assert "/login" in flask_client.get(
+        f"/orders/{order_id}/pay-remaining"
+    ).headers["Location"]
+    _login_session(flask_client, user_id=2)
+    assert flask_client.get(f"/orders/{order_id}/pay-remaining").status_code == 404
+
+    _login_session(flask_client, user_id=1)
+    view = flask_client.get(f"/orders/{order_id}/pay-remaining")
+    assert view.status_code == 200
+    assert b"Pay Remaining Balance" in view.data
+    with flask_client.session_transaction() as sess:
+        csrf = sess["collection_csrf"]
+    invalid = flask_client.post(f"/orders/{order_id}/pay-remaining", data={
+        "csrf_token": "invalid", "action": "request", "payment_method": "BANK_TRANSFER",
+    })
+    assert invalid.status_code == 400
+    assert raw.execute("SELECT COUNT(*) FROM Payments").fetchone()[0] == 1
+
+    submit = flask_client.post(f"/orders/{order_id}/pay-remaining", data={
+        "csrf_token": csrf, "action": "request", "payment_method": "BANK_TRANSFER",
+    })
+    assert submit.status_code == 302
+    page = flask_client.get(f"/orders/{order_id}/pay-remaining")
+    body = page.get_data(as_text=True)
+    assert "img.vietqr.io/image/970436-0000000000-compact2.png" in body
+    assert "amount=420000" in body
+    assert "Awaiting Verification" in body
+    assert "BAL-" in body
+    assert "Pay Remaining Balance" in flask_client.get("/dashboard").get_data(as_text=True)
+    assert raw.execute(
+        "SELECT COUNT(*) FROM Payments WHERE paymentStatus = 'Paid'"
+    ).fetchone()[0] == 1
+
+    cancel = flask_client.post(f"/orders/{order_id}/pay-remaining", data={
+        "csrf_token": csrf, "action": "cancel_pending",
+    })
+    assert cancel.status_code == 302
+    assert svc.get_order_payment_details(1, order_id)["can_pay_remaining"]
+
+
+def test_admin_payment_verification_rejects_customers_and_csrf(flask_client, booking_db):
+    from business import payment_collection_service as col
+    raw, _ = booking_db
+    _seed_admin(raw)
+    order_id = svc.place_order(1, _customer_order_for_balance(), "PICKUP", "BANK_TRANSFER")
+    payment_id = raw.execute("SELECT paymentID FROM Payments LIMIT 1").fetchone()[0]
+    assert "/login" in flask_client.get("/admin/payments").headers["Location"]
+    _login_session(flask_client, user_id=1)
+    assert flask_client.get("/admin/payments").status_code == 403
+
+    _login_session(flask_client, user_id=3)
+    with flask_client.session_transaction() as sess:
+        sess["role"] = "ADMIN"
+    admin_page = flask_client.get("/admin/payments")
+    assert admin_page.status_code == 200
+    assert b"Payment Verification" in admin_page.data
+    with flask_client.session_transaction() as sess:
+        token = sess["admin_payment_csrf"]
+    route = f"/admin/payments/{payment_id}/confirm"
+    assert flask_client.post(route, data={"csrf_token": "wrong", "verified": "yes"}).status_code == 400
+    skip = flask_client.post(route, data={"csrf_token": token})
+    assert skip.status_code == 302
+    assert raw.execute(
+        "SELECT paymentStatus FROM Payments WHERE paymentID = ?", (payment_id,)
+    ).fetchone()[0] == "Pending"
+
+    confirm = flask_client.post(route, data={
+        "csrf_token": token, "verified": "yes",
+    })
+    assert confirm.status_code == 302
+    assert raw.execute(
+        "SELECT paymentStatus FROM Payments WHERE paymentID = ?", (payment_id,)
+    ).fetchone()[0] == "Paid"
+    assert svc.get_order_payment_details(1, order_id)["can_pay_remaining"]
+    # Repeated verification must never credit the same transaction twice.
+    flask_client.post(route, data={"csrf_token": token, "verified": "yes"})
+    assert raw.execute(
+        "SELECT COUNT(*) FROM Payments WHERE paymentStatus = 'Paid'"
+    ).fetchone()[0] == 1
+
+
+def test_admin_db_role_is_rechecked_even_if_session_claims_admin(flask_client, booking_db):
+    raw, _ = booking_db
+    _login_session(flask_client, user_id=1)
+    with flask_client.session_transaction() as sess:
+        sess["role"] = "ADMIN"
+    assert flask_client.get("/admin/payments").status_code == 403
+
+    _seed_admin(raw)
+    _login_session(flask_client, user_id=3)
+    with flask_client.session_transaction() as sess:
+        sess["role"] = "ADMIN"
+    assert flask_client.get("/admin/payments").status_code == 200
+    raw.execute("UPDATE Users SET isLocked = 1 WHERE UserID = 3")
+    assert flask_client.get("/admin/payments").status_code == 403
+
+
+def test_cancel_order_marks_all_pending_and_manual_refund_required(booking_db):
+    from business import payment_collection_service as col
+    raw, _ = booking_db
+    order_id = svc.place_order(1, _customer_order_for_balance(), "PICKUP", "E_WALLET")
+    pending_id = col.request_remaining_payment(1, order_id, "CASH")
+    svc.cancel_order(1, order_id)
+    rows = raw.execute(
+        "SELECT paymentStatus FROM Payments WHERE oderID = ? ORDER BY paymentID ASC",
+        (order_id,),
+    ).fetchall()
+    assert [r[0] for r in rows] == ["Refund Pending", "Cancelled"]
+    with pytest.raises(col.CollectionError, match="cancelled order"):
+        col.confirm_collection(pending_id)
+    assert not svc.get_order_payment_details(1, order_id)["can_pay_remaining"]
+
+
+def test_remainder_request_db_failure_rolls_back(booking_db, monkeypatch):
+    from business import payment_collection_service as col
+    from data import payment_repository
+    raw, tracker = booking_db
+    order_id = svc.place_order(1, _customer_order_for_balance(), "PICKUP", "E_WALLET")
+    initial = raw.execute("SELECT COUNT(*) FROM Payments").fetchone()[0]
+
+    def crash(*args, **kwargs):
+        raise RuntimeError("simulated SQL error")
+
+    monkeypatch.setattr(payment_repository, "insert_payment", crash)
+    with pytest.raises(col.CollectionError, match="Unable to create payment"):
+        col.request_remaining_payment(1, order_id, "CASH")
+    assert raw.execute("SELECT COUNT(*) FROM Payments").fetchone()[0] == initial
+    assert tracker["rollbacks"] > 0
