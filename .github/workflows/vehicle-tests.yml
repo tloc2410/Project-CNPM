@@ -40,7 +40,7 @@ jobs:
       - name: Run Authentication tests (15)
         run: python -m pytest Test/test_auth.py -v
 
-      - name: Run Rental Cart and Booking tests (13)
+      - name: Run Rental Cart and Booking tests (25)
         run: python -m pytest Test/test_cart_booking.py -v
 
       - name: Run Payment tests (independent suite)
