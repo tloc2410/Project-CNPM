@@ -1,47 +1,1097 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thanh toán đơn hàng #{{ order_id }}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/payment.css') }}">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Thanh Toán — Group 12</title>
+  <style>
+    :root {
+      --bg-page: #eef2f6;
+      --bg-canvas: #f6f8fb;
+      --surface: #ffffff;
+      --surface-muted: #f1f5f9;
+      --text-main: #0f172a;
+      --text-sub: #475569;
+      --text-muted: #94a3b8;
+      --border: #e2e8f0;
+      --amber: #f59e0b;
+      --amber-bright: #fbbf24;
+      --amber-hover: #d97706;
+      --amber-soft: #fffbeb;
+      --green: #16a34a;
+      --danger: #dc2626;
+      --radius-lg: 14px;
+      --radius-md: 10px;
+      --radius-sm: 8px;
+      --shadow-card: 0 4px 16px rgba(15, 23, 42, 0.04);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: "Inter", "Segoe UI", Roboto, Arial, sans-serif;
+      background: var(--bg-page);
+      color: var(--text-main);
+      line-height: 1.45;
+      padding: 20px;
+    }
+
+    .page-shell {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: var(--bg-canvas);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 14px 36px rgba(15, 23, 42, 0.08);
+      position: relative;
+    }
+
+    /* Header / Navbar */
+    .topbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .brand-logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+      font-weight: 900;
+      font-size: 20px;
+      letter-spacing: -0.5px;
+      color: var(--text-main);
+      padding: 4px 10px;
+      border: 2px solid var(--text-main);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .brand-logo span {
+      color: var(--amber);
+      font-style: italic;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      list-style: none;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: var(--text-main);
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      color: inherit;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .nav-links a:hover {
+      color: var(--amber-hover);
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .search-box {
+      position: relative;
+      width: 220px;
+    }
+
+    .search-box input {
+      width: 100%;
+      height: 34px;
+      padding: 0 34px 0 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: #f8fafc;
+      font-size: 12px;
+      color: var(--text-main);
+      outline: none;
+    }
+
+    .search-box input:focus {
+      border-color: var(--amber);
+      background: #fff;
+    }
+
+    .search-icon {
+      position: absolute;
+      right: 11px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-sub);
+      pointer-events: none;
+    }
+
+    .cart-btn {
+      position: relative;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-main);
+      display: inline-flex;
+      align-items: center;
+      padding: 4px;
+    }
+
+    .cart-badge {
+      position: absolute;
+      top: -4px;
+      right: -6px;
+      min-width: 17px;
+      height: 17px;
+      border-radius: 999px;
+      background: var(--amber-bright);
+      color: var(--text-main);
+      font-size: 10px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 4px;
+    }
+
+    .user-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding-left: 12px;
+      border-left: 1px solid var(--border);
+    }
+
+    .user-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--text-main);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .user-tag {
+      background: var(--amber-bright);
+      color: var(--text-main);
+      font-size: 11.5px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 8px;
+    }
+
+    /* Stepper */
+    .stepper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 22px 20px 10px;
+    }
+
+    .step {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .step.done {
+      color: var(--text-sub);
+    }
+
+    .step.active {
+      color: var(--text-main);
+      font-weight: 700;
+    }
+
+    .step-circle {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      font-size: 11.5px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #e2e8f0;
+      color: var(--text-sub);
+    }
+
+    .step.done .step-circle {
+      background: var(--amber-bright);
+      color: var(--text-main);
+    }
+
+    .step.active .step-circle {
+      background: var(--amber-bright);
+      color: var(--text-main);
+      box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.25);
+    }
+
+    .step-line {
+      width: 68px;
+      height: 2px;
+      background: #cbd5e1;
+      border-radius: 2px;
+    }
+
+    .step-line.done {
+      background: var(--amber-bright);
+    }
+
+    /* Main Grid */
+    .checkout-main {
+      padding: 14px 28px 36px;
+      display: grid;
+      grid-template-columns: 1.55fr 1fr;
+      gap: 20px;
+      align-items: start;
+      position: relative;
+      z-index: 1;
+    }
+
+    .left-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid #edf2f7;
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      box-shadow: var(--shadow-card);
+    }
+
+    .card-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 14px;
+    }
+
+    /* Rental Information */
+    .rental-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .field-box {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 10px 12px;
+      background: #fff;
+      transition: border-color 0.15s ease;
+    }
+
+    .field-box:focus-within {
+      border-color: var(--amber);
+    }
+
+    .field-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--text-sub);
+      margin-bottom: 4px;
+    }
+
+    .field-control {
+      width: 100%;
+      border: none;
+      background: transparent;
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--text-main);
+      outline: none;
+      font-family: inherit;
+    }
+
+    /* Payment Method */
+    .method-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .method-card {
+      position: relative;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 12px 8px;
+      background: #fff;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      text-align: center;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--text-sub);
+      transition: all 0.15s ease;
+    }
+
+    .method-card:hover {
+      border-color: #cbd5e1;
+      color: var(--text-main);
+    }
+
+    .method-card.selected {
+      border-color: var(--amber);
+      background: var(--amber-soft);
+      color: var(--text-main);
+    }
+
+    .method-check {
+      display: none;
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--amber);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 800;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .method-card.selected .method-check {
+      display: flex;
+    }
+
+    .card-form-panel {
+      background: var(--surface-muted);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      margin-bottom: 14px;
+    }
+
+    .card-row-top {
+      margin-bottom: 10px;
+    }
+
+    .card-row-bottom {
+      display: grid;
+      grid-template-columns: 1fr 110px;
+      gap: 10px;
+    }
+
+    .input-wrap {
+      position: relative;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      height: 38px;
+      display: flex;
+      align-items: center;
+      padding: 0 10px;
+      gap: 8px;
+    }
+
+    .input-wrap:focus-within {
+      border-color: var(--amber);
+    }
+
+    .input-wrap input {
+      width: 100%;
+      border: none;
+      background: transparent;
+      font-size: 12.5px;
+      color: var(--text-main);
+      outline: none;
+    }
+
+    .input-wrap input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .sub-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-sub);
+      margin-bottom: 5px;
+    }
+
+    .alt-payment-note {
+      font-size: 12.5px;
+      color: var(--text-sub);
+      line-height: 1.5;
+    }
+
+    .agree-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text-sub);
+    }
+
+    .agree-row input[type="checkbox"] {
+      width: 15px;
+      height: 15px;
+      accent-color: var(--amber);
+      cursor: pointer;
+    }
+
+    .agree-row a {
+      color: #2563eb;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .agree-row a:hover {
+      text-decoration: underline;
+    }
+
+    /* Security Banner */
+    .security-bar {
+      background: var(--surface);
+      border: 1px solid #edf2f7;
+      border-radius: var(--radius-md);
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      box-shadow: var(--shadow-card);
+      flex-wrap: wrap;
+    }
+
+    .security-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-sub);
+    }
+
+    .payment-brands {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-chip {
+      height: 22px;
+      padding: 0 7px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background: #fff;
+      font-size: 10px;
+      font-weight: 800;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .chip-visa { color: #1d4ed8; }
+    .chip-mc { color: #ea580c; }
+    .chip-jcb { background: #1e40af; color: #fff; border-color: #1e40af; }
+    .chip-momo { color: #be185d; }
+
+    /* Order Summary */
+    .summary-card {
+      background: var(--surface);
+      border: 1px solid #edf2f7;
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      box-shadow: var(--shadow-card);
+    }
+
+    .car-preview {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      padding-bottom: 14px;
+      border-bottom: 1px solid #f1f5f9;
+      margin-bottom: 14px;
+    }
+
+    .car-thumb {
+      width: 118px;
+      height: 76px;
+      border-radius: var(--radius-sm);
+      object-fit: cover;
+      background: #e2e8f0;
+      flex-shrink: 0;
+    }
+
+    .car-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 3px;
+    }
+
+    .car-meta {
+      font-size: 12px;
+      color: var(--text-sub);
+    }
+
+    .trip-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid #f1f5f9;
+      margin-bottom: 14px;
+      font-size: 12px;
+      color: var(--text-sub);
+    }
+
+    .trip-line {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .price-rows {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid #f1f5f9;
+      margin-bottom: 14px;
+      font-size: 12.5px;
+    }
+
+    .price-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--text-sub);
+    }
+
+    .price-row strong {
+      color: var(--text-main);
+      font-weight: 600;
+    }
+
+    .free-text {
+      color: var(--green);
+      font-weight: 700;
+    }
+
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 16px;
+    }
+
+    .total-label {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .total-value {
+      font-size: 21px;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+
+    .cta-btn {
+      width: 100%;
+      height: 44px;
+      border: none;
+      border-radius: var(--radius-sm);
+      background: var(--amber-bright);
+      color: var(--text-main);
+      font-size: 13.5px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.15s ease, transform 0.08s ease;
+    }
+
+    .cta-btn:hover {
+      background: var(--amber);
+      color: #fff;
+    }
+
+    .cta-btn:active {
+      transform: scale(0.99);
+    }
+
+    .feedback-msg {
+      margin-top: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      display: none;
+    }
+
+    .feedback-msg.error {
+      display: block;
+      color: var(--danger);
+    }
+
+    .feedback-msg.success {
+      display: block;
+      color: var(--green);
+    }
+
+    /* Subtle car silhouette watermark at bottom right */
+    .bg-car-watermark {
+      position: absolute;
+      right: -24px;
+      bottom: -18px;
+      width: 280px;
+      height: 110px;
+      opacity: 0.06;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    @media (max-width: 960px) {
+      .checkout-main {
+        grid-template-columns: 1fr;
+      }
+      .nav-links {
+        display: none;
+      }
+    }
+
+    @media (max-width: 600px) {
+      body { padding: 8px; }
+      .rental-grid { grid-template-columns: 1fr; }
+      .method-grid { grid-template-columns: repeat(2, 1fr); }
+      .card-row-bottom { grid-template-columns: 1fr; }
+      .step-line { width: 32px; }
+    }
+  </style>
 </head>
 <body>
-    <div class="payment-container">
-        <h1>Thanh toán đơn thuê xe #{{ order_id }}</h1>
-        <p class="amount">Số tiền cần thanh toán: <strong>{{ amount }}</strong></p>
+  <div class="page-shell">
+    <!-- Topbar -->
+    <header class="topbar">
+      <a href="/" class="brand-logo">Group<span>12</span></a>
 
-        {% if message %}
-            <div class="alert success">{{ message }}</div>
-        {% endif %}
+      <ul class="nav-links">
+        <li><a href="#about">ABOUT US</a></li>
+        <li><a href="#vehicles">VEHICLE LIST ▾</a></li>
+        <li><a href="#rental">CAR RENTAL ▾</a></li>
+        <li><a href="#contact">CONTACT</a></li>
+      </ul>
 
-        {% if error %}
-            <div class="alert error">{{ error }}</div>
-        {% endif %}
+      <div class="topbar-right">
+        <div class="search-box">
+          <input type="text" placeholder="Search..." aria-label="Search" />
+          <span class="search-icon">🔍</span>
+        </div>
 
-        <form method="POST" class="payment-form">
-            <div class="form-group">
-                <label>Chọn phương thức thanh toán:</label>
-                <label class="radio-option">
-                    <input type="radio" name="payment_method" value="cash_on_pickup" checked>
-                    Tiền mặt khi nhận xe
-                </label>
-                <label class="radio-option">
-                    <input type="radio" name="payment_method" value="online_sim">
-                    Trực tuyến (chế độ mô phỏng)
-                </label>
+        <button type="button" class="cart-btn" aria-label="Cart">
+          🛒
+          <span class="cart-badge">2</span>
+        </button>
+
+        <div class="user-pill">
+          <span class="user-avatar">👤</span>
+          <span class="user-tag">Group 12</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Stepper -->
+    <nav class="stepper" aria-label="Checkout progress">
+      <div class="step done">
+        <span class="step-circle">✓</span>
+        <span>Cart</span>
+      </div>
+      <div class="step-line done"></div>
+      <div class="step active">
+        <span class="step-circle">2</span>
+        <span>Checkout</span>
+      </div>
+      <div class="step-line"></div>
+      <div class="step">
+        <span class="step-circle">3</span>
+        <span>Payment</span>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <form id="checkoutForm" class="checkout-main" novalidate>
+      <!-- Left Column -->
+      <div class="left-stack">
+        <!-- Rental Information -->
+        <section class="card">
+          <h2 class="card-title">👤 Rental Information</h2>
+
+          <div class="rental-grid">
+            <div class="field-box">
+              <label class="field-label" for="pickupDate">📅 Pickup Date</label>
+              <input id="pickupDate" type="date" class="field-control" value="2025-04-17" />
             </div>
 
-            <div class="form-group">
-                <label for="sim_outcome">Kết quả mô phỏng (nếu chọn trực tuyến):</label>
-                <select id="sim_outcome" name="sim_outcome">
-                    <option value="success">Thành công (Success)</option>
-                    <option value="failed">Thất bại (Failed)</option>
-                </select>
+            <div class="field-box">
+              <label class="field-label" for="returnDate">📅 Return Date</label>
+              <input id="returnDate" type="date" class="field-control" value="2025-04-18" />
             </div>
 
-            <button type="submit" class="btn-submit">Xác nhận thanh toán</button>
-        </form>
-    </div>
+            <div class="field-box">
+              <label class="field-label" for="pickupLocation">📍 Pickup Location</label>
+              <select id="pickupLocation" class="field-control">
+                <option value="Tan Son Nhat Airport" selected>Tan Son Nhat Airport</option>
+                <option value="District 1 — Ben Thanh">District 1 — Ben Thanh</option>
+                <option value="Thu Duc City">Thu Duc City</option>
+              </select>
+            </div>
+
+            <div class="field-box">
+              <label class="field-label" for="returnLocation">📍 Return Location</label>
+              <select id="returnLocation" class="field-control">
+                <option value="Tan Son Nhat Airport" selected>Tan Son Nhat Airport</option>
+                <option value="District 1 — Ben Thanh">District 1 — Ben Thanh</option>
+                <option value="Thu Duc City">Thu Duc City</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        <!-- Payment Method -->
+        <section class="card">
+          <h2 class="card-title">💳 Payment Method</h2>
+
+          <div class="method-grid" id="paymentMethods">
+            <button type="button" class="method-card selected" data-method="card">
+              <span class="method-check">✓</span>
+              <span>💳</span>
+              <span>Credit / Debit Card</span>
+            </button>
+
+            <button type="button" class="method-card" data-method="ewallet">
+              <span class="method-check">✓</span>
+              <span>👛</span>
+              <span>E-Wallet</span>
+            </button>
+
+            <button type="button" class="method-card" data-method="bank">
+              <span class="method-check">✓</span>
+              <span>🏛️</span>
+              <span>Bank Transfer</span>
+            </button>
+
+            <button type="button" class="method-card" data-method="cod">
+              <span class="method-check">✓</span>
+              <span>💵</span>
+              <span>Cash on Delivery</span>
+            </button>
+          </div>
+
+          <!-- Card Input Panel -->
+          <div id="cardPanel" class="card-form-panel">
+            <div class="card-row-top">
+              <label class="sub-label" for="cardNumber">Card Number</label>
+              <div class="input-wrap">
+                <span>💳</span>
+                <input
+                  id="cardNumber"
+                  type="text"
+                  inputmode="numeric"
+                  maxlength="19"
+                  placeholder="1234 5678 9012 3456"
+                />
+              </div>
+            </div>
+
+            <div class="card-row-bottom">
+              <div>
+                <label class="sub-label" for="expiryDate">Expiry Date</label>
+                <div class="input-wrap">
+                  <span>📅</span>
+                  <input
+                    id="expiryDate"
+                    type="text"
+                    inputmode="numeric"
+                    maxlength="5"
+                    placeholder="MM / YY"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label class="sub-label" for="cvvCode">CVV</label>
+                <div class="input-wrap">
+                  <span>🔒</span>
+                  <input
+                    id="cvvCode"
+                    type="password"
+                    inputmode="numeric"
+                    maxlength="4"
+                    placeholder="123"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Alternative Method Panel -->
+          <div id="altPanel" class="card-form-panel" style="display: none;">
+            <p id="altDescription" class="alt-payment-note"></p>
+          </div>
+
+          <label class="agree-row">
+            <input type="checkbox" id="agreeTerms" checked />
+            <span>
+              I agree to the
+              <a href="#terms">Terms and Conditions</a>
+              and
+              <a href="#privacy">Privacy Policy</a>
+            </span>
+          </label>
+        </section>
+
+        <!-- Security Banner -->
+        <div class="security-bar">
+          <div class="security-left">
+            <span>🛡️</span>
+            <span>Your information is secure and protected.</span>
+          </div>
+          <div class="payment-brands">
+            <span class="brand-chip chip-visa">VISA</span>
+            <span class="brand-chip chip-mc">●●</span>
+            <span class="brand-chip chip-jcb">JCB</span>
+            <span class="brand-chip chip-momo">momo</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Order Summary -->
+      <aside class="summary-card">
+        <h2 class="card-title">📋 Order Summary</h2>
+
+        <div class="car-preview">
+          <img
+            class="car-thumb"
+            src="https://images.unsplash.com/photo-1619767886558-efdc259cde1a?auto=format&fit=crop&w=400&q=80"
+            alt="Toyota Vios"
+          />
+          <div>
+            <div class="car-name">Toyota Vios</div>
+            <div class="car-meta">4 seats • Automatic</div>
+          </div>
+        </div>
+
+        <div class="trip-meta">
+          <div class="trip-line">
+            <span>📅</span>
+            <span id="summaryDates">Apr 17 – Apr 18, 2025 (1 day)</span>
+          </div>
+          <div class="trip-line">
+            <span>📍</span>
+            <span id="summaryLocation">Tan Son Nhat Airport</span>
+          </div>
+        </div>
+
+        <div class="price-rows">
+          <div class="price-row">
+            <span id="rentalFeeLabel">Rental Fee (1 day)</span>
+            <strong id="rentalFeeValue">600.000đ</strong>
+          </div>
+          <div class="price-row">
+            <span>Service Fee <span title="Miễn phí dịch vụ đặt xe">ⓘ</span></span>
+            <span class="free-text">Free</span>
+          </div>
+        </div>
+
+        <div class="total-row">
+          <span class="total-label">Total Amount</span>
+          <span class="total-value" id="totalAmountValue">600.000đ</span>
+        </div>
+
+        <button type="submit" class="cta-btn">
+          <span>💳</span>
+          <span>Proceed to Payment →</span>
+        </button>
+
+        <div id="formFeedback" class="feedback-msg"></div>
+      </aside>
+    </form>
+
+    <!-- Watermark Car Silhouette -->
+    <svg class="bg-car-watermark" viewBox="0 0 320 120" fill="#0f172a">
+      <path d="M45 78 L66 44 C72 35 82 30 93 30 L186 30 C197 30 207 35 214 44 L244 54 L288 60 C298 62 305 70 305 80 L305 88 L272 88 A22 22 0 0 0 228 88 L108 88 A22 22 0 0 0 64 88 L20 88 L20 82 C20 79 32 78 45 78 Z" />
+      <circle cx="86" cy="88" r="16" />
+      <circle cx="250" cy="88" r="16" />
+    </svg>
+  </div>
+
+  <script>
+    const DAILY_RATE = 600000;
+
+    const pickupDateEl = document.getElementById("pickupDate");
+    const returnDateEl = document.getElementById("returnDate");
+    const pickupLocEl = document.getElementById("pickupLocation");
+
+    const summaryDatesEl = document.getElementById("summaryDates");
+    const summaryLocationEl = document.getElementById("summaryLocation");
+    const rentalFeeLabelEl = document.getElementById("rentalFeeLabel");
+    const rentalFeeValueEl = document.getElementById("rentalFeeValue");
+    const totalAmountValueEl = document.getElementById("totalAmountValue");
+
+    const methodButtons = document.querySelectorAll(".method-card");
+    const cardPanel = document.getElementById("cardPanel");
+    const altPanel = document.getElementById("altPanel");
+    const altDescription = document.getElementById("altDescription");
+
+    const cardNumberEl = document.getElementById("cardNumber");
+    const expiryDateEl = document.getElementById("expiryDate");
+    const agreeTermsEl = document.getElementById("agreeTerms");
+    const formEl = document.getElementById("checkoutForm");
+    const feedbackEl = document.getElementById("formFeedback");
+
+    let selectedMethod = "card";
+
+    function formatVND(amount) {
+      return amount.toLocaleString("vi-VN") + "đ";
+    }
+
+    function formatShortEnDate(dateStr) {
+      if (!dateStr) return "";
+      const [y, m, d] = dateStr.split("-").map(Number);
+      const dt = new Date(Date.UTC(y, m - 1, d));
+      return dt.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        timeZone: "UTC",
+      });
+    }
+
+    function updateSummary() {
+      const start = new Date(pickupDateEl.value + "T00:00:00");
+      const end = new Date(returnDateEl.value + "T00:00:00");
+
+      let days = 1;
+      if (!isNaN(start) && !isNaN(end)) {
+        const diffDays = Math.round((end - start) / (1000 * 60 * 60 * 24));
+        days = diffDays >= 1 ? diffDays : 1;
+        if (diffDays < 1) {
+          returnDateEl.value = pickupDateEl.value;
+        }
+      }
+
+      const startText = formatShortEnDate(pickupDateEl.value);
+      const endText = formatShortEnDate(returnDateEl.value);
+      const yearText = pickupDateEl.value ? pickupDateEl.value.slice(0, 4) : "2025";
+      const dayWord = days === 1 ? "1 day" : `${days} days`;
+
+      summaryDatesEl.textContent = `${startText} – ${endText}, ${yearText} (${dayWord})`;
+      summaryLocationEl.textContent = pickupLocEl.value;
+
+      const total = days * DAILY_RATE;
+      rentalFeeLabelEl.textContent = `Rental Fee (${dayWord})`;
+      rentalFeeValueEl.textContent = formatVND(total);
+      totalAmountValueEl.textContent = formatVND(total);
+    }
+
+    pickupDateEl.addEventListener("change", updateSummary);
+    returnDateEl.addEventListener("change", updateSummary);
+    pickupLocEl.addEventListener("change", updateSummary);
+
+    const methodNotes = {
+      ewallet: "Bạn sẽ được chuyển tới cổng ví điện tử (MoMo / ZaloPay) để xác nhận thanh toán ở bước kế tiếp.",
+      bank: "Thông tin chuyển khoản ngân hàng (Vietcombank / MB Bank) kèm mã đơn hàng sẽ hiển thị sau khi xác nhận.",
+      cod: "Thanh toán tiền mặt trực tiếp cho nhân viên giao xe tại địa điểm nhận xe.",
+    };
+
+    methodButtons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        methodButtons.forEach((b) => b.classList.remove("selected"));
+        btn.classList.add("selected");
+        selectedMethod = btn.dataset.method;
+
+        if (selectedMethod === "card") {
+          cardPanel.style.display = "block";
+          altPanel.style.display = "none";
+        } else {
+          cardPanel.style.display = "none";
+          altPanel.style.display = "block";
+          altDescription.textContent = methodNotes[selectedMethod] || "";
+        }
+      });
+    });
+
+    cardNumberEl.addEventListener("input", (e) => {
+      const digits = e.target.value.replace(/\D/g, "").slice(0, 16);
+      e.target.value = digits.replace(/(.{4})/g, "$1 ").trim();
+    });
+
+    expiryDateEl.addEventListener("input", (e) => {
+      const digits = e.target.value.replace(/\D/g, "").slice(0, 4);
+      if (digits.length >= 3) {
+        e.target.value = `${digits.slice(0, 2)} / ${digits.slice(2)}`;
+      } else {
+        e.target.value = digits;
+      }
+    });
+
+    formEl.addEventListener("submit", (e) => {
+      e.preventDefault();
+      feedbackEl.className = "feedback-msg";
+
+      if (!agreeTermsEl.checked) {
+        feedbackEl.textContent = "Vui lòng tick đồng ý Terms and Conditions và Privacy Policy.";
+        feedbackEl.classList.add("error");
+        return;
+      }
+
+      if (selectedMethod === "card") {
+        const rawCard = cardNumberEl.value.replace(/\s+/g, "");
+        if (rawCard.length < 12) {
+          feedbackEl.textContent = "Vui lòng nhập số thẻ hợp lệ trước khi tiếp tục.";
+          feedbackEl.classList.add("error");
+          cardNumberEl.focus();
+          return;
+        }
+      }
+
+      feedbackEl.textContent = `Đã xác nhận thông tin (${selectedMethod.toUpperCase()}) — chuyển sang bước thanh toán...`;
+      feedbackEl.classList.add("success");
+    });
+
+    updateSummary();
+  </script>
 </body>
 </html>

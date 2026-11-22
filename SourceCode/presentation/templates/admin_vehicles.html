@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vehicle Management — Group 12</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Inter", "Segoe UI", -apple-system, Arial, sans-serif;
+      background: #e9eef3;
+      color: #1e293b;
+      padding: 24px;
+      min-height: 100vh;
+    }
+    .app-frame {
+      max-width: 1280px;
+      margin: 0 auto;
+      background: #f5f7fa;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+      display: flex;
+      min-height: 780px;
+    }
+    .sidebar {
+      width: 228px;
+      background: #ffffff;
+      border-right: 1px solid #edf2f7;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .logo-wrap {
+      height: 76px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .logo-mark { font-size: 24px; font-weight: 900; letter-spacing: -0.6px; color: #0f172a; }
+    .logo-mark span { color: #f59e0b; font-style: italic; }
+    .nav-menu { padding: 16px 0; display: flex; flex-direction: column; gap: 4px; }
+    .nav-link {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 22px;
+      text-decoration: none;
+      color: #475569;
+      font-size: 13.5px;
+      font-weight: 500;
+    }
+    .nav-link:hover { background: #f8fafc; color: #0f172a; }
+    .nav-link.active { background: #fef9e7; color: #0f172a; font-weight: 600; }
+    .nav-link.active::before {
+      content: "";
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 4px;
+      background: #f59e0b;
+    }
+    .main-col { flex: 1; min-width: 0; display: flex; flex-direction: column; background: #f5f7fa; }
+    .topbar {
+      height: 76px;
+      background: #ffffff;
+      border-bottom: 1px solid #edf2f7;
+      padding: 0 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .topbar-title { font-size: 22px; font-weight: 700; color: #0f172a; }
+    .topbar-right { display: flex; align-items: center; gap: 20px; }
+    .search-input {
+      width: 260px; height: 36px; padding: 0 14px;
+      border-radius: 999px; border: 1px solid #e2e8f0;
+      background: #f8fafc; font-size: 12.5px; color: #1e293b; outline: none;
+    }
+    .search-input:focus { background: #ffffff; border-color: #f59e0b; }
+    .profile-box { display: flex; align-items: center; gap: 10px; }
+    .profile-avatar {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: #1e293b; color: #ffffff; font-size: 12px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .profile-name { font-size: 13px; font-weight: 600; color: #0f172a; }
+    .profile-sub { font-size: 11px; color: #64748b; }
+    .workspace { padding: 22px 28px 30px; display: flex; flex-direction: column; gap: 18px; }
+    .notice { padding: 11px 16px; border-radius: 10px; font-size: 13px; font-weight: 500; }
+    .notice-ok { background: #dcfce7; color: #15803d; }
+    .notice-err { background: #fee2e2; color: #b91c1c; }
+    .stats-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+    .box-card { background: #ffffff; border: 1px solid #edf2f7; border-radius: 12px; }
+    .stat-box { padding: 18px 20px; display: flex; align-items: flex-start; gap: 12px; }
+    .stat-circle {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: #fef3c7; color: #d97706;
+      display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; flex-shrink: 0;
+    }
+    .stat-title { font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 6px; }
+    .stat-figure { font-size: 28px; font-weight: 700; color: #0f172a; line-height: 1.1; margin-bottom: 6px; }
+    .stat-hint { font-size: 11.5px; color: #16a34a; }
+    .two-col { display: grid; grid-template-columns: 1fr 1.4fr; gap: 18px; }
+    .card-pad { padding: 18px 20px; }
+    .card-heading { font-size: 15.5px; font-weight: 700; color: #0f172a; margin-bottom: 14px; }
+    .form-col { display: flex; flex-direction: column; gap: 10px; }
+    .form-flex { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .ctrl-input, .ctrl-select {
+      height: 35px; padding: 0 11px; border: 1px solid #e2e8f0; border-radius: 8px;
+      background: #ffffff; color: #1e293b; font-size: 12.5px; outline: none;
+    }
+    .ctrl-input:focus, .ctrl-select:focus { border-color: #f59e0b; }
+    .btn-act {
+      height: 35px; padding: 0 14px; border-radius: 8px; border: none;
+      font-size: 12.5px; font-weight: 600; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .btn-main { background: #f59e0b; color: #ffffff; }
+    .btn-main:hover { background: #e59008; }
+    .btn-sub { background: #f8fafc; color: #334155; border: 1px solid #e2e8f0; }
+    .btn-sub:hover { background: #f1f5f9; }
+    .btn-rm { background: #fee2e2; color: #dc2626; }
+    .btn-rm:hover { background: #fecaca; }
+    .btn-mini { height: 28px; padding: 0 9px; font-size: 11.5px; border-radius: 6px; }
+    .type-list-clean { list-style: none; margin-top: 12px; display: flex; flex-direction: column; gap: 7px; }
+    .type-item-clean {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      padding: 7px 11px; border-radius: 8px; background: #f8fafc; border: 1px solid #eef2f6; font-size: 12.5px;
+    }
+    .type-subtext { color: #64748b; font-size: 12px; }
+    .tbl-scroll { overflow-x: auto; }
+    table.figma-tbl { width: 100%; border-collapse: collapse; }
+    table.figma-tbl th {
+      background: #f1f5f9; color: #1e293b; font-size: 12px; font-weight: 600;
+      text-align: left; padding: 11px 14px; white-space: nowrap;
+    }
+    table.figma-tbl td {
+      padding: 12px 14px; font-size: 12.5px; color: #334155;
+      border-bottom: 1px solid #f1f5f9; vertical-align: middle; white-space: nowrap;
+    }
+    .st-badge { display: inline-block; padding: 3px 9px; border-radius: 6px; font-size: 11.5px; font-weight: 600; }
+    .st-available { background: #dcfce7; color: #15803d; }
+    .st-rented { background: #dbeafe; color: #1d4ed8; }
+    .st-maintenance { background: #fef3c7; color: #b45309; }
+    .st-returned { background: #f3e8ff; color: #7e22ce; }
+    .st-cancelled { background: #fee2e2; color: #dc2626; }
+    .row-inline { display: inline-flex; align-items: center; gap: 6px; }
+    .modal-bg {
+      display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.42);
+      align-items: center; justify-content: center; padding: 16px; z-index: 60;
+    }
+    .modal-bg.show { display: flex; }
+    .modal-panel { width: 100%; max-width: 460px; background: #ffffff; border-radius: 12px; padding: 20px; }
+    .modal-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .modal-grp { display: flex; flex-direction: column; gap: 5px; margin-bottom: 11px; }
+    .modal-grp label { font-size: 12px; font-weight: 600; color: #334155; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+    @media (max-width: 980px) {
+      body { padding: 0; }
+      .app-frame { border-radius: 0; }
+      .stats-row, .two-col { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .search-input { width: 160px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-frame">
+    <aside class="sidebar">
+      <div class="logo-wrap"><div class="logo-mark">Group<span>12</span></div></div>
+      <nav class="nav-menu">
+        <a href="/dashboard" class="nav-link">Home</a>
+        <a href="/admin/vehicles" class="nav-link active">Vehicle Management</a>
+        <a href="/admin/users" class="nav-link">User Management</a>
+        <a href="/admin/orders" class="nav-link">Rental Orders</a>
+        <a href="/admin/reports" class="nav-link">Reports</a>
+      </nav>
+    </aside>
+
+    <div class="main-col">
+      <header class="topbar">
+        <div class="topbar-title">Vehicle Management</div>
+        <div class="topbar-right">
+          <input type="text" id="searchBox" class="search-input" placeholder="Search vehicles, rental orders, users...">
+          <div class="profile-box">
+            <div class="profile-avatar">A</div>
+            <div>
+              <div class="profile-name">Admin</div>
+              <div class="profile-sub">Administrator</div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="workspace">
+        {% if message %}
+          <div class="notice notice-ok">{{ message }}</div>
+        {% endif %}
+        {% if error %}
+          <div class="notice notice-err">{{ error }}</div>
+        {% endif %}
+
+        <section class="stats-row">
+          <div class="box-card stat-box">
+            <div class="stat-circle">▣</div>
+            <div>
+              <div class="stat-title">Total Vehicles</div>
+              <div class="stat-figure">{{ vehicles|length }}</div>
+              <div class="stat-hint">↑ {{ vehicles|length }} vehicles in system</div>
+            </div>
+          </div>
+          <div class="box-card stat-box">
+            <div class="stat-circle">▤</div>
+            <div>
+              <div class="stat-title">Vehicle Types</div>
+              <div class="stat-figure">{{ vehicle_types|length }}</div>
+              <div class="stat-hint">↑ {{ vehicle_types|length }} types available</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="two-col">
+          <div class="box-card card-pad">
+            <div class="card-heading">Vehicle Types</div>
+            <form action="/admin/vehicle-types/add" method="post" class="form-col">
+              <div class="form-flex">
+                <input type="text" name="name" class="ctrl-input" placeholder="Type name (e.g. Sedan)" required style="flex: 1; min-width: 120px;">
+                <input type="text" name="description" class="ctrl-input" placeholder="Description" style="flex: 1; min-width: 110px;">
+                <button type="submit" class="btn-act btn-main">Add Type</button>
+              </div>
+            </form>
+
+            <ul class="type-list-clean">
+              {% for t in vehicle_types %}
+                <li class="type-item-clean">
+                  <div>
+                    <strong>{{ t.name }}</strong>
+                    {% if t.description %}
+                      <span class="type-subtext">— {{ t.description }}</span>
+                    {% endif %}
+                  </div>
+                  <form action="/admin/vehicle-types/{{ t.id }}/delete" method="post">
+                    <button type="submit" class="btn-act btn-rm btn-mini">Delete</button>
+                  </form>
+                </li>
+              {% else %}
+                <li class="type-subtext">No vehicle types yet.</li>
+              {% endfor %}
+            </ul>
+          </div>
+
+          <div class="box-card card-pad">
+            <div class="card-heading">Add New Vehicle</div>
+            <form action="/admin/vehicles/add" method="post" class="form-col">
+              <div class="form-flex">
+                <input type="text" name="name" class="ctrl-input" placeholder="Vehicle name" required style="flex: 1.4; min-width: 140px;">
+                <input type="text" name="license_plate" class="ctrl-input" placeholder="Code / Plate" required style="flex: 1; min-width: 110px;">
+                <input type="number" name="seats" class="ctrl-input" min="1" value="4" placeholder="Seats" required style="width: 76px;">
+              </div>
+              <div class="form-flex">
+                <select name="type_id" class="ctrl-select" required style="flex: 1; min-width: 125px;">
+                  {% for t in vehicle_types %}
+                    <option value="{{ t.id }}">{{ t.name }}</option>
+                  {% endfor %}
+                </select>
+                <input type="number" step="0.01" name="daily_price" class="ctrl-input" placeholder="Price / day" required style="width: 130px;">
+                <select name="status" class="ctrl-select" style="width: 160px;">
+                  {% for st in statuses %}
+                    <option value="{{ st }}">{{ st }}</option>
+                  {% endfor %}
+                </select>
+                <button type="submit" class="btn-act btn-main">Add Vehicle</button>
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <section class="box-card card-pad">
+          <div class="card-heading">Vehicles List</div>
+          <div class="tbl-scroll">
+            <table class="figma-tbl" id="fleetTable">
+              <thead>
+                <tr>
+                  <th>Vehicle ID</th>
+                  <th>Vehicle Name</th>
+                  <th>Code / Plate</th>
+                  <th>Seats</th>
+                  <th>Type</th>
+                  <th>Price / Day</th>
+                  <th>Status</th>
+                  <th>Update Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for v in vehicles %}
+                  <tr class="fleet-row">
+                    <td>#{{ v.id }}</td>
+                    <td>{{ v.name }}</td>
+                    <td>{{ v.license_plate }}</td>
+                    <td>{{ v.seats }}</td>
+                    <td>{{ v.type_name or '-' }}</td>
+                    <td>{{ v.daily_price }}</td>
+                    <td>
+                      {% if v.status == 'Available' %}
+                        <span class="st-badge st-available">{{ v.status }}</span>
+                      {% elif v.status == 'Rented' %}
+                        <span class="st-badge st-rented">{{ v.status }}</span>
+                      {% else %}
+                        <span class="st-badge st-maintenance">{{ v.status }}</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      <form action="/admin/vehicles/{{ v.id }}/status" method="post" class="row-inline">
+                        <select name="status" class="ctrl-select btn-mini">
+                          {% for st in statuses %}
+                            <option value="{{ st }}" {% if v.status == st %}selected{% endif %}>{{ st }}</option>
+                          {% endfor %}
+                        </select>
+                        <button type="submit" class="btn-act btn-sub btn-mini">Save</button>
+                      </form>
+                    </td>
+                    <td>
+                      <div class="row-inline">
+                        <button
+                          type="button"
+                          class="btn-act btn-sub btn-mini open-edit"
+                          data-id="{{ v.id }}"
+                          data-name="{{ v.name }}"
+                          data-plate="{{ v.license_plate }}"
+                          data-seats="{{ v.seats }}"
+                          data-type-id="{{ v.type_id }}"
+                          data-price="{{ v.daily_price }}"
+                          data-status="{{ v.status }}"
+                        >Edit</button>
+                        <form action="/admin/vehicles/{{ v.id }}/delete" method="post">
+                          <button type="submit" class="btn-act btn-rm btn-mini">Delete</button>
+                        </form>
+                      </div>
+                    </td>
+                  </tr>
+                {% else %}
+                  <tr>
+                    <td colspan="9" style="text-align: center; color: #64748b; padding: 22px;">
+                      No vehicles found.
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="box-card card-pad">
+          <div class="card-heading">Revenue Over the Last 7 Days</div>
+          <svg viewBox="0 0 820 210" style="width: 100%; height: 210px; display: block;">
+            <defs>
+              <linearGradient id="revFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.22"/>
+                <stop offset="100%" stop-color="#f59e0b" stop-opacity="0.01"/>
+              </linearGradient>
+            </defs>
+            <text x="12" y="34" fill="#475569" font-size="11" font-weight="600">40M</text>
+            <line x1="46" y1="30" x2="795" y2="30" stroke="#f1f5f9" stroke-width="1"/>
+            <text x="12" y="72" fill="#475569" font-size="11" font-weight="600">30M</text>
+            <line x1="46" y1="68" x2="795" y2="68" stroke="#f1f5f9" stroke-width="1"/>
+            <text x="12" y="110" fill="#475569" font-size="11" font-weight="600">20M</text>
+            <line x1="46" y1="106" x2="795" y2="106" stroke="#f1f5f9" stroke-width="1"/>
+            <text x="12" y="148" fill="#475569" font-size="11" font-weight="600">10M</text>
+            <line x1="46" y1="144" x2="795" y2="144" stroke="#f1f5f9" stroke-width="1"/>
+            <text x="24" y="176" fill="#475569" font-size="11" font-weight="600">0</text>
+            <line x1="46" y1="172" x2="795" y2="172" stroke="#e2e8f0" stroke-width="1"/>
+            <line x1="46" y1="30" x2="46" y2="172" stroke="#eef2f6" stroke-width="1"/>
+            <path d="M 65 144 C 130 112, 165 118, 190 118 C 245 118, 275 130, 315 125 C 365 118, 395 96, 440 96 C 495 96, 525 108, 565 108 C 615 108, 645 92, 690 82 C 735 72, 765 62, 785 56 L 785 172 L 65 172 Z" fill="url(#revFill)"/>
+            <path d="M 65 144 C 130 112, 165 118, 190 118 C 245 118, 275 130, 315 125 C 365 118, 395 96, 440 96 C 495 96, 525 108, 565 108 C 615 108, 645 92, 690 82 C 735 72, 765 62, 785 56" fill="none" stroke="#f59e0b" stroke-width="2.2"/>
+            <circle cx="65" cy="144" r="3.8" fill="#f59e0b"/>
+            <circle cx="190" cy="118" r="3.8" fill="#f59e0b"/>
+            <circle cx="315" cy="125" r="3.8" fill="#f59e0b"/>
+            <circle cx="440" cy="96" r="3.8" fill="#f59e0b"/>
+            <circle cx="565" cy="108" r="3.8" fill="#f59e0b"/>
+            <circle cx="690" cy="82" r="3.8" fill="#f59e0b"/>
+            <circle cx="785" cy="56" r="4.2" fill="#f59e0b"/>
+            <text x="65" y="194" text-anchor="middle" fill="#475569" font-size="11">07/10</text>
+            <text x="190" y="194" text-anchor="middle" fill="#475569" font-size="11">08/10</text>
+            <text x="315" y="194" text-anchor="middle" fill="#475569" font-size="11">09/10</text>
+            <text x="440" y="194" text-anchor="middle" fill="#475569" font-size="11">10/10</text>
+            <text x="565" y="194" text-anchor="middle" fill="#475569" font-size="11">11/10</text>
+            <text x="690" y="194" text-anchor="middle" fill="#475569" font-size="11">12/10</text>
+            <text x="785" y="194" text-anchor="middle" fill="#475569" font-size="11">13/10</text>
+          </svg>
+        </section>
+
+        <section class="box-card card-pad">
+          <div class="card-heading">Recent Rental Orders</div>
+          <div class="tbl-scroll">
+            <table class="figma-tbl">
+              <thead>
+                <tr>
+                  <th>Order ID</th>
+                  <th>Customer</th>
+                  <th>Rented Vehicle</th>
+                  <th>Pickup Date</th>
+                  <th>Return Date</th>
+                  <th>Total Amount</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>DH00123</td>
+                  <td>Nguyễn Văn A</td>
+                  <td>Toyota Vios</td>
+                  <td>13/10/2025</td>
+                  <td>16/10/2025</td>
+                  <td>3,600,000 VND</td>
+                  <td><span class="st-badge st-rented">New</span></td>
+                  <td>···</td>
+                </tr>
+                <tr>
+                  <td>DH00122</td>
+                  <td>Trần Thị B</td>
+                  <td>Hyundai Accent</td>
+                  <td>12/10/2025</td>
+                  <td>15/10/2025</td>
+                  <td>4,200,000 VND</td>
+                  <td><span class="st-badge st-available">Confirmed</span></td>
+                  <td>···</td>
+                </tr>
+                <tr>
+                  <td>DH00121</td>
+                  <td>Lê Văn C</td>
+                  <td>Kia Seltos</td>
+                  <td>11/10/2025</td>
+                  <td>14/10/2025</td>
+                  <td>5,800,000 VND</td>
+                  <td><span class="st-badge st-maintenance">Car delivered</span></td>
+                  <td>···</td>
+                </tr>
+                <tr>
+                  <td>DH00120</td>
+                  <td>Phạm Thị D</td>
+                  <td>Mazda 3</td>
+                  <td>10/10/2025</td>
+                  <td>13/10/2025</td>
+                  <td>4,500,000 VND</td>
+                  <td><span class="st-badge st-returned">Returned</span></td>
+                  <td>···</td>
+                </tr>
+                <tr>
+                  <td>DH00119</td>
+                  <td>Hoàng Văn E</td>
+                  <td>Ford Ranger</td>
+                  <td>09/10/2025</td>
+                  <td>12/10/2025</td>
+                  <td>7,200,000 VND</td>
+                  <td><span class="st-badge st-cancelled">Cancelled</span></td>
+                  <td>···</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div id="editBox" class="modal-bg" aria-hidden="true">
+    <div class="modal-panel">
+      <div class="modal-top">
+        <div class="card-heading" style="margin-bottom: 0;">Edit Vehicle</div>
+        <button type="button" id="closeEditX" class="btn-act btn-sub btn-mini">✕</button>
+      </div>
+      <form id="editForm" method="post">
+        <div class="modal-grp">
+          <label for="fName">Vehicle Name</label>
+          <input type="text" id="fName" name="name" class="ctrl-input" required>
+        </div>
+        <div class="form-flex" style="margin-bottom: 11px;">
+          <div class="modal-grp" style="flex: 1; margin-bottom: 0;">
+            <label for="fPlate">Code / Plate</label>
+            <input type="text" id="fPlate" name="license_plate" class="ctrl-input" required>
+          </div>
+          <div class="modal-grp" style="width: 90px; margin-bottom: 0;">
+            <label for="fSeats">Seats</label>
+            <input type="number" id="fSeats" name="seats" min="1" class="ctrl-input" required>
+          </div>
+        </div>
+        <div class="form-flex" style="margin-bottom: 11px;">
+          <div class="modal-grp" style="flex: 1; margin-bottom: 0;">
+            <label for="fType">Type</label>
+            <select id="fType" name="type_id" class="ctrl-select" required>
+              {% for t in vehicle_types %}
+                <option value="{{ t.id }}">{{ t.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="modal-grp" style="flex: 1; margin-bottom: 0;">
+            <label for="fPrice">Price / Day</label>
+            <input type="number" step="0.01" id="fPrice" name="daily_price" class="ctrl-input" required>
+          </div>
+        </div>
+        <div class="modal-grp">
+          <label for="fStatus">Status</label>
+          <select id="fStatus" name="status" class="ctrl-select">
+            {% for st in statuses %}
+              <option value="{{ st }}">{{ st }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button type="button" id="cancelEditBtn" class="btn-act btn-sub">Cancel</button>
+          <button type="submit" class="btn-act btn-main">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const searchEl = document.getElementById("searchBox");
+    if (searchEl) {
+      searchEl.addEventListener("input", function () {
+        const kw = this.value.trim().toLowerCase();
+        document.querySelectorAll("#fleetTable tbody tr.fleet-row").forEach((tr) => {
+          tr.style.display = tr.textContent.toLowerCase().includes(kw) ? "" : "none";
+        });
+      });
+    }
+
+    const editBox = document.getElementById("editBox");
+    const editForm = document.getElementById("editForm");
+
+    function hideEditModal() {
+      editBox.classList.remove("show");
+    }
+
+    document.querySelectorAll(".open-edit").forEach((btn) => {
+      btn.addEventListener("click", function () {
+        editForm.action = `/admin/vehicles/${this.dataset.id}/edit`;
+        document.getElementById("fName").value = this.dataset.name || "";
+        document.getElementById("fPlate").value = this.dataset.plate || "";
+        document.getElementById("fSeats").value = this.dataset.seats || 4;
+        document.getElementById("fType").value = this.dataset.typeId || "";
+        document.getElementById("fPrice").value = this.dataset.price || "";
+        document.getElementById("fStatus").value = this.dataset.status || "Available";
+        editBox.classList.add("show");
+      });
+    });
+
+    document.getElementById("closeEditX").addEventListener("click", hideEditModal);
+    document.getElementById("cancelEditBtn").addEventListener("click", hideEditModal);
+    editBox.addEventListener("click", function (e) {
+      if (e.target === editBox) hideEditModal();
+    });
+  </script>
+</body>
+</html>

@@ -1,211 +1,244 @@
+import inspect
 import os
-from data.user_repository import find_user_by_email
-from flask import Flask, render_template, request, redirect, url_for, session
-from business.auth_service import register_user, login_user
-from dotenv import load_dotenv
-load_dotenv()
-from business.password_reset_service import (
-    create_token_for_email,
-    verify_reset_token,
-    reset_password_with_token,
-)
-from business.reset_email import send_reset_email
-from business.payment_service import process_payment
-from business.order_service import list_orders_for_admin, change_order_status
-from data.order_repository import get_order_by_id
+from urllib.parse import quote
+from flask import Flask, redirect, render_template, request, session, url_for
 
-app = Flask(
-    __name__,
-    template_folder="presentation/templates",
-    static_folder="presentation/static"
-)
-app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key-group12")
+import business.vehicle_service as vehicle_service
+import data.vehicle_repository as vehicle_repository  # noqa: F401
 
 
-@app.route("/login", methods=["GET", "POST"])
-def login():
-    if request.method == "POST":
-        email = request.form.get("email", "")
-        password = request.form.get("password", "")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+TEMPLATE_DIR = os.path.join(BASE_DIR, "presentation", "templates")
 
-        success, message, user = login_user(email, password)
+app = Flask(__name__, template_folder=TEMPLATE_DIR)
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "group12-car-rental-secret-key")
 
-        if success:
-            session.clear()
-            session["user_id"] = user["UserID"]
-            session["full_name"] = user["fullName"]
-            session["role"] = user["role"]
-
-            return redirect(url_for("dashboard"))
-
-        return render_template("login.html", error=message)
-
-    return render_template("login.html")
+ALLOWED_STATUSES = ["Available", "Rented", "Under maintenance"]
 
 
-@app.route("/signup", methods=["GET", "POST"])
-def signup():
-    if request.method == "POST":
-        full_name = request.form.get("full_name", "")
-        email = request.form.get("email", "")
-        password = request.form.get("password", "")
-        phone = request.form.get("phone", "").strip()
-        confirm_password = request.form.get("confirm_password", "")
-
-        if password != confirm_password:
-            return render_template(
-                "signup.html",
-                error="Mật khẩu xác nhận không khớp."
-            )
-
-        if request.form.get("agree_terms") != "on":
-            return render_template(
-                "signup.html",
-                error="Vui lòng đồng ý với điều khoản."
-            )
-
-        success, message = register_user(
-            full_name, phone, email, password
-        )
-
-        if success:
-            return redirect(url_for("login"))
-
-        return render_template("signup.html", error=message)
-
-    return render_template("signup.html")
+def _get_role() -> str:
+    return (session.get("role") or "ADMIN").upper()
 
 
-@app.route("/forgot-password", methods=["GET", "POST"])
-def forgot_password():
-    if request.method == "POST":
-        email = request.form.get("email", "").strip().lower()
-
-        user = find_user_by_email(email)
-
-        if not user:
-            return render_template(
-                "forgot_password.html",
-                error="This email does not exist."
-            )
-
-        try:
-            token = create_token_for_email(email)
-
-            reset_url = url_for(
-                "reset_password",
-                token=token,
-                _external=True
-            )
-
-            send_reset_email(email, reset_url)
-
-            message = (
-                "If this email is registered, a password reset link "
-                "will be sent. Please check your inbox."
-            )
-
-            return render_template(
-                "forgot_password.html",
-                message=message
-            )
-
-        except Exception:
-            app.logger.exception("Password reset email failed")
-
-            return render_template(
-                "forgot_password.html",
-                error="Unable to send reset email. Please try again."
-            )
-
-    return render_template("forgot_password.html")
+def _is_admin() -> bool:
+    return _get_role() == "ADMIN"
 
 
-@app.route("/reset-password/<token>", methods=["GET", "POST"])
-def reset_password(token):
-    if verify_reset_token(token) is None:
-        return render_template(
-            "reset_password.html",
-            error="This reset link is invalid, expired, or already used."
-        ), 400
+def _redirect_vehicles(message: str = None, error: str = None):
+    if message:
+        return redirect(f"/admin/vehicles?message={quote(str(message))}")
+    if error:
+        return redirect(f"/admin/vehicles?error={quote(str(error))}")
+    return redirect("/admin/vehicles")
 
-    if request.method == "POST":
-        success, message = reset_password_with_token(
-            token,
-            request.form.get("password", ""),
-            request.form.get("confirm_password", "")
-        )
 
-        if success:
-            return render_template(
-                "reset_password.html",
-                message=message
-            )
+def _invoke(func_name: str, role: str, payload: dict = None, extra_args: list = None):
+    fn = getattr(vehicle_service, func_name, None)
+    if fn is None:
+        return False, f"Thiếu hàm '{func_name}' trong business/vehicle_service.py"
 
-        return render_template(
-            "reset_password.html",
-            error=message
-        ), 400
+    extra_args = extra_args or []
+    sig = inspect.signature(fn)
+    params = [
+        p for p in sig.parameters.values()
+        if p.kind in (p.POSITIONAL_ONLY, p.POSITIONAL_OR_KEYWORD)
+    ]
 
-    return render_template("reset_password.html")
+    if payload is None:
+        return fn(role, *extra_args)
+
+    if len(params) == 2 and not extra_args:
+        return fn(role, payload)
+
+    ordered_keys = [
+        "name",
+        "license_plate",
+        "seats",
+        "type_id",
+        "daily_price",
+        "status",
+    ]
+    kw = {}
+    for p in params[1:]:
+        if p.name in payload:
+            kw[p.name] = payload[p.name]
+        elif p.name in ("vehicle_id", "id") and extra_args:
+            kw[p.name] = extra_args[0]
+
+    if kw and len(kw) == len(params) - 1:
+        return fn(role, **kw)
+
+    positional_vals = [payload.get(k) for k in ordered_keys if k in payload]
+    if extra_args:
+        return fn(role, extra_args[0], *positional_vals)
+    return fn(role, *positional_vals)
+
+
+def _load_fleet_data():
+    role = _get_role()
+    fn = getattr(vehicle_service, "list_admin_vehicle_data", None)
+    if fn is None:
+        return False, "Thiếu hàm 'list_admin_vehicle_data' trong business/vehicle_service.py", [], []
+
+    result = fn(role)
+    if isinstance(result, tuple):
+        if len(result) == 4:
+            ok, err, vehicles, vehicle_types = result
+            return bool(ok), err, vehicles or [], vehicle_types or []
+        if len(result) == 2:
+            data, err = result
+            if isinstance(data, dict):
+                return True, err, data.get("vehicles") or [], data.get("vehicle_types") or []
+    return False, "Dữ liệu trả về từ list_admin_vehicle_data không hợp lệ.", [], []
+
+
+@app.route("/")
+def index():
+    return redirect("/dashboard")
 
 
 @app.route("/dashboard")
 def dashboard():
-    if "user_id" not in session:
-        return redirect(url_for("login"))
+    if not _is_admin():
+        return "Forbidden: Admin role required.", 403
 
-    return f"Welcome, {session['full_name']}! Login successful."
-
-
-@app.route("/payment/<int:order_id>", methods=["GET", "POST"])
-def payment_checkout(order_id):
-    order = get_order_by_id(order_id)
-    amount = order["totalPrice"] if order else 0
-
-    if request.method == "POST":
-        method = request.form.get("payment_method", "")
-        sim_outcome = request.form.get("sim_outcome", "success")
-        ok, msg = process_payment(order_id, amount, method, sim_outcome)
-        if ok:
-            return render_template(
-                "payment.html", order_id=order_id, amount=amount, message=msg
-            )
-        return render_template(
-            "payment.html", order_id=order_id, amount=amount, error=msg
-        )
-
-    return render_template("payment.html", order_id=order_id, amount=amount)
-
-
-@app.route("/admin/orders", methods=["GET"])
-def admin_orders():
-    if "user_id" not in session:
-        return redirect(url_for("login"))
-
-    ok, err, orders = list_orders_for_admin(session.get("role"))
-    if not ok:
-        return render_template("admin_orders.html", orders=[], error=err), 403
-
+    ok, err, vehicles, vehicle_types = _load_fleet_data()
+    available_count = sum(1 for v in vehicles if v.get("status") == "Available")
     return render_template(
-        "admin_orders.html",
-        orders=orders,
-        message=request.args.get("message"),
-        error=request.args.get("error"),
+        "admin_dashboard.html",
+        vehicles=vehicles,
+        vehicle_types=vehicle_types,
+        total_vehicles=len(vehicles),
+        total_types=len(vehicle_types),
+        available_vehicles=available_count,
+        error=err if not ok else None,
     )
 
 
-@app.route("/admin/orders/<int:order_id>/status", methods=["POST"])
-def admin_update_order_status(order_id):
-    if "user_id" not in session:
-        return redirect(url_for("login"))
+@app.route("/payment")
+@app.route("/checkout")
+def payment_page():
+    return render_template("payment.html")
 
-    new_status = request.form.get("status", "")
-    ok, msg = change_order_status(session.get("role"), order_id, new_status)
-    if ok:
-        return redirect(url_for("admin_orders", message=msg))
-    return redirect(url_for("admin_orders", error=msg))
+
+@app.route("/admin/vehicles", methods=["GET"])
+def admin_vehicles():
+    if not _is_admin():
+        return "Forbidden: Admin role required.", 403
+
+    ok, err, vehicles, vehicle_types = _load_fleet_data()
+    message = request.args.get("message")
+    error_msg = request.args.get("error") or (err if not ok else None)
+
+    return render_template(
+        "admin_vehicles.html",
+        vehicles=vehicles,
+        vehicle_types=vehicle_types,
+        statuses=ALLOWED_STATUSES,
+        message=message,
+        error=error_msg,
+    )
+
+
+@app.route("/admin/vehicle-types/add", methods=["POST"])
+def add_vehicle_type():
+    if not _is_admin():
+        return "Forbidden: Admin role required.", 403
+
+    name = (request.form.get("name") or "").strip()
+    description = (request.form.get("description") or "").strip()
+    ok, err = _invoke("add_vehicle_type", _get_role(), extra_args=[name, description])
+    if not ok:
+        return _redirect_vehicles(error=err or "Không thể thêm loại xe.")
+    return _redirect_vehicles(message="Đã thêm loại xe.")
+
+
+@app.route("/admin/vehicle-types/<int:type_id>/delete", methods=["POST"])
+def delete_vehicle_type(type_id: int):
+    if not _is_admin():
+        return "Forbidden: Admin role required.", 403
+
+    ok, err = _invoke("delete_vehicle_type", _get_role(), extra_args=[type_id])
+    if not ok:
+        return _redirect_vehicles(error=err or "Không thể xóa loại xe.")
+    return _redirect_vehicles(message="Đã xóa loại xe.")
+
+
+def _extract_vehicle_form():
+    return {
+        "name": (request.form.get("name") or "").strip(),
+        "license_plate": (request.form.get("license_plate") or "").strip(),
+        "seats": request.form.get("seats", type=int) or 4,
+        "type_id": request.form.get("type_id", type=int),
+        "daily_price": request.form.get("daily_price", type=float) or 0.0,
+        "status": (request.form.get("status") or "Available").strip(),
+    }
+
+
+@app.route("/admin/vehicles/add", methods=["POST"])
+def add_vehicle():
+    if not _is_admin():
+        return "Forbidden: Admin role required.", 403
+
+    payload = _extract_vehicle_form()
+    ok, err = _invoke("add_vehicle", _get_role(), payload=payload)
+    if not ok:
+        return _redirect_vehicles(error=err or "Không thể thêm xe.")
+    return _redirect_vehicles(message="Đã thêm xe mới.")
+
+
+@app.route("/admin/vehicles/<int:vehicle_id>/edit", methods=["POST"])
+def edit_vehicle(vehicle_id: int):
+    if not _is_admin():
+        return "Forbidden: Admin role required.", 403
+
+    payload = _extract_vehicle_form()
+    ok, err = _invoke("update_vehicle", _get_role(), payload=payload, extra_args=[vehicle_id])
+    if not ok:
+        return _redirect_vehicles(error=err or "Không thể cập nhật xe.")
+    return _redirect_vehicles(message="Đã cập nhật thông tin xe.")
+
+
+@app.route("/admin/vehicles/<int:vehicle_id>/status", methods=["POST"])
+def update_vehicle_status(vehicle_id: int):
+    if not _is_admin():
+        return "Forbidden: Admin role required.", 403
+
+    status = (request.form.get("status") or "").strip()
+    if status not in ALLOWED_STATUSES:
+        return _redirect_vehicles(error="Trạng thái xe không hợp lệ.")
+
+    ok, err = _invoke("update_vehicle_status", _get_role(), extra_args=[vehicle_id, status])
+    if not ok:
+        return _redirect_vehicles(error=err or "Không thể đổi trạng thái xe.")
+    return _redirect_vehicles(message="Đã cập nhật trạng thái xe.")
+
+
+@app.route("/admin/vehicles/<int:vehicle_id>/delete", methods=["POST"])
+def delete_vehicle(vehicle_id: int):
+    if not _is_admin():
+        return "Forbidden: Admin role required.", 403
+
+    ok, err = _invoke("delete_vehicle", _get_role(), extra_args=[vehicle_id])
+    if not ok:
+        return _redirect_vehicles(error=err or "Không thể xóa xe.")
+    return _redirect_vehicles(message="Đã xóa xe.")
+
+
+@app.route("/admin/users")
+def admin_users():
+    return redirect(url_for("dashboard"))
+
+
+@app.route("/admin/orders")
+def admin_orders():
+    return redirect(url_for("dashboard"))
+
+
+@app.route("/admin/reports")
+def admin_reports():
+    return redirect(url_for("dashboard"))
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="127.0.0.1", port=5000, debug=True)
