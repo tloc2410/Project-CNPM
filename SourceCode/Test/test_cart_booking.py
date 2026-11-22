@@ -515,7 +515,8 @@ def test_routes_require_login(flask_client):
     assert api_res.get_json()["ok"] is False
 
 
-def test_full_web_booking_flow_cart_to_checkout_to_cancel(flask_client):
+def test_full_web_booking_flow_cart_to_checkout_to_cancel(flask_client, booking_db):
+    raw, _ = booking_db
     _login_session(flask_client, user_id=1, full_name="Do Thu Thao")
 
     # 1. Open cart page
@@ -1346,7 +1347,7 @@ def test_payment_requires_checkout_login_csrf_and_expiry(flask_client, booking_d
     }).status_code == 400
     assert raw.execute("SELECT COUNT(*) FROM Orders").fetchone()[0] == 0
     with flask_client.session_transaction() as sess:
-        sess["pending_payment"]["created_at"] = int(time_module.time()) - 3600
+        sess["pending_payment"] = {**sess["pending_payment"], "created_at": int(time_module.time()) - 3600}
     assert flask_client.get("/payment").status_code == 302
     assert raw.execute("SELECT COUNT(*) FROM Orders").fetchone()[0] == 0
 
