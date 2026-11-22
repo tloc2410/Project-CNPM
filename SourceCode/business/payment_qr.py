@@ -1,15 +1,11 @@
-"""Display-only QR configuration for bank transfers and merchant-supplied MoMo QR.
-
-These images do not prove that a transfer was received. Transaction verification
-requires an authenticated provider callback or manual bank/merchant reconciliation.
-"""
+"""QR display only; receipt needs provider verification or staff reconciliation."""
 import os
 import re
 from urllib.parse import urlencode
 
 
 def bank_transfer_qr(amount, reference):
-    """Return a VietQR quick-link image URL, or None if payee is not configured."""
+    """Create a VietQR link only for a configured, valid recipient."""
     bank = os.getenv("PAYMENT_BANK_BIN", "").strip()
     account = os.getenv("PAYMENT_BANK_ACCOUNT", "").strip()
     holder = os.getenv("PAYMENT_BANK_HOLDER", "").strip()
@@ -35,7 +31,7 @@ def bank_transfer_qr(amount, reference):
 
 
 def momo_merchant_qr_filename():
-    """Return a safe, merchant-provided filename from static/images/payments."""
+    """Validate the configured merchant QR image filename."""
     name = os.getenv("MOMO_MERCHANT_QR_FILENAME", "").strip()
     if not name or "/" in name or "\\" in name or name.startswith("."):
         return None
