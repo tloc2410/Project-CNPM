@@ -14,6 +14,7 @@ import time
 
 from flask import (
     Blueprint,
+    abort,
     current_app,
     flash,
     jsonify,
@@ -26,6 +27,7 @@ from flask import (
 
 from business import booking_service as svc
 from business import payment_qr
+from business import payment_collection_service as collection_service
 
 booking_bp = Blueprint("booking", __name__)
 
@@ -697,6 +699,129 @@ def payment_page():
         bank_details=bank_details,
         direct_mode=draft["direct_mode"],
     )
+
+
+# ------------------------------------------------------------------ remaining balance (customer)
+def _collection_csrf(key):
+    if key not in session:
+        session[key] = secrets.token_urlsafe(32)
+    return session[key]
+
+
+def _require_collection_csrf(key):
+    expected = str(session.get(key) or "")
+    provided = str(request.form.get("csrf_token") or "")
+    if not expected or not secrets.compare_digest(expected, provided):
+        abort(400)
+
+
+def _momo_image_for_payment():
+    name = payment_qr.momo_merchant_qr_filename()
+    if not name:
+        return None
+    path = os.path.join(current_app.static_folder, "images", "payments", name)
+    return (url_for("static", filename="images/payments/" + name)
+            if os.path.isfile(path) else None)
+
+
+@booking_bp.route("/orders/<int:order_id>/pay-remaining", methods=["GET", "POST"])
+@login_required
+def pay_remaining(order_id):
+    """Customer requests collection of the unpaid amount; never self-approves."""
+    if request.method == "POST":
+        _require_collection_csrf("collection_csrf")
+        action = request.form.get("action")
+        try:
+            if action == "request":
+                method = request.form.get("payment_method", "")
+                collection_service.request_remaining_payment(
+                    session["user_id"], order_id, method
+                )
+                flash("Payment request submitted. Awaiting staff verification.", "success")
+            elif action == "cancel_pending":
+                collection_service.cancel_remaining_request(session["user_id"], order_id)
+                flash("Pending request cancelled. You may choose another method.", "success")
+            else:
+                abort(400)
+        except collection_service.CollectionError as exc:
+            flash(str(exc), "error")
+        return redirect(url_for("booking.pay_remaining", order_id=order_id))
+
+    try:
+        order = svc.get_order_payment_details(session["user_id"], order_id)
+    except svc.BookingError:
+        abort(404)
+
+    payment = order.get("pending_balance_request")
+    qr_image = None
+    qr_type = None
+    bank_details = None
+    if payment:
+        if payment["paymentMethod"] == "BANK_TRANSFER":
+            qr_image = payment_qr.bank_transfer_qr(
+                payment["amount"], payment["transactionCode"]
+            )
+            if qr_image:
+                qr_type = "BANK_TRANSFER"
+                bank_details = {
+                    "bank": os.getenv("PAYMENT_BANK_BIN", "").strip(),
+                    "account": os.getenv("PAYMENT_BANK_ACCOUNT", "").strip(),
+                    "holder": os.getenv("PAYMENT_BANK_HOLDER", "").strip(),
+                }
+        elif payment["paymentMethod"] == "E_WALLET":
+            qr_image = _momo_image_for_payment()
+            if qr_image:
+                qr_type = "MOMO_STATIC"
+
+    return render_template(
+        "booking/pay_remaining.html",
+        order=order,
+        payment=payment,
+        qr_image=qr_image,
+        qr_type=qr_type,
+        bank_details=bank_details,
+        payment_methods=collection_service.SUPPORTED_BALANCE_METHODS,
+        csrf_token=_collection_csrf("collection_csrf"),
+    )
+
+
+# ------------------------------------------------------------------ payment verification (administrator)
+def admin_payment_required(view):
+    @wraps(view)
+    def guarded(*args, **kwargs):
+        if "user_id" not in session:
+            return redirect(url_for("login"))
+        if str(session.get("role") or "").upper() != "ADMIN":
+            abort(403)
+        if not collection_service.is_active_admin(session["user_id"]):
+            abort(403)
+        return view(*args, **kwargs)
+    return guarded
+
+
+@booking_bp.route("/admin/payments")
+@admin_payment_required
+def admin_payments():
+    pending = collection_service.list_pending_collections()
+    return render_template(
+        "booking/admin_payments.html", pending=pending,
+        csrf_token=_collection_csrf("admin_payment_csrf")
+    )
+
+
+@booking_bp.route("/admin/payments/<int:payment_id>/confirm", methods=["POST"])
+@admin_payment_required
+def admin_confirm_payment(payment_id):
+    _require_collection_csrf("admin_payment_csrf")
+    if request.form.get("verified") != "yes":
+        flash("Verify the actual deposit in the bank / wallet / cash ledger first.", "error")
+        return redirect(url_for("booking.admin_payments"))
+    try:
+        order_id = collection_service.confirm_collection(payment_id)
+        flash(f"Payment #{payment_id} verified for booking #{order_id}.", "success")
+    except collection_service.CollectionError as exc:
+        flash(str(exc), "error")
+    return redirect(url_for("booking.admin_payments"))
 
 
 # ------------------------------------------------------------------ orders
