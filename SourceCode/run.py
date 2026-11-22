@@ -22,9 +22,10 @@ app = Flask(
     template_folder="presentation/templates",
     static_folder="presentation/static",
 )
-app.secret_key = os.getenv("SECRET_KEY", "dev-only-change-me")
-if app.secret_key == "dev-only-change-me":
-    app.logger.warning("SECRET_KEY is not set; using a development-only fallback.")
+_configured_secret = os.getenv("SECRET_KEY", "").strip()
+app.secret_key = _configured_secret or secrets.token_urlsafe(48)
+if not _configured_secret:
+    app.logger.warning("SECRET_KEY is unset; using a random session key for this process. Set SECRET_KEY in .env before deployment.")
 
 
 def car_image(car):
