@@ -45,3 +45,6 @@ jobs:
 
       - name: Run Payment tests (independent suite)
         run: python -m pytest Test/test_payment_flow.py -v
+
+      - name: Run Admin integration tests
+        run: python -m pytest Test/test_admin_integration.py -v

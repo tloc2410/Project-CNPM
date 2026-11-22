@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>User Management — Group 12</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Inter", "Segoe UI", -apple-system, Arial, sans-serif;
+      background: #eef2f6; color: #1e293b; padding: 24px; min-height: 100vh;
+    }
+    .app-frame {
+      max-width: 1280px; margin: 0 auto; background: #f6f8fb; border-radius: 16px;
+      overflow: hidden; box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08); display: flex; min-height: 760px;
+    }
+    .sidebar { width: 228px; background: #ffffff; border-right: 1px solid #edf2f7; flex-shrink: 0; }
+    .logo-wrap { height: 76px; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid #f1f5f9; }
+    .logo-mark { font-size: 24px; font-weight: 900; letter-spacing: -0.6px; color: #0f172a; }
+    .logo-mark span { color: #f59e0b; font-style: italic; }
+    .nav-menu { padding: 16px 0; display: flex; flex-direction: column; gap: 4px; }
+    .nav-link {
+      position: relative; display: flex; align-items: center; gap: 12px;
+      padding: 12px 22px; text-decoration: none; color: #475569; font-size: 13.5px; font-weight: 500;
+    }
+    .nav-link:hover { background: #f8fafc; color: #0f172a; }
+    .nav-link.active { background: #fef9e7; color: #0f172a; font-weight: 600; }
+    .nav-link.active::before {
+      content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: #f59e0b;
+    }
+    .main-col { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .topbar {
+      height: 76px; background: #ffffff; border-bottom: 1px solid #edf2f7;
+      padding: 0 28px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .topbar-title { font-size: 22px; font-weight: 700; color: #0f172a; }
+    .topbar-right { display: flex; align-items: center; gap: 20px; }
+    .search-input {
+      width: 260px; height: 36px; padding: 0 14px; border-radius: 999px;
+      border: 1px solid #e2e8f0; background: #f8fafc; font-size: 12.5px; color: #1e293b; outline: none;
+    }
+    .profile-box { display: flex; align-items: center; gap: 10px; }
+    .profile-avatar {
+      width: 34px; height: 34px; border-radius: 50%; background: #1e293b;
+      color: #ffffff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center;
+    }
+    .profile-name { font-size: 13px; font-weight: 600; color: #0f172a; }
+    .profile-sub { font-size: 11px; color: #64748b; }
+    .workspace { padding: 22px 28px 30px; display: flex; flex-direction: column; gap: 18px; }
+    .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+    .box-card { background: #ffffff; border: 1px solid #edf2f7; border-radius: 12px; padding: 18px 20px; }
+    .stat-box { display: flex; align-items: flex-start; gap: 12px; }
+    .stat-circle {
+      width: 34px; height: 34px; border-radius: 50%; background: #fef3c7; color: #d97706;
+      display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0;
+    }
+    .stat-title { font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 6px; }
+    .stat-figure { font-size: 28px; font-weight: 700; color: #0f172a; line-height: 1.1; margin-bottom: 6px; }
+    .stat-hint { font-size: 11.5px; color: #16a34a; }
+    .card-heading { font-size: 15.5px; font-weight: 700; color: #0f172a; margin-bottom: 14px; }
+    .tbl-scroll { overflow-x: auto; }
+    table.figma-tbl { width: 100%; border-collapse: collapse; }
+    table.figma-tbl th {
+      background: #f1f5f9; color: #1e293b; font-size: 12px; font-weight: 600;
+      text-align: left; padding: 11px 14px; white-space: nowrap;
+    }
+    table.figma-tbl td {
+      padding: 12px 14px; font-size: 12.5px; color: #334155; border-bottom: 1px solid #f1f5f9; white-space: nowrap;
+    }
+    .badge-ok { background: #dcfce7; color: #15803d; padding: 3px 9px; border-radius: 6px; font-size: 11.5px; font-weight: 600; }
+    .badge-off { background: #fee2e2; color: #dc2626; padding: 3px 9px; border-radius: 6px; font-size: 11.5px; font-weight: 600; }
+    .btn-action { border: none; border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .btn-lock { background: #fef3c7; color: #b45309; }
+    .btn-unlock { background: #dcfce7; color: #15803d; }
+    .alert-ok {
+      background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46;
+      padding: 10px 14px; border-radius: 10px; font-size: 13px;
+    }
+    @media (max-width: 980px) {
+      body { padding: 0; }
+      .app-frame { border-radius: 0; }
+      .stats-row { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-frame">
+    <aside class="sidebar">
+      <div class="logo-wrap"><div class="logo-mark">Group<span>12</span></div></div>
+      <nav class="nav-menu">
+        <a href="/admin/dashboard" class="nav-link">Home</a>
+        <a href="/admin/vehicles" class="nav-link">Vehicle Management</a>
+        <a href="/admin/users" class="nav-link active">User Management</a>
+        <a href="/admin/orders" class="nav-link">Rental Orders</a>
+        <a href="/admin/reports" class="nav-link">Reports</a>
+        <a href="/admin/payments" class="nav-link">Payment Verification</a>
+        <a href="/" class="nav-link">Customer Website</a>
+        <a href="/logout" class="nav-link">Log out</a>
+      </nav>
+    </aside>
+
+    <div class="main-col">
+      <header class="topbar">
+        <div class="topbar-title">User Management</div>
+        <div class="topbar-right">
+          <input type="text" id="userSearch" class="search-input" placeholder="Search users by name or email..." />
+          <div class="profile-box">
+            <div class="profile-avatar">A</div>
+            <div>
+              <div class="profile-name">Admin</div>
+              <div class="profile-sub">Administrator</div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="workspace">
+        {% if request.args.get('message') %}
+          <div class="alert-ok">{{ request.args.get('message') }}</div>
+        {% endif %}
+        {% if request.args.get('error') %}
+          <div class="alert-ok" style="background:#fef2f2;color:#991b1b;border-color:#fecaca;">{{ request.args.get('error') }}</div>
+        {% endif %}
+
+        <section class="stats-row">
+          <div class="box-card stat-box">
+            <div class="stat-circle">👤</div>
+            <div>
+              <div class="stat-title">Total Users</div>
+              <div class="stat-figure">{{ users|length }}</div>
+              <div class="stat-hint">↑ Registered accounts</div>
+            </div>
+          </div>
+          <div class="box-card stat-box">
+            <div class="stat-circle">✓</div>
+            <div>
+              <div class="stat-title">Unlocked Accounts</div>
+              <div class="stat-figure">{{ users|rejectattr('is_locked')|list|length }}</div>
+              <div class="stat-hint">↑ Active access</div>
+            </div>
+          </div>
+          <div class="box-card stat-box">
+            <div class="stat-circle">🔒</div>
+            <div>
+              <div class="stat-title">Locked Accounts</div>
+              <div class="stat-figure">{{ users|selectattr('is_locked')|list|length }}</div>
+              <div class="stat-hint">Restricted accounts</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="box-card">
+          <div class="card-heading">Users Directory</div>
+          <div class="tbl-scroll">
+            <table class="figma-tbl" id="usersTable">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Full Name</th>
+                  <th>Email</th>
+                  <th>Phone</th>
+                  <th>Address</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for u in users %}
+                  <tr class="user-row">
+                    <td>#{{ u.id }}</td>
+                    <td>{{ u.full_name }}</td>
+                    <td>{{ u.email }}</td>
+                    <td>{{ u.phone }}</td>
+                    <td>{{ u.address }}</td>
+                    <td>{{ u.role }}</td>
+                    <td>
+                      {% if u.is_locked %}
+                        <span class="badge-off">Locked</span>
+                      {% else %}
+                        <span class="badge-ok">Unlocked</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      <form method="POST" action="/admin/users/{{ u.id }}/toggle-lock" style="display:inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        {% if u.is_locked %}
+                          <button type="submit" class="btn-action btn-unlock">Unlock</button>
+                        {% else %}
+                          <button type="submit" class="btn-action btn-lock">Lock</button>
+                        {% endif %}
+                      </form>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const input = document.getElementById("userSearch");
+    if (input) {
+      input.addEventListener("input", function () {
+        const kw = this.value.trim().toLowerCase();
+        document.querySelectorAll("#usersTable tbody tr.user-row").forEach((row) => {
+          row.style.display = row.textContent.toLowerCase().includes(kw) ? "" : "none";
+        });
+      });
+    }
+  </script>
+</body>
+</html>

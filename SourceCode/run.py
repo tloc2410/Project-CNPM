@@ -13,7 +13,7 @@ from business.password_reset_service import (
     reset_password_with_token,
 )
 from business.reset_email import send_reset_email
-from data.user_repository import find_user_by_email, update_user_profile
+from data.user_repository import find_user_by_email, find_user_permissions, update_user_profile
 
 load_dotenv()
 
@@ -126,7 +126,7 @@ def login():
             session["full_name"] = user["fullName"]
             session["role"] = user["role"]
 
-            return redirect(url_for("dashboard"))
+            return redirect(url_for("admin.dashboard") if str(user.get("role") or "").upper() == "ADMIN" else url_for("dashboard"))
 
         return render_template("login.html", error=message)
 
@@ -274,6 +274,10 @@ def _account_order_group(status):
 def dashboard():
     if "user_id" not in session:
         return redirect(url_for("login"))
+    permissions = find_user_permissions(session["user_id"])
+    if not permissions or permissions.get("isLocked"):
+        session.clear()
+        return redirect(url_for("login"))
 
     from business import booking_service
 
@@ -316,6 +320,10 @@ def dashboard():
 def account_update_profile():
     """A signed-in customer may edit only their own non-sensitive profile fields."""
     if "user_id" not in session:
+        return redirect(url_for("login"))
+    permissions = find_user_permissions(session["user_id"])
+    if not permissions or permissions.get("isLocked"):
+        session.clear()
         return redirect(url_for("login"))
     csrf = request.form.get("csrf_token", "")
     expected = session.get("account_profile_csrf", "")
@@ -476,6 +484,9 @@ def internal_error(error):
 # Keep the in-memory test database open until teardown.
 from presentation.booking_routes import booking_bp
 app.register_blueprint(booking_bp)
+
+from presentation.admin_routes import admin_bp
+app.register_blueprint(admin_bp)
 
 
 if __name__ == "__main__":

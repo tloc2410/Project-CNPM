@@ -22,6 +22,7 @@ from flask import (
 from business import booking_service as svc
 from business import payment_qr
 from business import payment_collection_service as collection_service
+from data.user_repository import find_user_permissions
 
 booking_bp = Blueprint("booking", __name__)
 
@@ -64,6 +65,13 @@ def login_required(view):
         if "user_id" not in session:
             if request.is_json or request.path.startswith("/api/"):
                 return jsonify(ok=False, message="Vui lòng đăng nhập."), 401
+            return redirect(url_for("login"))
+        permissions = find_user_permissions(session["user_id"])
+        if not permissions or permissions.get("isLocked"):
+            session.clear()
+            if request.is_json or request.path.startswith("/api/"):
+                return jsonify(ok=False, message="This account is locked or unavailable."), 403
+            flash("This account is locked or unavailable. Please contact support.", "error")
             return redirect(url_for("login"))
         return view(*args, **kwargs)
 

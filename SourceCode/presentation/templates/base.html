@@ -84,6 +84,7 @@
                         <a href="{{ url_for('booking.cart') }}" class="g12-dropdown-item">Your Cart</a>
                         <a href="{{ url_for('booking.my_orders') }}" class="g12-dropdown-item">My Orders</a>
                         {% if session.get('role', '')|upper == 'ADMIN' %}
+                          <a href="{{ url_for('admin.dashboard') }}" class="g12-dropdown-item">Admin Dashboard</a>
                           <a href="{{ url_for('booking.admin_payments') }}" class="g12-dropdown-item">Admin Payments</a>
                         {% endif %}
                         <a href="{{ url_for('logout') }}" class="g12-dropdown-item">Log out</a>

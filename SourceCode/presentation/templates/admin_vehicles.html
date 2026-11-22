@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vehicle Management — Group 12</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Inter", "Segoe UI", -apple-system, Arial, sans-serif;
+      background: #e9eef3;
+      color: #1e293b;
+      padding: 24px;
+      min-height: 100vh;
+    }
+    .app-frame {
+      max-width: 1280px;
+      margin: 0 auto;
+      background: #f5f7fa;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+      display: flex;
+      min-height: 780px;
+    }
+    .sidebar {
+      width: 228px;
+      background: #ffffff;
+      border-right: 1px solid #edf2f7;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .logo-wrap {
+      height: 76px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .logo-mark { font-size: 24px; font-weight: 900; letter-spacing: -0.6px; color: #0f172a; }
+    .logo-mark span { color: #f59e0b; font-style: italic; }
+    .nav-menu { padding: 16px 0; display: flex; flex-direction: column; gap: 4px; }
+    .nav-link {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 22px;
+      text-decoration: none;
+      color: #475569;
+      font-size: 13.5px;
+      font-weight: 500;
+    }
+    .nav-link:hover { background: #f8fafc; color: #0f172a; }
+    .nav-link.active { background: #fef9e7; color: #0f172a; font-weight: 600; }
+    .nav-link.active::before {
+      content: "";
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 4px;
+      background: #f59e0b;
+    }
+    .main-col { flex: 1; min-width: 0; display: flex; flex-direction: column; background: #f5f7fa; }
+    .topbar {
+      height: 76px;
+      background: #ffffff;
+      border-bottom: 1px solid #edf2f7;
+      padding: 0 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .topbar-title { font-size: 22px; font-weight: 700; color: #0f172a; }
+    .topbar-right { display: flex; align-items: center; gap: 20px; }
+    .search-input {
+      width: 260px; height: 36px; padding: 0 14px;
+      border-radius: 999px; border: 1px solid #e2e8f0;
+      background: #f8fafc; font-size: 12.5px; color: #1e293b; outline: none;
+    }
+    .search-input:focus { background: #ffffff; border-color: #f59e0b; }
+    .profile-box { display: flex; align-items: center; gap: 10px; }
+    .profile-avatar {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: #1e293b; color: #ffffff; font-size: 12px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .profile-name { font-size: 13px; font-weight: 600; color: #0f172a; }
+    .profile-sub { font-size: 11px; color: #64748b; }
+    .workspace { padding: 22px 28px 30px; display: flex; flex-direction: column; gap: 18px; }
+    .notice { padding: 11px 16px; border-radius: 10px; font-size: 13px; font-weight: 500; }
+    .notice-ok { background: #dcfce7; color: #15803d; }
+    .notice-err { background: #fee2e2; color: #b91c1c; }
+    .stats-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+    .box-card { background: #ffffff; border: 1px solid #edf2f7; border-radius: 12px; }
+    .stat-box { padding: 18px 20px; display: flex; align-items: flex-start; gap: 12px; }
+    .stat-circle {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: #fef3c7; color: #d97706;
+      display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; flex-shrink: 0;
+    }
+    .stat-title { font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 6px; }
+    .stat-figure { font-size: 28px; font-weight: 700; color: #0f172a; line-height: 1.1; margin-bottom: 6px; }
+    .stat-hint { font-size: 11.5px; color: #16a34a; }
+    .two-col { display: grid; grid-template-columns: 1fr 1.4fr; gap: 18px; }
+    .card-pad { padding: 18px 20px; }
+    .card-heading { font-size: 15.5px; font-weight: 700; color: #0f172a; margin-bottom: 14px; }
+    .form-col { display: flex; flex-direction: column; gap: 10px; }
+    .form-flex { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .ctrl-input, .ctrl-select {
+      height: 35px; padding: 0 11px; border: 1px solid #e2e8f0; border-radius: 8px;
+      background: #ffffff; color: #1e293b; font-size: 12.5px; outline: none;
+    }
+    .ctrl-input:focus, .ctrl-select:focus { border-color: #f59e0b; }
+    .btn-act {
+      height: 35px; padding: 0 14px; border-radius: 8px; border: none;
+      font-size: 12.5px; font-weight: 600; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .btn-main { background: #f59e0b; color: #ffffff; }
+    .btn-main:hover { background: #e59008; }
+    .btn-sub { background: #f8fafc; color: #334155; border: 1px solid #e2e8f0; }
+    .btn-sub:hover { background: #f1f5f9; }
+    .btn-rm { background: #fee2e2; color: #dc2626; }
+    .btn-rm:hover { background: #fecaca; }
+    .btn-mini { height: 28px; padding: 0 9px; font-size: 11.5px; border-radius: 6px; }
+    .type-list-clean { list-style: none; margin-top: 12px; display: flex; flex-direction: column; gap: 7px; }
+    .type-item-clean {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      padding: 7px 11px; border-radius: 8px; background: #f8fafc; border: 1px solid #eef2f6; font-size: 12.5px;
+    }
+    .type-subtext { color: #64748b; font-size: 12px; }
+    .tbl-scroll { overflow-x: auto; }
+    table.figma-tbl { width: 100%; border-collapse: collapse; }
+    table.figma-tbl th {
+      background: #f1f5f9; color: #1e293b; font-size: 12px; font-weight: 600;
+      text-align: left; padding: 11px 14px; white-space: nowrap;
+    }
+    table.figma-tbl td {
+      padding: 12px 14px; font-size: 12.5px; color: #334155;
+      border-bottom: 1px solid #f1f5f9; vertical-align: middle; white-space: nowrap;
+    }
+    .st-badge { display: inline-block; padding: 3px 9px; border-radius: 6px; font-size: 11.5px; font-weight: 600; }
+    .st-available { background: #dcfce7; color: #15803d; }
+    .st-rented { background: #dbeafe; color: #1d4ed8; }
+    .st-maintenance { background: #fef3c7; color: #b45309; }
+    .st-returned { background: #f3e8ff; color: #7e22ce; }
+    .st-cancelled { background: #fee2e2; color: #dc2626; }
+    .row-inline { display: inline-flex; align-items: center; gap: 6px; }
+    .modal-bg {
+      display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.42);
+      align-items: center; justify-content: center; padding: 16px; z-index: 60;
+    }
+    .modal-bg.show { display: flex; }
+    .modal-panel { width: 100%; max-width: 460px; background: #ffffff; border-radius: 12px; padding: 20px; }
+    .modal-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .modal-grp { display: flex; flex-direction: column; gap: 5px; margin-bottom: 11px; }
+    .modal-grp label { font-size: 12px; font-weight: 600; color: #334155; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+    @media (max-width: 980px) {
+      body { padding: 0; }
+      .app-frame { border-radius: 0; }
+      .stats-row, .two-col { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .search-input { width: 160px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-frame">
+    <aside class="sidebar">
+      <div class="logo-wrap"><div class="logo-mark">Group<span>12</span></div></div>
+      <nav class="nav-menu">
+        <a href="/admin/dashboard" class="nav-link">Home</a>
+        <a href="/admin/vehicles" class="nav-link active">Vehicle Management</a>
+        <a href="/admin/users" class="nav-link">User Management</a>
+        <a href="/admin/orders" class="nav-link">Rental Orders</a>
+        <a href="/admin/reports" class="nav-link">Reports</a>
+        <a href="/admin/payments" class="nav-link">Payment Verification</a>
+        <a href="/" class="nav-link">Customer Website</a>
+        <a href="/logout" class="nav-link">Log out</a>
+      </nav>
+    </aside>
+
+    <div class="main-col">
+      <header class="topbar">
+        <div class="topbar-title">Vehicle Management</div>
+        <div class="topbar-right">
+          <input type="text" id="searchBox" class="search-input" placeholder="Search vehicles, rental orders, users...">
+          <div class="profile-box">
+            <div class="profile-avatar">A</div>
+            <div>
+              <div class="profile-name">Admin</div>
+              <div class="profile-sub">Administrator</div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="workspace">
+        {% if request.args.get('message') %}
+          <div class="notice notice-ok">{{ request.args.get('message') }}</div>
+        {% endif %}
+        {% if request.args.get('error') %}
+          <div class="notice notice-err">{{ request.args.get('error') }}</div>
+        {% endif %}
+
+        <section class="stats-row">
+          <div class="box-card stat-box">
+            <div class="stat-circle">▣</div>
+            <div>
+              <div class="stat-title">Total Vehicles</div>
+              <div class="stat-figure">{{ vehicles|length }}</div>
+              <div class="stat-hint">↑ {{ vehicles|length }} vehicles in system</div>
+            </div>
+          </div>
+          <div class="box-card stat-box">
+            <div class="stat-circle">▤</div>
+            <div>
+              <div class="stat-title">Vehicle Types</div>
+              <div class="stat-figure">{{ vehicle_types|length }}</div>
+              <div class="stat-hint">↑ {{ vehicle_types|length }} types available</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="two-col">
+          <div class="box-card card-pad">
+            <div class="card-heading">Vehicle Types</div>
+            <form action="/admin/vehicle-types/add" method="post" class="form-col">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <div class="form-flex">
+                <input type="text" name="name" class="ctrl-input" placeholder="Type name (e.g. Sedan)" required style="flex: 1; min-width: 120px;">
+                <input type="text" name="description" class="ctrl-input" placeholder="Description" style="flex: 1; min-width: 110px;">
+                <button type="submit" class="btn-act btn-main">Add Type</button>
+              </div>
+            </form>
+
+            <ul class="type-list-clean">
+              {% for t in vehicle_types %}
+                <li class="type-item-clean">
+                  <div>
+                    <strong>{{ t.name }}</strong>
+                    {% if t.description %}
+                      <span class="type-subtext">— {{ t.description }}</span>
+                    {% endif %}
+                  </div>
+                  <form action="/admin/vehicle-types/{{ t.id }}/delete" method="post">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <button type="submit" class="btn-act btn-rm btn-mini">Delete</button>
+                  </form>
+                </li>
+              {% else %}
+                <li class="type-subtext">No vehicle types yet.</li>
+              {% endfor %}
+            </ul>
+          </div>
+
+          <div class="box-card card-pad">
+            <div class="card-heading">Add New Vehicle</div>
+            <form action="/admin/vehicles/add" method="post" class="form-col">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <div class="form-flex">
+                <input type="text" name="name" class="ctrl-input" placeholder="Vehicle name" required style="flex: 1.4; min-width: 140px;">
+                <input type="text" name="license_plate" class="ctrl-input" placeholder="Code / Plate" required style="flex: 1; min-width: 110px;">
+                <input type="number" name="seats" class="ctrl-input" min="1" value="4" placeholder="Seats" required style="width: 76px;">
+              </div>
+              <div class="form-flex">
+                <select name="type_id" class="ctrl-select" required style="flex: 1; min-width: 125px;">
+                  {% for t in vehicle_types %}
+                    <option value="{{ t.id }}">{{ t.name }}</option>
+                  {% endfor %}
+                </select>
+                <input type="number" step="0.01" name="daily_price" class="ctrl-input" placeholder="Price / day" required style="width: 130px;">
+                <select name="status" class="ctrl-select" style="width: 160px;">
+                  {% for st in statuses %}
+                    <option value="{{ st }}">{{ st|replace("_", " ")|title }}</option>
+                  {% endfor %}
+                </select>
+                <button type="submit" class="btn-act btn-main">Add Vehicle</button>
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <section class="box-card card-pad">
+          <div class="card-heading">Vehicles List</div>
+          <div class="tbl-scroll">
+            <table class="figma-tbl" id="fleetTable">
+              <thead>
+                <tr>
+                  <th>Vehicle ID</th>
+                  <th>Vehicle Name</th>
+                  <th>Code / Plate</th>
+                  <th>Seats</th>
+                  <th>Type</th>
+                  <th>Price / Day</th>
+                  <th>Status</th>
+                  <th>Update Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for v in vehicles %}
+                  <tr class="fleet-row">
+                    <td>#{{ v.id }}</td>
+                    <td>{{ v.name }}</td>
+                    <td>{{ v.license_plate }}</td>
+                    <td>{{ v.seats }}</td>
+                    <td>{{ v.type_name or '-' }}</td>
+                    <td>{{ "{:,.0f}".format(v.daily_price|float)|replace(",", ".") }}đ</td>
+                    <td>
+                      {% if v.status == 'available' %}
+                        <span class="st-badge st-available">{{ v.status }}</span>
+                      {% elif v.status == 'rented' %}
+                        <span class="st-badge st-rented">{{ v.status }}</span>
+                      {% else %}
+                        <span class="st-badge st-maintenance">{{ v.status }}</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      <form action="/admin/vehicles/{{ v.id }}/status" method="post" class="row-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <select name="status" class="ctrl-select btn-mini">
+                          {% for st in statuses %}
+                            <option value="{{ st }}" {% if v.status == st %}selected{% endif %}>{{ st|replace("_", " ")|title }}</option>
+                          {% endfor %}
+                        </select>
+                        <button type="submit" class="btn-act btn-sub btn-mini">Save</button>
+                      </form>
+                    </td>
+                    <td>
+                      <div class="row-inline">
+                        <button
+                          type="button"
+                          class="btn-act btn-sub btn-mini open-edit"
+                          data-id="{{ v.id }}"
+                          data-name="{{ v.name }}"
+                          data-plate="{{ v.license_plate }}"
+                          data-seats="{{ v.seats }}"
+                          data-type-id="{{ v.type_id }}"
+                          data-price="{{ "{:,.0f}".format(v.daily_price|float)|replace(",", ".") }}đ"
+                          data-status="{{ v.status }}"
+                        >Edit</button>
+                        <form action="/admin/vehicles/{{ v.id }}/delete" method="post">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                          <button type="submit" class="btn-act btn-rm btn-mini">Delete</button>
+                        </form>
+                      </div>
+                    </td>
+                  </tr>
+                {% else %}
+                  <tr>
+                    <td colspan="9" style="text-align: center; color: #64748b; padding: 22px;">
+                      No vehicles found.
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="box-card card-pad">
+          <div class="card-heading">Recorded Paid — Last 7 Days</div>
+          <p style="font-size:12px;color:#64748b;margin:0 0 10px">Database totals from Paid records. Simulated payments are not actual money.</p>
+          <div class="tbl-scroll"><table class="figma-tbl">
+            <thead><tr><th>Day</th><th>Recorded Paid</th></tr></thead>
+            <tbody>{% for day in report.days %}
+              <tr><td>{{ day.label }}</td><td>{{ "{:,.0f}".format(day.amount|float)|replace(",", ".") }}đ</td></tr>
+            {% endfor %}</tbody>
+          </table></div>
+        </section>
+
+        <section class="box-card card-pad">
+          <div class="card-heading">Recent Rental Orders</div>
+          <div class="tbl-scroll">
+            <table class="figma-tbl">
+              <thead><tr><th>Order ID</th><th>Customer</th><th>Vehicle</th><th>Pickup</th><th>Return</th><th>Total</th><th>Status</th></tr></thead>
+              <tbody>
+                {% for o in orders[:5] %}
+                <tr><td>#{{ o.id }}</td><td>{{ o.customer or "-" }}</td><td>{{ o.vehicle }}</td>
+                  <td>{{ o.pickup_date or "-" }}</td><td>{{ o.return_date or "-" }}</td>
+                  <td>{{ "{:,.0f}".format(o.total|float)|replace(",", ".") }}đ</td><td>{{ o.status }}</td></tr>
+                {% else %}
+                <tr><td colspan="7">No rental orders yet.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div id="editBox" class="modal-bg" aria-hidden="true">
+    <div class="modal-panel">
+      <div class="modal-top">
+        <div class="card-heading" style="margin-bottom: 0;">Edit Vehicle</div>
+        <button type="button" id="closeEditX" class="btn-act btn-sub btn-mini">✕</button>
+      </div>
+      <form id="editForm" method="post">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <div class="modal-grp">
+          <label for="fName">Vehicle Name</label>
+          <input type="text" id="fName" name="name" class="ctrl-input" required>
+        </div>
+        <div class="form-flex" style="margin-bottom: 11px;">
+          <div class="modal-grp" style="flex: 1; margin-bottom: 0;">
+            <label for="fPlate">Code / Plate</label>
+            <input type="text" id="fPlate" name="license_plate" class="ctrl-input" required>
+          </div>
+          <div class="modal-grp" style="width: 90px; margin-bottom: 0;">
+            <label for="fSeats">Seats</label>
+            <input type="number" id="fSeats" name="seats" min="1" class="ctrl-input" required>
+          </div>
+        </div>
+        <div class="form-flex" style="margin-bottom: 11px;">
+          <div class="modal-grp" style="flex: 1; margin-bottom: 0;">
+            <label for="fType">Type</label>
+            <select id="fType" name="type_id" class="ctrl-select" required>
+              {% for t in vehicle_types %}
+                <option value="{{ t.id }}">{{ t.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="modal-grp" style="flex: 1; margin-bottom: 0;">
+            <label for="fPrice">Price / Day</label>
+            <input type="number" step="0.01" id="fPrice" name="daily_price" class="ctrl-input" required>
+          </div>
+        </div>
+        <div class="modal-grp">
+          <label for="fStatus">Status</label>
+          <select id="fStatus" name="status" class="ctrl-select">
+            {% for st in statuses %}
+              <option value="{{ st }}">{{ st|replace("_", " ")|title }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button type="button" id="cancelEditBtn" class="btn-act btn-sub">Cancel</button>
+          <button type="submit" class="btn-act btn-main">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const searchEl = document.getElementById("searchBox");
+    if (searchEl) {
+      searchEl.addEventListener("input", function () {
+        const kw = this.value.trim().toLowerCase();
+        document.querySelectorAll("#fleetTable tbody tr.fleet-row").forEach((tr) => {
+          tr.style.display = tr.textContent.toLowerCase().includes(kw) ? "" : "none";
+        });
+      });
+    }
+
+    const editBox = document.getElementById("editBox");
+    const editForm = document.getElementById("editForm");
+
+    function hideEditModal() {
+      editBox.classList.remove("show");
+    }
+
+    document.querySelectorAll(".open-edit").forEach((btn) => {
+      btn.addEventListener("click", function () {
+        editForm.action = `/admin/vehicles/${this.dataset.id}/edit`;
+        document.getElementById("fName").value = this.dataset.name || "";
+        document.getElementById("fPlate").value = this.dataset.plate || "";
+        document.getElementById("fSeats").value = this.dataset.seats || 4;
+        document.getElementById("fType").value = this.dataset.typeId || "";
+        document.getElementById("fPrice").value = this.dataset.price || "";
+        document.getElementById("fStatus").value = this.dataset.status || "Available";
+        editBox.classList.add("show");
+      });
+    });
+
+    document.getElementById("closeEditX").addEventListener("click", hideEditModal);
+    document.getElementById("cancelEditBtn").addEventListener("click", hideEditModal);
+    editBox.addEventListener("click", function (e) {
+      if (e.target === editBox) hideEditModal();
+    });
+  </script>
+</body>
+</html>
