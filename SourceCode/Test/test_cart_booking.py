@@ -1530,6 +1530,19 @@ def test_bank_transfer_payment_page_shows_vietqr_when_configured(flask_client, b
     assert "amount=180000" in text
     assert "G12" in text
     with flask_client.session_transaction() as sess:
-        assert sess["pending_payment"]["transfer_reference"].startswith("G12")
+        reference = sess["pending_payment"]["transfer_reference"]
+        token = sess["pending_payment"]["csrf"]
+        assert reference.startswith("G12")
+        assert reference in text
     raw, _ = booking_db
     assert raw.execute("SELECT COUNT(*) FROM Orders").fetchone()[0] == 0
+
+    confirmed = flask_client.post("/payment", data={
+        "payment_csrf": token, "payment_action": "confirm",
+    })
+    assert confirmed.status_code == 302
+    saved = raw.execute(
+        "SELECT transactionCode, paymentStatus FROM Payments LIMIT 1"
+    ).fetchone()
+    assert saved["transactionCode"] == reference
+    assert saved["paymentStatus"] == "Pending"
