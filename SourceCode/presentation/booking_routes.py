@@ -530,7 +530,7 @@ def checkout():
         # Checkout does NOT write Orders/Payments. Stage a short-lived draft for
         # a separate Payment page. The final POST recalculates DB prices and
         # availability and commits order + payment in one transaction.
-        payment_method = request.form.get("payment_method", "CARD")
+        payment_method = request.form.get("payment_method", "E_WALLET")
         if payment_method not in svc.PAYMENT_METHODS:
             flash("Please select a valid payment method.", "error")
             return redirect(checkout_again)
@@ -618,7 +618,7 @@ def payment_page():
             try:
                 # Offline methods require explicit simulated confirmation too:
                 # no bank or cash payment is actually processed.
-                outcome = "success" if draft["payment_method"] in ("CARD", "E_WALLET") else "confirmed"
+                outcome = "success" if draft["payment_method"] == "E_WALLET" else "confirmed"
                 order_id = svc.place_order(
                     user_id=session["user_id"],
                     cart=draft["items"],
