@@ -1,4 +1,6 @@
 """Booking SQL; transaction ownership stays in the business service."""
+# UML [Order, OrderItem]: SQL tables are Orders and legacy-spelled Oderitem.
+
 
 INACTIVE_STATUSES = ("CANCELLED", "COMPLETED", "RETURNED")
 

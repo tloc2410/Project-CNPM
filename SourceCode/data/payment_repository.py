@@ -1,4 +1,6 @@
 """Payment persistence; uses the caller's transaction and cursor (no commit)."""
+# UML [Payment]: SQL persistence for Payments and Paid/Pending status transitions.
+
 
 
 def insert_payment(cursor, order_id, amount, method, status, transaction_code, paid_at=None):

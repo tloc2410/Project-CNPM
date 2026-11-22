@@ -1,4 +1,6 @@
 """Vehicle business rules; input validation occurs before repository calls."""
+# UML [Car, CarType, Customer]: searchCars(), getDetails() and car-type listing.
+
 import math
 import re
 

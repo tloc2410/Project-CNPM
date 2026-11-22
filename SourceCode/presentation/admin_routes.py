@@ -1,4 +1,6 @@
 """Admin screens adapted from Chanh's UI to the shared Flask application."""
+# UML [Admin]: HTTP screens/actions for Admin role (role checked against Users).
+
 
 from functools import wraps
 import secrets
@@ -71,6 +73,7 @@ def dashboard():
     )
 
 
+# UML [Admin, Car, CarType]: screens for vehicle/type management.
 @admin_bp.route("/admin/vehicles")
 @admin_required
 def vehicles():
@@ -126,6 +129,7 @@ def delete_vehicle(vehicle_id):
                    "admin.vehicles", "Vehicle deleted.")
 
 
+# UML [Admin, User]: user list and lock/unlock actions.
 @admin_bp.route("/admin/users")
 @admin_required
 def users():
@@ -142,6 +146,7 @@ def toggle_lock_user(user_id):
     return _handle(action, "admin.users", "Account lock status updated.")
 
 
+# UML [Admin, Order]: confirm and update rental-order status.
 @admin_bp.route("/admin/orders")
 @admin_required
 def orders():

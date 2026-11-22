@@ -1,4 +1,6 @@
 """Vehicle SQL access; filtering rules live in vehicle_service."""
+# UML [Car, CarType]: SQL for Cars/CarTypes; increaseViewCount() is increment_views().
+
 from data.database import get_db_connection
 
 _CAR_SELECT = """

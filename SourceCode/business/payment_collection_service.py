@@ -1,4 +1,6 @@
 """Two-stage collections: Pending requests never prove funds were received."""
+# UML [Payment]: payment status, 30% deposit, remaining 70% and Admin verification.
+
 from datetime import datetime
 from decimal import Decimal
 from secrets import token_hex
@@ -20,6 +22,7 @@ def _money(value):
     return Decimal(str(value or 0)).quantize(Decimal("1"))
 
 
+# UML [Payment]: getPaymentStatus() computes Paid/Pending and remaining balance.
 def payment_overview(order, payments):
     """Summarize all payment rows, counting only Paid amounts as received."""
     total = _money(order.get("totalPrice"))
@@ -74,6 +77,7 @@ def _read_customer_order(cursor, user_id, order_id, lock=False):
     return order
 
 
+# UML [Payment]: processPayment() creates a Pending remaining-balance request.
 def request_remaining_payment(user_id, order_id, method):
     """Create a Pending balance request under a lock to prevent duplicates."""
     if method not in SUPPORTED_BALANCE_METHODS:
@@ -164,6 +168,7 @@ def list_pending_collections():
         conn.close()
 
 
+# UML [Payment, Admin]: verifyPayment() marks an Admin-confirmed payment Paid.
 def confirm_collection(payment_id, demo=False):
     """Mark a staff-confirmed payment Paid; tag simulated confirmations clearly."""
     conn = database.get_db_connection()

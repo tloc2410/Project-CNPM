@@ -1,3 +1,4 @@
+# UML [User]: register()/login() logic; Users records stand in for a Python User class.
 import re
 from mysql.connector import IntegrityError
 from werkzeug.security import generate_password_hash, check_password_hash

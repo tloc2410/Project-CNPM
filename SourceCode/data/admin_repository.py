@@ -1,4 +1,6 @@
 """MySQL access for the Admin screens; uses the shared Group12 schema."""
+# UML [Admin, CarType, Car, User, Order]: MySQL queries for Admin screens.
+
 
 from data import database
 

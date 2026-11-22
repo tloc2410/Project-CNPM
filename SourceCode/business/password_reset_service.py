@@ -1,3 +1,4 @@
+# UML [User]: resetPassword() uses signed tokens and password-hash updates.
 import hashlib
 import hmac
 

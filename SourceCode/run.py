@@ -1,3 +1,4 @@
+# UML [User, Customer]: Flask routes for authentication, browsing and My Account.
 import os
 import re
 import secrets
@@ -145,6 +146,7 @@ def _safe_auth_next(value):
     return target if not parts.scheme and not parts.netloc else ""
 
 
+# UML [User]: login() checks credentials and creates the session.
 @app.route("/login", methods=["GET", "POST"])
 def login():
     return_to = _safe_auth_next(request.values.get("next"))
@@ -170,6 +172,7 @@ def login():
     return render_template("login.html", next_path=return_to)
 
 
+# UML [User]: register() maps to the signup route and auth_service.register_user().
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
     return_to = _safe_auth_next(request.values.get("next"))
@@ -308,6 +311,7 @@ def _account_order_group(status):
     return _ACCOUNT_ORDER_GROUPS.get(str(status or "").upper(), "other")
 
 
+# UML [Customer, User]: viewOrders() and updateProfile() are exposed via My Account.
 @app.route("/dashboard")
 def dashboard():
     if "user_id" not in session:
@@ -447,6 +451,7 @@ def home():
     )
 
 
+# UML [Customer, Car]: searchCars() and vehicle filtering are exposed here.
 @app.route("/cars")
 def cars():
     db_error = None
@@ -473,6 +478,7 @@ def cars():
     )
 
 
+# UML [Customer, Car]: viewCarDetails() and increaseViewCount() are exposed here.
 @app.route("/cars/<int:car_id>")
 def car_detail(car_id):
     try:

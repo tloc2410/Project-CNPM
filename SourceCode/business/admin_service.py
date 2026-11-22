@@ -1,4 +1,6 @@
 """Admin validation and reports for Group12 Car Rental."""
+# UML [Admin, Car, CarType, User, Order]: Admin role operations, not a Python Admin class.
+
 
 from collections import defaultdict
 from datetime import date, datetime, timedelta
@@ -54,6 +56,7 @@ def validate_vehicle(form):
     }
 
 
+# UML [Admin, Car]: addCar()/updateCar() use MySQL Cars.
 def save_vehicle(form, vehicle_id=None):
     data = validate_vehicle(form)
     affected = (repo.edit_vehicle(vehicle_id, data) if vehicle_id is not None
@@ -94,6 +97,7 @@ def list_users():
     return repo.list_users()
 
 
+# UML [Admin, User]: lockUser()/unlockUser() update Users.isLocked.
 def change_user_lock(user_id, actor_id):
     if int(user_id) == int(actor_id):
         raise AdminError("You cannot lock or unlock your own Admin account.")
@@ -115,6 +119,7 @@ def list_orders():
     return repo.list_orders()
 
 
+# UML [Admin, Order]: confirmOrder()/updateOrderStatus() enforce allowed transitions.
 def change_order_status(order_id, status):
     status = str(status or "").strip().upper()
     if status not in {v for group in ORDER_TRANSITIONS.values() for v in group}:

@@ -1,4 +1,6 @@
 """Flask routes for rental cart, checkout, payments and orders."""
+# UML [Customer, RentalCart, CartItem, Order, Payment]: customer-facing Flask routes.
+
 
 from datetime import datetime
 from functools import wraps
@@ -211,6 +213,7 @@ def inject_booking_nav():
     }
 
 
+# UML [RentalCart, CartItem]: addCar(), removeCar(), updateRentalPeriod() via cart routes.
 @booking_bp.route("/cart")
 @login_required
 def cart():
@@ -449,6 +452,7 @@ def api_cart_summary():
     )
 
 
+# UML [Customer, Order]: createOrder() starts at checkout, then confirms on /payment.
 @booking_bp.route("/checkout", methods=["GET", "POST"])
 @login_required
 def checkout():
@@ -723,6 +727,7 @@ def _momo_image_for_payment():
             if os.path.isfile(path) else None)
 
 
+# UML [Payment]: Customer requests outstanding 70%; only Admin can confirm it.
 @booking_bp.route("/orders/<int:order_id>/pay-remaining", methods=["GET", "POST"])
 @login_required
 def pay_remaining(order_id):
@@ -798,6 +803,7 @@ def admin_payment_required(view):
     return guarded
 
 
+# UML [Admin, Payment]: verifyPayment() is exposed in Payment Verification.
 @booking_bp.route("/admin/payments")
 @admin_payment_required
 def admin_payments():

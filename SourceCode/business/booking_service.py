@@ -1,4 +1,6 @@
 """Cart, availability, pricing and atomic rental booking logic."""
+# UML [RentalCart, CartItem, Order, OrderItem]: cart is session data; Orders/Oderitem use SQL.
+
 
 from datetime import date, datetime, timedelta
 from decimal import Decimal, ROUND_HALF_UP
@@ -91,6 +93,7 @@ def validate_dates(pickup, return_, today=None):
     return True, "", days
 
 
+# UML [CartItem, OrderItem]: calculateSubtotal() is shared rental-day pricing.
 def calculate_line_total(price_per_day, rental_days):
     if int(rental_days) <= 0:
         return Decimal("0")
@@ -138,6 +141,7 @@ def _normalize_cart_item(item):
     }
 
 
+# UML [RentalCart, CartItem]: addCar() creates/updates a cart item dictionary.
 def add_to_cart(
     cart,
     car_id,
@@ -193,6 +197,7 @@ def remove_car_ids_from_cart(cart, car_ids):
     return [item for item in items if item["car_id"] not in to_remove]
 
 
+# UML [CartItem]: updateRentalPeriod() updates selected rental dates.
 def update_cart_dates(cart, car_id, pickup, return_):
     car_id = int(car_id)
     items = [_normalize_cart_item(i) for i in (cart or [])]
@@ -353,6 +358,7 @@ def build_cart_summary(cart, receiving_method="PICKUP", today=None, selected_onl
         conn.close()
 
 
+# UML [Order, OrderItem]: createOrder() writes both order and item rows atomically.
 def place_order(
     user_id,
     cart,
@@ -471,6 +477,7 @@ def place_order(
         conn.close()
 
 
+# UML [Order]: cancelOrder() checks ownership and changes order status.
 def cancel_order(user_id, order_id):
     """Cancel an order belonging to ``user_id`` inside a database transaction."""
     if not user_id:
@@ -511,6 +518,7 @@ def cancel_order(user_id, order_id):
         conn.close()
 
 
+# UML [Customer, Order]: viewOrders() returns the logged-in customer's bookings.
 def get_user_orders(user_id):
     """Return a customer's orders with nested Oderitem records."""
     conn = database.get_db_connection()

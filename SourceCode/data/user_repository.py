@@ -1,3 +1,4 @@
+# UML [User]: SQL persistence for Users; roles CUSTOMER/ADMIN are stored in Users.role.
 
 
 from data import database

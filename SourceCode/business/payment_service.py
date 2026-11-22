@@ -1,4 +1,6 @@
 """Sandbox payment rules; no real charge, transfer or refund occurs."""
+# UML [Payment]: planPayment()/processPayment() rules; PaymentPlan is a helper dataclass.
+
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
@@ -14,6 +16,7 @@ OFFLINE_METHODS = frozenset(("BANK_TRANSFER", "CASH"))
 METHODS = ONLINE_METHODS | OFFLINE_METHODS
 
 
+# UML [Payment]: PaymentPlan is an actual Python dataclass, not a full Payment entity.
 @dataclass(frozen=True)
 class PaymentPlan:
     amount: Decimal
@@ -22,6 +25,7 @@ class PaymentPlan:
     paid_at: datetime | None
 
 
+# UML [Payment]: processPayment() creates the demo payment plan and initial status.
 def plan_payment(method, order_id, total, deposit, demo_outcome="success", transfer_reference=None):
     """Build a demo payment; decline raises so the booking transaction rolls back."""
     if method not in METHODS:
