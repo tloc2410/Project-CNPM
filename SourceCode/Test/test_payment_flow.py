@@ -102,6 +102,7 @@ def test_payment_04_momo_page_requires_existing_merchant_qr_file(
     flask_client, booking_db, monkeypatch, tmp_path
 ):
     import run
+    monkeypatch.setenv("DEMO_PAYMENT_MODE", "0")
     monkeypatch.setenv("MOMO_MERCHANT_QR_FILENAME", "momo-test.png")
     _checkout(flask_client)
     html = flask_client.get("/payment").get_data(as_text=True)
@@ -228,6 +229,7 @@ def test_payment_12_duplicate_remaining_request_is_rejected(booking_db):
 def test_payment_13_bank_balance_page_shows_qr_of_70_percent(
     flask_client, booking_db, monkeypatch
 ):
+    monkeypatch.setenv("DEMO_PAYMENT_MODE", "0")
     monkeypatch.setenv("PAYMENT_BANK_BIN", "970436")
     monkeypatch.setenv("PAYMENT_BANK_ACCOUNT", "0000000000")
     monkeypatch.setenv("PAYMENT_BANK_HOLDER", "TEST PAYEE")
