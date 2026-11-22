@@ -51,6 +51,45 @@
         <p class="pay-muted">Total amount payable in cash when you collect the vehicle or receive your delivery.</p>
       {% endif %}
 
+      {% if draft.payment_method in ('E_WALLET', 'BANK_TRANSFER') %}
+        {% if qr_image %}
+        <div class="payment-message payment-qr" style="text-align:center;">
+          <strong>
+            {% if qr_kind == 'BANK_TRANSFER' %}
+              Scan VietQR to transfer the deposit
+            {% else %}
+              Scan the merchant's MoMo QR
+            {% endif %}
+          </strong>
+          <img src="{{ qr_image }}" alt="{{ 'VietQR bank transfer' if qr_kind == 'BANK_TRANSFER' else 'MoMo merchant QR' }}"
+               width="264" height="264" referrerpolicy="no-referrer" loading="eager"
+               style="display:block;width:min(100%,264px);height:auto;aspect-ratio:1;object-fit:contain;margin:14px auto;border:9px solid white;border-radius:13px;background:white;">
+          {% if qr_kind == 'BANK_TRANSFER' %}
+            <p class="pay-muted" style="margin:8px 0 4px;">
+              Bank: <strong>{{ bank_details.bank }}</strong>
+              · Account: <strong>{{ bank_details.account }}</strong>
+              {% if bank_details.holder %} · Name: <strong>{{ bank_details.holder }}</strong>{% endif %}
+            </p>
+            <p class="pay-muted">Transfer amount: <strong>{{ summary.deposit|vnd }}</strong></p>
+            <p class="pay-muted">Transfer reference: <strong>{{ draft.transfer_reference }}</strong></p>
+            <p class="pay-muted">The amount and reference are included in this VietQR code. Verify them in your banking app before paying.</p>
+          {% else %}
+            <p class="pay-muted">Pay the deposit of <strong>{{ summary.deposit|vnd }}</strong> in the MoMo app.</p>
+            <p class="pay-muted">This is a merchant-supplied static QR. You may need to type the amount manually; it does not automatically attach or verify the order reference.</p>
+          {% endif %}
+        </div>
+        {% else %}
+        <div class="payment-warning">
+          {% if draft.payment_method == 'BANK_TRANSFER' %}
+            Bank QR is not configured yet. Add PAYMENT_BANK_BIN, PAYMENT_BANK_ACCOUNT and PAYMENT_BANK_HOLDER to SourceCode/.env.
+          {% else %}
+            MoMo QR is not configured yet. Add your authorized merchant QR image to static/images/payments/ and configure MOMO_MERCHANT_QR_FILENAME.
+          {% endif %}
+          Do not send any money until the recipient details are configured and verified.
+        </div>
+        {% endif %}
+      {% endif %}
+
       {% if draft.payment_method == 'E_WALLET' %}
       <div class="payment-message">
         <strong>E-Wallet — Demo Gateway</strong>
@@ -67,7 +106,7 @@
         <p class="pay-muted">No online payment is required. Confirm the rental request; payment remains <strong>Pending</strong> until cash is collected in person.</p>
       </div>
       {% endif %}
-      <div class="payment-warning">Project demonstration only — never enter real bank logins or wallet credentials.</div>
+      <div class="payment-warning">Scanning a QR code does not confirm a payment in Group12. This demo does not read MoMo or bank transaction callbacks. The buttons below simulate confirmation or record a pending request; do not treat them as evidence that money was received. Never enter real bank or wallet credentials on this website.</div>
       {% if payment_error %}
         <div class="payment-error" role="alert">{{ payment_error }}</div>
       {% endif %}
