@@ -42,3 +42,6 @@ jobs:
 
       - name: Run Rental Cart and Booking tests (13)
         run: python -m pytest Test/test_cart_booking.py -v
+
+      - name: Run Payment tests (independent suite)
+        run: python -m pytest Test/test_payment_flow.py -v
