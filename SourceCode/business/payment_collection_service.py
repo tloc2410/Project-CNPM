@@ -213,3 +213,57 @@ def confirm_collection(payment_id):
     finally:
         cursor.close()
         conn.close()
+
+
+
+def simulate_collection(user_id, order_id, payment_id, outcome):
+    """Local demo only. Caller must enforce the debug-only demo-mode guard."""
+    if outcome not in ("success", "failed"):
+        raise CollectionError("Invalid demo payment outcome.")
+    conn = database.get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        conn.start_transaction()
+        order = _read_customer_order(cursor, user_id, order_id, lock=True)
+        if str(order.get("status") or "").upper() in INACTIVE_ORDER_STATUSES:
+            raise CollectionError("Cannot pay a cancelled booking.")
+        payments = payment_repo.list_payments_for_orders(cursor, [order_id])
+        payment = next((p for p in payments if p["paymentID"] == payment_id), None)
+        if not payment or str(payment.get("paymentStatus") or "") != "Pending":
+            raise CollectionError("This payment is not Pending or was already processed.")
+        is_balance = str(payment.get("transactionCode") or "").startswith("BAL-")
+        overview = payment_overview(order, payments)
+        if is_balance:
+            if not overview["deposit_paid"]:
+                raise CollectionError("The deposit must be paid before the remaining balance.")
+        elif overview["paid_amount"] > ZERO:
+            raise CollectionError("The initial payment has already been processed.")
+        if outcome == "failed":
+            if not is_balance:
+                raise CollectionError("Decline the initial payment from Checkout before booking.")
+            if not payment_repo.mark_demo_payment_failed(cursor, payment_id):
+                raise CollectionError("This payment has already been processed.")
+        else:
+            amount = _money(payment["amount"])
+            if amount <= ZERO or overview["paid_amount"] + amount > _money(order["totalPrice"]):
+                raise CollectionError("Payment amount exceeds the outstanding order total.")
+            reference = str(payment.get("transactionCode") or f"PAY-{payment_id}")
+            demo_reference = (reference[:95] + "-DEMO")
+            if not payment_repo.mark_demo_payment_paid(
+                cursor, payment_id, datetime.now(), demo_reference
+            ):
+                raise CollectionError("This payment has already been processed.")
+            if (str(order.get("status") or "").upper() in ("PENDING", "NEW")
+                    and overview["paid_amount"] + amount >= _money(order["deposit"])):
+                booking_repo.update_order_status(cursor, order_id, "CONFIRMED")
+        conn.commit()
+        return True
+    except CollectionError:
+        conn.rollback()
+        raise
+    except Exception as exc:
+        conn.rollback()
+        raise CollectionError("Demo payment could not be processed.") from exc
+    finally:
+        cursor.close()
+        conn.close()
