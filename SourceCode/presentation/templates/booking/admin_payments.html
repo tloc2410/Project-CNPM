@@ -39,7 +39,7 @@
         <td><strong>{{ item.customerName }}</strong><span class="g12-admin-meta">{{ item.customerEmail }}</span></td>
         <td>
           <strong>{{ 'E-Wallet (MoMo)' if item.paymentMethod == 'E_WALLET' else 'Bank Transfer' if item.paymentMethod == 'BANK_TRANSFER' else 'Cash' }}</strong>
-          <span class="g12-admin-meta">{{ 'Remaining balance' if item.transactionCode.startswith('BAL-') else 'Initial deposit / cash amount' }}</span>
+          <span class="g12-admin-meta">{{ 'Remaining balance' if (item.transactionCode or '').startswith('BAL-') else 'Initial deposit / cash amount' }}</span>
         </td>
         <td><strong>{{ item.amount|vnd }}</strong><span class="g12-admin-meta">Order total {{ item.totalPrice|vnd }}</span></td>
         <td><code style="overflow-wrap:anywhere;">{{ item.transactionCode }}</code></td>
