@@ -237,3 +237,18 @@ def test_admin_cannot_edit_vehicles_or_users_with_spoofed_customer_role(
                              data={"csrf_token": csrf}).status_code == 403
     assert raw.execute("SELECT COUNT(*) FROM Cars WHERE carID=1").fetchone()[0] == 1
     assert raw.execute("SELECT isLocked FROM Users WHERE UserID=1").fetchone()[0] == 0
+
+
+def test_admin_header_displays_signed_in_full_name_on_every_page(flask_client, booking_db):
+    raw, _ = booking_db
+    _admin(flask_client, raw)
+    with flask_client.session_transaction() as sess:
+        sess["full_name"] = "Nguyen Dinh Chanh"
+    for url in ("/admin", "/admin/vehicles", "/admin/users",
+                "/admin/orders", "/admin/reports"):
+        response = flask_client.get(url)
+        assert response.status_code == 200
+        html = response.get_data(as_text=True)
+        assert '<div class="profile-name">Nguyen Dinh Chanh</div>' in html
+        assert '<div class="profile-avatar">N</div>' in html
+

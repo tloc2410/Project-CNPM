@@ -90,12 +90,12 @@
       <header class="topbar">
         <div class="topbar-title">Reports</div>
         <div class="profile-box">
-          <div class="profile-avatar">A</div>
-          <div>
-            <div class="profile-name">Admin</div>
-            <div class="profile-sub">Administrator</div>
+            <div class="profile-avatar">{{ (session.get('full_name') or 'A')|trim|first|upper }}</div>
+            <div>
+              <div class="profile-name">{{ session.get('full_name') or 'My Account' }}</div>
+              <div class="profile-sub">Administrator</div>
+            </div>
           </div>
-        </div>
       </header>
 
       <main class="workspace">
