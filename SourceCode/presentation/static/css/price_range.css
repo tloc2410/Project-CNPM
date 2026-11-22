@@ -1,0 +1,72 @@
+/* Both price controls must remain keyboard accessible. */
+.g12-dual-range {
+  position: relative;
+  width: calc(100% - 24px);
+  margin: 18px 12px 19px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+}
+.g12-dual-range-track {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 3px;
+  top: 10px;
+  background: #e2e2e2;
+  border-radius: 5px;
+  pointer-events: none;
+}
+.g12-dual-range-fill {
+  position: absolute;
+  height: 100%;
+  left: 0;
+  width: 40%;
+  border-radius: 5px;
+  background: #f5a300;
+}
+.g12-dual-range input[type="range"] {
+  appearance: none;
+  -webkit-appearance: none;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  margin: 0;
+  background: transparent;
+  pointer-events: none;
+  cursor: pointer;
+}
+.g12-dual-range input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #f5a300;
+  border-radius: 50%;
+  background: #fff;
+  cursor: grab;
+  pointer-events: auto;
+  box-shadow: 0 0 0 2px #fff;
+}
+.g12-dual-range input[type="range"]:active::-webkit-slider-thumb { cursor: grabbing; }
+.g12-dual-range input[type="range"]::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: 2px solid #f5a300;
+  border-radius: 50%;
+  background: #fff;
+  cursor: grab;
+  pointer-events: auto;
+}
+.g12-dual-range input[type="range"]:focus-visible::-webkit-slider-thumb {
+  outline: 3px solid #b26a00;
+  outline-offset: 2px;
+}
+.g12-dual-range input[type="range"]:focus-visible::-moz-range-thumb {
+  outline: 3px solid #b26a00;
+  outline-offset: 2px;
+}

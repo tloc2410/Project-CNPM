@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment Verification — Group 12</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Inter", "Segoe UI", -apple-system, Arial, sans-serif;
+      background: #eef2f6; color: #1e293b; padding: 24px; min-height: 100vh;
+    }
+    .app-frame {
+      max-width: 1280px; margin: 0 auto; background: #f6f8fb; border-radius: 16px;
+      overflow: hidden; box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08); display: flex; min-height: 760px;
+    }
+    .sidebar { width: 228px; background: #ffffff; border-right: 1px solid #edf2f7; flex-shrink: 0; }
+    .logo-wrap { height: 76px; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid #f1f5f9; }
+    .logo-mark { font-size: 24px; font-weight: 900; letter-spacing: -0.6px; color: #0f172a; }
+    .logo-mark span { color: #f59e0b; font-style: italic; }
+    .nav-menu { padding: 16px 0; display: flex; flex-direction: column; gap: 4px; }
+    .nav-link {
+      position: relative; display: flex; align-items: center; gap: 12px;
+      padding: 12px 22px; text-decoration: none; color: #475569; font-size: 13.5px; font-weight: 500;
+    }
+    .nav-link:hover { background: #f8fafc; color: #0f172a; }
+    .nav-link.active { background: #fef9e7; color: #0f172a; font-weight: 600; }
+    .nav-link.active::before {
+      content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: #f59e0b;
+    }
+    .main-col { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .topbar {
+      height: 76px; background: #ffffff; border-bottom: 1px solid #edf2f7;
+      padding: 0 28px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .topbar-title { font-size: 22px; font-weight: 700; color: #0f172a; }
+    .topbar-right { display: flex; align-items: center; gap: 20px; }
+    .search-input {
+      width: 260px; height: 36px; padding: 0 14px; border-radius: 999px;
+      border: 1px solid #e2e8f0; background: #f8fafc; font-size: 12.5px; color: #1e293b; outline: none;
+    }
+    .profile-box { display: flex; align-items: center; gap: 10px; }
+    .profile-avatar {
+      width: 34px; height: 34px; border-radius: 50%; background: #1e293b;
+      color: #ffffff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center;
+    }
+    .profile-name { font-size: 13px; font-weight: 600; color: #0f172a; }
+    .profile-sub { font-size: 11px; color: #64748b; }
+    .workspace { padding: 22px 28px 30px; display: flex; flex-direction: column; gap: 18px; }
+    .box-card { background: #ffffff; border: 1px solid #edf2f7; border-radius: 12px; padding: 18px 20px; }
+    .card-heading { font-size: 15.5px; font-weight: 700; color: #0f172a; margin-bottom: 14px; }
+    .tbl-scroll { overflow-x: auto; }
+    table.figma-tbl { width: 100%; border-collapse: collapse; }
+    table.figma-tbl th {
+      background: #f1f5f9; color: #1e293b; font-size: 12px; font-weight: 600;
+      text-align: left; padding: 11px 14px; white-space: nowrap;
+    }
+    table.figma-tbl td {
+      padding: 12px 14px; font-size: 12.5px; color: #334155; border-bottom: 1px solid #f1f5f9; white-space: nowrap;
+    }
+    .st-pill { padding: 3px 9px; border-radius: 6px; font-size: 11.5px; font-weight: 600; background: #fef3c7; color: #b45309; }
+    .st-select { padding: 5px 8px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 12px; background: #fff; }
+    .btn-save {
+      padding: 5px 10px; border-radius: 6px; border: none; background: #f59e0b;
+      color: #fff; font-size: 12px; font-weight: 600; cursor: pointer;
+    }
+    .alert-ok { background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; padding: 10px 14px; border-radius: 10px; font-size: 13px; }
+    .alert-err { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 10px 14px; border-radius: 10px; font-size: 13px; }
+    @media (max-width: 980px) {
+      body { padding: 0; }
+      .app-frame { border-radius: 0; }
+      .sidebar { display: none; }
+    }
+    .alert-ok { background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46;padding:12px 14px;border-radius:10px;font-size:13px; }
+    .alert-err { background:#fef2f2;border:1px solid #fecaca;color:#991b1b;padding:12px 14px;border-radius:10px;font-size:13px; }
+.g12-adminpay{width:100%;min-width:0;margin:0;padding:0;color:#172033}
+.g12-adminpay h1{font-size:30px;margin:7px 0}.g12-adminpay .sub{font-size:14px;color:#64748b;margin-bottom:22px}
+.g12-admin-panel{background:white;border:1px solid #e2e8f0;border-radius:15px;overflow:hidden;box-shadow:0 6px 27px #1720330d}
+.g12-admin-table{width:100%;border-collapse:collapse;font-size:13px;text-align:left}
+.g12-admin-table th{background:#f8fafc;padding:15px 13px;white-space:nowrap}
+.g12-admin-table td{padding:14px 13px;border-top:1px solid #e2e8f0;vertical-align:top}
+.g12-admin-meta{display:block;font-size:12px;color:#64748b;margin-top:5px;overflow-wrap:anywhere}
+.g12-admin-confirm{border:0;background:#fbbf24;padding:10px 12px;border-radius:9px;cursor:pointer;font-weight:800;color:#111827}
+.g12-admin-confirm:hover{background:#f59e0b}
+.g12-admin-verify{display:flex;align-items:flex-start;gap:6px;font-size:12px;line-height:1.35;margin-bottom:8px;max-width:185px}
+.g12-admin-verify input{margin-top:2px}
+.g12-admin-alert{background:#fffbeb;border:1px solid #fcd34d;color:#92400e;border-radius:10px;padding:14px;font-size:13px;margin:18px 0}
+.g12-admin-empty{padding:34px;text-align:center;color:#475569}
+@media(max-width:900px){.g12-admin-panel{overflow-x:auto}.g12-admin-table{min-width:850px}}
+  </style>
+</head>
+<body>
+  <div class="app-frame">
+    <aside class="sidebar">
+      <div class="logo-wrap"><div class="logo-mark">Group<span>12</span></div></div>
+      <nav class="nav-menu">
+        <a href="/admin/dashboard" class="nav-link">Home</a>
+        <a href="/admin/vehicles" class="nav-link">Vehicle Management</a>
+        <a href="/admin/users" class="nav-link">User Management</a>
+        <a href="/admin/orders" class="nav-link">Rental Orders</a>
+        <a href="/admin/reports" class="nav-link">Reports</a>
+        <a href="/admin/payments" class="nav-link active" aria-current="page">Payment Verification</a>
+        <a href="/" class="nav-link">Customer Website</a>
+        <a href="/logout" class="nav-link">Log out</a>
+      </nav>
+    </aside>
+    <div class="main-col">
+      <header class="topbar">
+        <div class="topbar-title">Payment Verification</div>
+        <div class="topbar-right">
+          <div class="profile-box">
+            <div class="profile-avatar">{{ (session.get('full_name') or 'A')|trim|first|upper }}</div>
+            <div>
+              <div class="profile-name">{{ session.get('full_name') or 'My Account' }}</div>
+              <div class="profile-sub">Administrator</div>
+            </div>
+          </div>
+        </div>
+      </header>
+      <main class="workspace">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% for category, message in messages %}
+            <div class="{{ 'alert-ok' if category == 'success' else 'alert-err' }}" role="alert">{{ message }}</div>
+          {% endfor %}
+        {% endwith %}
+        <div class="g12-adminpay">
+
+  <p class="sub" style="color:#b45309;font-weight:750;letter-spacing:.12em;">GROUP 12 · ADMIN</p>
+  <h1>Payment Verification</h1>
+  <p class="sub"><a href="{{ url_for('admin.dashboard') }}">← Admin Dashboard</a> · <a href="{{ url_for('admin.orders') }}">Manage Orders</a></p>
+  <p class="sub">Confirm deposits, remaining balances and cash received for rental orders.</p>
+  <div class="g12-admin-alert">
+    {% if demo_mode %}
+    <strong>STUDENT DEMO MODE:</strong> Confirm only test transactions. Clicking Confirm Demo Payment records simulated receipt; <strong>no real money is transferred</strong>.
+    {% else %}
+    Check the actual receipt in the bank account, MoMo business ledger or cash register <strong>before</strong> confirming any payment.
+    This page cannot check transfers automatically. A customer's screenshot or QR scan alone is not proof.
+    {% endif %}
+  </div>
+  <section class="g12-admin-panel">
+    {% if pending %}
+    <table class="g12-admin-table">
+      <thead><tr><th>Payment / Order</th><th>Customer</th><th>Method</th><th>Amount to verify</th><th>Reference</th><th>Action</th></tr></thead>
+      <tbody>
+      {% for item in pending %}
+      <tr>
+        <td><strong>Payment #{{ item.paymentID }}</strong><span class="g12-admin-meta">Booking #{{ item.oderID }}</span><span class="g12-admin-meta">{{ item.orderStatus }}</span></td>
+        <td><strong>{{ item.customerName }}</strong><span class="g12-admin-meta">{{ item.customerEmail }}</span></td>
+        <td>
+          <strong>{{ 'E-Wallet (MoMo)' if item.paymentMethod == 'E_WALLET' else 'Bank Transfer' if item.paymentMethod == 'BANK_TRANSFER' else 'Cash' }}</strong>
+          <span class="g12-admin-meta">{{ 'Remaining balance' if (item.transactionCode or '').startswith('BAL-') else 'Initial deposit / cash amount' }}</span>
+        </td>
+        <td><strong>{{ item.amount|vnd }}</strong><span class="g12-admin-meta">Order total {{ item.totalPrice|vnd }}</span></td>
+        <td><code style="overflow-wrap:anywhere;">{{ item.transactionCode }}</code></td>
+        <td>
+          <form method="POST" action="{{ url_for('booking.admin_confirm_payment', payment_id=item.paymentID) }}"
+                onsubmit="return confirm('{% if demo_mode %}DEMO ONLY: Mark payment #{{ item.paymentID }} as Paid without moving money?{% else %}Confirm that the full amount has ACTUALLY been received for payment #{{ item.paymentID }}?{% endif %}');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <label class="g12-admin-verify"><input type="checkbox" name="verified" value="yes" required><span>{{ 'I approve this simulated demo payment (no real funds received).' if demo_mode else 'I verified the actual money received.' }}</span></label>
+            <button type="submit" class="g12-admin-confirm">{{ 'Confirm Demo Payment' if demo_mode else 'Confirm Received' }}</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="g12-admin-empty"><h2>No pending payments</h2><p>New deposit or remaining-balance requests will appear here.</p></div>
+    {% endif %}
+  </section>
+  <p class="sub" style="margin-top:18px;">Only accounts with an active ADMIN role can access this screen.</p>
+
+        </div>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

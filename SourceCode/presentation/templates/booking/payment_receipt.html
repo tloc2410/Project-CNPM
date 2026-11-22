@@ -1,0 +1,91 @@
+{% extends "booking/base_booking.html" %}
+{% block title %}Payment Details - Group 12 Car Rental{% endblock %}
+{% block content %}
+<main style="max-width:900px;margin:36px auto 65px;padding:0 18px;">
+  <section style="background:#fff;padding:30px;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 8px 28px #1520350b;">
+    <p style="color:#b45309;font-weight:700;letter-spacing:.12em;">GROUP 12 · RENTAL PAYMENTS</p>
+    <h1 style="margin:12px 0;">Booking #{{ order.oderID }}</h1>
+    {% if demo_mode %}
+    <div style="border:1px solid #fcd34d;background:#fffbeb;color:#92400e;border-radius:11px;padding:13px 16px;margin:12px 0;">
+      <strong>STUDENT DEMO MODE</strong> — Payment statuses marked through simulation do not represent real money. No bank or MoMo account is needed.
+    </div>
+    {% endif %}
+    <p style="color:#64748b;">Only Paid records count toward the balance. Pending requests are not yet credited.</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin:22px 0;">
+      <div style="padding:18px;background:#f8fafc;border-radius:10px;"><div>Order status</div><strong>{{ order.status }}</strong></div>
+      <div style="padding:18px;background:#f8fafc;border-radius:10px;"><div>Payment status</div><strong>{{ order.payment_status }}</strong></div>
+      <div style="padding:18px;background:#f8fafc;border-radius:10px;"><div>Original method</div><strong>{{ order.payment_label }}</strong></div>
+    </div>
+    <table style="width:100%;border-collapse:collapse;text-align:left;">
+      <tbody>
+        <tr><th style="padding:12px 0;">Total rental amount</th><td style="text-align:right;">{{ order.totalPrice|vnd }}</td></tr>
+        <tr><th style="padding:12px 0;">Deposit required (30%)</th><td style="text-align:right;">{{ order.deposit|vnd }}</td></tr>
+        <tr><th style="padding:12px 0;">{{ "Simulated paid" if demo_mode else "Verified paid" }}</th><td style="text-align:right;color:#15803d;font-weight:700;">{{ order.paid_amount|vnd }}</td></tr>
+        <tr><th style="padding:12px 0;">Pending verification</th><td style="text-align:right;">{{ order.pending_amount|vnd }}</td></tr>
+        <tr><th style="padding:12px 0;">Remaining balance</th><td style="text-align:right;"><strong>{{ order.balance_due|vnd }}</strong></td></tr>
+      </tbody>
+    </table>
+    {% if demo_mode and order.pending_payment and not order.pending_balance_request
+          and (order.status or '')|upper != 'CANCELLED' %}
+    <form method="POST" action="{{ url_for('booking.demo_receive_initial_payment', order_id=order.oderID) }}" style="margin-top:18px;">
+      <input type="hidden" name="csrf_token" value="{{ demo_csrf }}">
+      <input type="hidden" name="action" value="success">
+      <button type="submit" style="background:#fbbf24;border:0;border-radius:10px;padding:13px 20px;cursor:pointer;font-weight:800;color:#111827;">
+        {{ 'Simulate Cash Collected at Pickup' if order.pending_payment.paymentMethod == 'CASH' else 'Simulate Deposit Received (30%)' }}
+      </button>
+    </form>
+    <p style="font-size:12px;color:#92400e;">Demo only. This marks the pending amount as simulated Paid without receiving money.</p>
+    {% endif %}
+    {% if order.can_pay_remaining or order.pending_balance_request %}
+    <a href="{{ url_for('booking.pay_remaining', order_id=order.oderID) }}"
+       style="display:inline-block;background:#fbbf24;color:#111827;border-radius:10px;padding:13px 20px;font-weight:800;text-decoration:none;margin-top:18px;">
+      {{ 'Review Remaining Payment' if order.pending_balance_request else 'Pay Remaining Balance' }}
+    </a>
+    {% elif not order.deposit_paid and (order.status or '')|upper != 'CANCELLED' %}
+      <p style="color:#92400e;background:#fffbeb;border:1px solid #fcd34d;border-radius:9px;padding:12px;margin:18px 0;">
+        Waiting for deposit / cash payment verification before a remaining-balance request can be made.
+      </p>
+    {% endif %}
+    <hr style="border:0;border-top:1px solid #e5e7eb;margin:25px 0;">
+    <h2 style="font-size:19px;">Payment History</h2>
+    {% if order.payments %}
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;text-align:left;font-size:13px;">
+        <thead style="background:#f8fafc;">
+          <tr><th style="padding:12px;">Type / Reference</th><th style="padding:12px;">Method</th><th style="padding:12px;">Amount</th><th style="padding:12px;">Status</th></tr>
+        </thead>
+        <tbody>
+          {% for pay in order.payments %}
+          <tr style="border-top:1px solid #e5e7eb;">
+            <td style="padding:12px;">
+              <strong>{{ 'Remaining balance' if (pay.transactionCode or '').startswith('BAL-') else 'Deposit / initial payment' }}</strong>
+              <div style="overflow-wrap:anywhere;color:#64748b;">{{ pay.transactionCode }}</div>
+            </td>
+            <td style="padding:12px;">{{ 'E-Wallet' if pay.paymentMethod == 'E_WALLET' else 'Bank Transfer' if pay.paymentMethod == 'BANK_TRANSFER' else 'Cash' }}</td>
+            <td style="padding:12px;">{{ pay.amount|vnd }}</td>
+            <td style="padding:12px;"><strong>{{ pay.paymentStatus }}</strong></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+      <p>No payment records yet.</p>
+    {% endif %}
+    {% if (order.status or '')|upper == 'CANCELLED' %}
+      <p style="font-size:13px;color:#92400e;">Any Refund Pending entries require real staff review. The website does not automatically refund banks or wallets.</p>
+    {% endif %}
+    <hr style="border:0;border-top:1px solid #e5e7eb;margin:24px 0;">
+    <h2 style="font-size:19px;">Rented Vehicles</h2>
+    {% for item in order["items"] %}
+      <div style="padding:12px 0;border-bottom:1px solid #eee;">
+        <strong>{{ item.carName }}</strong> · {{ item.pickupDate|vn_date }} – {{ item.returnDate|vn_date }} ({{ item.rentalDays }} days)
+      </div>
+    {% endfor %}
+    <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:24px;">
+      <a href="{{ url_for('booking.my_orders') }}" class="btn-primary-sm">My Orders</a>
+      <a href="{{ url_for('dashboard') }}" class="btn-primary-sm">My Account</a>
+    </div>
+  </section>
+</main>
+{% endblock %}

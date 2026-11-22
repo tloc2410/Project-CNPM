@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#ffffff">
+  <title>{% block title %}Group12 Car Rental{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/vehicle.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/booking_header.css') }}">
+  {% block head %}{% endblock %}
+</head>
+<body class="g12-figma-site">
+<header class="g12-header">
+        <div class="g12-header-inner">
+            <a href="{{ url_for('home') }}" class="g12-logo-link" aria-label="Group 12 Car Rental">
+                <img src="{{ url_for('static', filename='images/booking/group12_logo.svg') }}"
+                     alt="Group 12" class="g12-logo-img">
+            </a>
+
+            <nav class="g12-nav" aria-label="Main navigation">
+                <a href="{{ url_for('home') }}#about-us" class="g12-nav-link">ABOUT US</a>
+                <div class="g12-nav-vehicle-group">
+                    <a href="{{ url_for('cars') }}" class="g12-nav-link {% if request.endpoint in ('cars', 'car_detail') %}is-active{% endif %}">VEHICLE LIST</a>
+                    <button type="button" id="g12-seats-toggle" class="g12-nav-seat-toggle" aria-label="Show vehicle categories by number of seats" aria-controls="g12-seat-dropdown" aria-expanded="false" aria-haspopup="true">
+                        <svg class="g12-chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                    </button>
+                </div>
+                <a href="{{ url_for('home') }}#rental-process" class="g12-nav-link">
+                    CAR RENTAL
+                </a>
+                <a href="{{ url_for('home') }}#contact" class="g12-nav-link">CONTACT</a>
+            </nav>
+            <div id="g12-seat-dropdown" class="g12-nav-seat-dropdown" aria-label="Vehicle categories by seats" hidden>
+                <a href="{{ url_for('cars', seats_min=4, seats_max=4) }}">4-Seater Vehicle</a>
+                <a href="{{ url_for('cars', seats_min=7, seats_max=7) }}">7-Seater Vehicle</a>
+                <a href="{{ url_for('cars', seats_min=16, seats_max=16) }}">16-Seater Vehicle</a>
+                <a href="{{ url_for('cars', seats_min=45, seats_max=45) }}">45-Seater Vehicle</a>
+            </div>
+
+            <form class="g12-search-form" method="GET" action="{{ url_for('cars') }}">
+                <input type="text"
+                       name="q"
+                       value="{{ request.args.get('q', '') }}"
+                       class="g12-search-input"
+                       placeholder="Search for cars..."
+                       aria-label="Search for cars">
+                <button type="submit" class="g12-search-btn" aria-label="Search">
+                    <svg viewBox="0 0 20 20" fill="none" width="18" height="18">
+                        <circle cx="9" cy="9" r="6" stroke="currentColor" stroke-width="1.8"/>
+                        <path d="M13.8 13.8L17.5 17.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                    </svg>
+                </button>
+            </form>
+
+            <div class="g12-header-actions">
+                <a href="{{ url_for('booking.cart') }}" class="g12-cart-btn g12-header-cart" title="Your Rental Cart" aria-label="Your cart ({{ nav_cart_count }} vehicles)">
+                    <svg viewBox="0 0 24 24" fill="none" width="24" height="24">
+                        <path d="M3 4h2.2l2.1 10.2a1.5 1.5 0 0 0 1.5 1.2h8.7a1.5 1.5 0 0 0 1.46-1.15L20.5 7.5H6.2"
+                              stroke="#111827" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="9.5" cy="19.5" r="1.4" fill="#111827"/>
+                        <circle cx="17.2" cy="19.5" r="1.4" fill="#111827"/>
+                    </svg>
+                    <span class="g12-cart-badge" id="g12-global-cart-count" data-cart-badge {% if not nav_cart_count %}hidden{% endif %}>{{ nav_cart_count }}</span>
+                </a>
+
+                <span class="g12-header-divider"></span>
+
+                {% include '_account_header.html' %}
+            </div>
+        </div>
+    </header>
+<main class="site-main">
+  {% with messages=get_flashed_messages(with_categories=true) %}
+    {% if messages %}<div class="container flash-stack">{% for category,message in messages %}<div class="flash flash-{{ category }}">{{ message }}</div>{% endfor %}</div>{% endif %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</main>
+<footer class="g12-site-footer" id="contact">
+  <div class="g12-page-width"><img src="{{ url_for('static', filename='images/group12-logo.svg') }}" alt="Group12" width="128"><span>© 2026 Group12 Car Rental · Find your next journey</span><a href="{{ url_for('cars') }}">Vehicle List</a></div>
+</footer>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const toggle = document.getElementById('g12-seats-toggle');
+  const panel = document.getElementById('g12-seat-dropdown');
+  if (!toggle || !panel) return;
+
+  function setOpen(open) {
+    panel.hidden = !open;
+    toggle.setAttribute('aria-expanded', String(open));
+  }
+
+  toggle.addEventListener('click', function (event) {
+    event.stopPropagation();
+    setOpen(panel.hidden);
+  });
+
+  document.addEventListener('click', function (event) {
+    if (!panel.hidden && !panel.contains(event.target) && !toggle.contains(event.target)) {
+      setOpen(false);
+    }
+  });
+
+  document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape' && !panel.hidden) {
+      setOpen(false);
+      toggle.focus();
+    }
+  });
+  // Same account dropdown behavior as the Booking/Cart header.
+  const userTrigger = document.getElementById('user-menu-trigger');
+  const userMenu = document.getElementById('user-menu-dropdown');
+  if (userTrigger && userMenu) {
+    userTrigger.addEventListener('click', function (event) {
+      event.stopPropagation();
+      const open = userMenu.hidden;
+      userMenu.hidden = !open;
+      userTrigger.setAttribute('aria-expanded', String(open));
+    });
+    document.addEventListener('click', function (event) {
+      if (!userMenu.hidden && !userMenu.contains(event.target) && !userTrigger.contains(event.target)) {
+        userMenu.hidden = true;
+        userTrigger.setAttribute('aria-expanded', 'false');
+      }
+    });
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape' && !userMenu.hidden) {
+        userMenu.hidden = true;
+        userTrigger.setAttribute('aria-expanded', 'false');
+        userTrigger.focus();
+      }
+    });
+  }
+});
+</script>
+{% if booking_enabled %}<div id="g12-cart-message" class="g12-cart-message" role="status" aria-live="polite" hidden></div><script src="{{ url_for('static', filename='js/vehicle_cart.js') }}" defer></script>{% endif %}
+{% block scripts %}{% endblock %}
+</body>
+</html>

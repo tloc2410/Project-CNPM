@@ -1,0 +1,227 @@
+{% extends 'base.html' %}
+{% block title %}Vehicle List – Group12 Car Rental{% endblock %}
+{% block content %}
+<div class="figma-cars-page">
+  <section class="figma-cars-banner" aria-label="Group12 Car Rental">
+    <div class="figma-cars-banner-content">
+      <span>THUÊ XE DỄ DÀNG - HÀNH TRÌNH VỮNG BƯỚC</span>
+      <div class="figma-banner-benefits">
+        <span><b>♧</b> ĐA DẠNG<br>XE</span><span><b>♢</b> AN TOÀN<br>UY TÍN</span><span><b>◷</b> THỦ TỤC<br>NHANH GỌN</span>
+      </div>
+    </div>
+  </section>
+  <div class="container figma-cars-container">
+    <div class="figma-cars-heading">
+      <h1>Find Your Rental Car</h1>
+      <p>Browse our cars and choose the best option for your trip.</p>
+    </div>
+    {% if db_error %}<div class="notice notice-warning">MySQL connection problem: {{ db_error }}</div>{% endif %}
+    <div class="figma-cars-layout">
+      <aside class="figma-cars-sidebar" aria-label="Filters">
+        <div class="figma-filter-title"><h2>Filters</h2><a href="{{ url_for('cars') }}">Reset</a></div>
+        <form id="figma-side-filter" method="GET" action="{{ url_for('cars') }}" class="figma-sidebar-form">
+          <label for="side-search">Search by name</label>
+          <div class="g12-input-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="18" height="18" stroke-width="1.6"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg>
+            <input id="side-search" type="search" name="q" value="{{ filters.keyword }}" placeholder="e.g. Toyota Vios">
+          </div>
+          <div class="g12-filter-separator"></div>
+          <label for="price-min">Price range</label>
+          <div class="g12-price-labels"><span>Min price</span><span>Max price</span></div>
+          <div class="g12-price-row">
+            <input id="price-min" type="text" inputmode="numeric" autocomplete="off" aria-label="Minimum price in VND" placeholder="0 ₫" value="">
+            <input id="price-max" type="text" inputmode="numeric" autocomplete="off" aria-label="Maximum price in VND" placeholder="2.000.000 ₫" value="">
+            <input id="price-min-raw" type="hidden" name="price_min" value="{{ filters.price_min if filters.price_min is not none else '' }}">
+            <input id="price-max-raw" type="hidden" name="price_max" value="{{ filters.price_max if filters.price_max is not none else '' }}">
+          </div>
+          <div class="g12-dual-range" id="g12-dual-range" role="group" aria-label="Drag to select the daily rental price range">
+            <div class="g12-dual-range-track" aria-hidden="true"><div class="g12-dual-range-fill" id="g12-range-fill"></div></div>
+            <input id="g12-slider-min" class="g12-range-min" type="range" min="0" max="5000000" step="50000"
+                   value="{{ filters.price_min if filters.price_min is not none else 0 }}"
+                   aria-label="Minimum daily rental price">
+            <input id="g12-slider-max" class="g12-range-max" type="range" min="0" max="5000000" step="50000"
+                   value="{{ filters.price_max if filters.price_max is not none else 2000000 }}"
+                   aria-label="Maximum daily rental price">
+          </div>
+          <div class="g12-filter-separator"></div>
+          <label for="g12-filter-type">Car type</label>
+          <div class="g12-filter-checkboxes">
+            {% for type in types %}
+            <label class="g12-checkbox-line"><input type="radio" name="type_id" value="{{ type.typeId }}" {% if filters.type_id == type.typeId %}checked{% endif %}><span>{{ type.typeName }}</span></label>
+            {% endfor %}
+            <label class="g12-checkbox-line"><input type="radio" name="type_id" value="" {% if not filters.type_id %}checked{% endif %}><span>All types</span></label>
+          </div>
+          <div class="g12-filter-separator"></div>
+          <label>Seats</label>
+          <div class="g12-seat-selector">
+            <label><input type="radio" name="seat_choice" value="4" {% if filters.seats_min == 4 and filters.seats_max == 4 %}checked{% endif %}><span>4 seats</span></label>
+            <label><input type="radio" name="seat_choice" value="5" {% if filters.seats_min == 5 and filters.seats_max == 5 %}checked{% endif %}><span>5 seats</span></label>
+            <label><input type="radio" name="seat_choice" value="7" {% if filters.seats_min == 7 and not filters.seats_max %}checked{% endif %}><span>7 seats+</span></label>
+          </div>
+          <input id="side-seats-min" name="seats_min" type="hidden" value="{{ filters.seats_min or '' }}">
+          <input id="side-seats-max" name="seats_max" type="hidden" value="{{ filters.seats_max or '' }}">
+          <input type="hidden" name="sort" value="{{ filters.sort }}">
+          <button type="submit" class="figma-dark-button">Apply Filters</button>
+        </form>
+      </aside>
+      <section class="figma-cars-results" aria-label="Available vehicles">
+        <form class="figma-cars-toolbar" method="GET" action="{{ url_for('cars') }}">
+          <div class="g12-input-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="20" height="20" stroke-width="1.6"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg>
+            <input type="search" name="q" value="{{ filters.keyword }}" aria-label="Search vehicles" placeholder="Search car name, brand...">
+          </div>
+          <input type="hidden" name="type_id" value="{{ filters.type_id or '' }}">
+          <input type="hidden" name="seats_min" value="{{ filters.seats_min or '' }}">
+          <input type="hidden" name="seats_max" value="{{ filters.seats_max or '' }}">
+          <input type="hidden" name="price_min" value="{{ filters.price_min if filters.price_min is not none else '' }}">
+          <input type="hidden" name="price_max" value="{{ filters.price_max if filters.price_max is not none else '' }}">
+          <label for="figma-sort">Sort by</label>
+          <select id="figma-sort" name="sort">
+            <option value="price_asc" {% if filters.sort == 'price_asc' %}selected{% endif %}>Price: Low to High</option>
+            <option value="price_desc" {% if filters.sort == 'price_desc' %}selected{% endif %}>Price: High to Low</option>
+            <option value="newest" {% if filters.sort == 'newest' %}selected{% endif %}>Newest</option>
+            <option value="popular" {% if filters.sort == 'popular' %}selected{% endif %}>Most Viewed</option>
+            <option value="rentals_desc" {% if filters.sort == 'rentals_desc' %}selected{% endif %}>Most Rented</option>
+          </select>
+          <button class="figma-dark-button" type="submit">Search</button>
+        </form>
+        <div class="figma-cars-results-heading">
+          <div><h2>Available Cars</h2><p>Showing {{ cars|length }} of {{ total }} vehicles</p></div>
+          <div class="figma-quick-filters">
+            <a class="{% if not filters.type_id and not filters.seats_min %}selected{% endif %}" href="{{ url_for('cars', q=filters.keyword, sort=filters.sort, price_min=filters.price_min, price_max=filters.price_max) }}">All Cars</a>
+            <a class="{% if filters.seats_min == 4 and filters.seats_max == 4 %}selected{% endif %}" href="{{ url_for('cars', q=filters.keyword, seats_min=4, seats_max=4, sort=filters.sort, price_min=filters.price_min, price_max=filters.price_max) }}">4 Seats</a>
+            <a class="{% if filters.seats_min == 5 and filters.seats_max == 5 %}selected{% endif %}" href="{{ url_for('cars', q=filters.keyword, seats_min=5, seats_max=5, sort=filters.sort, price_min=filters.price_min, price_max=filters.price_max) }}">5 Seats</a>
+            {% set suv_type = (types|selectattr('typeName', 'equalto', 'SUV')|list|first) %}
+            {% if suv_type %}<a class="{% if filters.type_id == suv_type.typeId %}selected{% endif %}" href="{{ url_for('cars', type_id=suv_type.typeId, q=filters.keyword, sort=filters.sort) }}">SUV</a>{% endif %}
+          </div>
+        </div>
+        {% if cars %}
+        <div class="car-grid figma-cars-grid">
+          {% for car in cars %}{% include '_car_card.html' %}{% endfor %}
+        </div>
+        {% if total_pages > 1 %}
+        <nav class="pagination" aria-label="Pagination">
+          {% if filters.page > 1 %}<a class="page-btn" href="{{ url_for('cars', q=filters.keyword, type_id=filters.type_id, seats_min=filters.seats_min, seats_max=filters.seats_max, price_min=filters.price_min, price_max=filters.price_max, sort=filters.sort, page=filters.page-1) }}">← Previous</a>{% endif %}
+          {% for p in range(1,total_pages+1) %}
+          {% if p==1 or p==total_pages or (p >= filters.page-2 and p <= filters.page+2) %}
+          <a class="page-btn {% if p == filters.page %}active{% endif %}" href="{{ url_for('cars', q=filters.keyword, type_id=filters.type_id, seats_min=filters.seats_min, seats_max=filters.seats_max, price_min=filters.price_min, price_max=filters.price_max, sort=filters.sort, page=p) }}">{{ p }}</a>
+          {% endif %}
+          {% endfor %}
+          {% if filters.page < total_pages %}<a class="page-btn" href="{{ url_for('cars', q=filters.keyword, type_id=filters.type_id, seats_min=filters.seats_min, seats_max=filters.seats_max, price_min=filters.price_min, price_max=filters.price_max, sort=filters.sort, page=filters.page+1) }}">Next →</a>{% endif %}
+        </nav>
+        {% endif %}
+        {% else %}
+        <div class="empty-state"><h3>No matching vehicles</h3><p>Try a different search, type or price range.</p><a href="{{ url_for('cars') }}" class="figma-dark-button">View all cars</a></div>
+        {% endif %}
+      </section>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/price_range.css') }}">
+{% endblock %}
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded',function(){
+  const form=document.getElementById('figma-side-filter');
+  if(!form)return;
+  // Show Vietnamese thousands separators while keeping numeric SQL filters.
+  const minField = document.getElementById('price-min');
+  const maxField = document.getElementById('price-max');
+  const minRaw = document.getElementById('price-min-raw');
+  const maxRaw = document.getElementById('price-max-raw');
+  const minSlider = document.getElementById('g12-slider-min');
+  const maxSlider = document.getElementById('g12-slider-max');
+  const rangeFill = document.getElementById('g12-range-fill');
+  const upperBound = Number(minSlider.max);
+  const step = Number(minSlider.step);
+  const bound = number => Math.min(upperBound, Math.max(0, number));
+  const formatPrice = number => Number(number).toLocaleString('vi-VN');
+
+  function setPrice(field, rawField, value) {
+    field.value = value === null ? '' : formatPrice(value);
+    rawField.value = value === null ? '' : String(value);
+  }
+
+  function drawRange() {
+    const low = Number(minSlider.value);
+    const high = Number(maxSlider.value);
+    rangeFill.style.left = (low / upperBound * 100) + '%';
+    rangeFill.style.width = (Math.max(0, high - low) / upperBound * 100) + '%';
+    minSlider.style.zIndex = low >= high - 3 * step ? '5' : '3';
+    maxSlider.style.zIndex = low >= high - 3 * step ? '4' : '5';
+    minSlider.setAttribute('aria-valuetext', formatPrice(low) + ' đồng');
+    maxSlider.setAttribute('aria-valuetext', formatPrice(high) + ' đồng');
+  }
+
+  minSlider.addEventListener('input', function () {
+    const low = Math.max(0, Math.min(Number(minSlider.value), Number(maxSlider.value) - step));
+    minSlider.value = String(low);
+    setPrice(minField, minRaw, low);
+    drawRange();
+  });
+
+  maxSlider.addEventListener('input', function () {
+    const high = Math.min(upperBound, Math.max(Number(maxSlider.value), Number(minSlider.value) + step));
+    maxSlider.value = String(high);
+    setPrice(maxField, maxRaw, high);
+    drawRange();
+  });
+
+  // Reformat as the user types; keep caret near the same digit after dots are inserted.
+  function listenForPrice(field, rawField, slider, isMin) {
+    field.addEventListener('input', function () {
+      const cursor = field.selectionStart === null ? field.value.length : field.selectionStart;
+      const digitPosition = field.value.slice(0, cursor).replace(/\D/g, '').length;
+      const digits = field.value.replace(/\D/g, '');
+      if (!digits) {
+        setPrice(field, rawField, null);
+        slider.value = isMin ? '0' : '2000000';
+        drawRange();
+        return;
+      }
+      let amount = bound(Number(digits));
+      if (isMin && amount >= Number(maxSlider.value)) {
+        amount = Math.min(amount, upperBound - step);
+        const newMax = Math.min(upperBound, amount + step);
+        maxSlider.value = String(newMax);
+        setPrice(maxField, maxRaw, newMax);
+      } else if (!isMin && amount <= Number(minSlider.value)) {
+        const newMin = Math.max(0, amount - step);
+        minSlider.value = String(newMin);
+        setPrice(minField, minRaw, newMin);
+      }
+      setPrice(field, rawField, amount);
+      slider.value = String(amount);
+      let pos = 0;
+      let digitsSeen = 0;
+      while (pos < field.value.length && digitsSeen < digitPosition) {
+        if (/\d/.test(field.value[pos])) digitsSeen++;
+        pos++;
+      }
+      field.setSelectionRange(pos, pos);
+      drawRange();
+    });
+  }
+
+  // Format restored URL values on first load, without changing the submitted filters.
+  if (minRaw.value !== '') minField.value = formatPrice(Number(minRaw.value));
+  if (maxRaw.value !== '') maxField.value = formatPrice(Number(maxRaw.value));
+  if (Number(minSlider.value) >= Number(maxSlider.value)) {
+    maxSlider.value = String(Math.min(upperBound, Number(minSlider.value) + step));
+  }
+  listenForPrice(minField, minRaw, minSlider, true);
+  listenForPrice(maxField, maxRaw, maxSlider, false);
+  drawRange();
+
+  form.querySelectorAll('input[name="seat_choice"]').forEach(function(input){
+    input.addEventListener('change',function(){
+      const v=Number(input.value);
+      document.getElementById('side-seats-min').value=v;
+      document.getElementById('side-seats-max').value=v===7?'':v;
+    });
+  });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400" role="img" aria-label="Sedan">
+  <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#dbeafe"/><stop offset="1" stop-color="#fef3c7"/></linearGradient></defs>
+  <rect width="640" height="400" fill="url(#bg)"/>
+  <circle cx="525" cy="75" r="100" fill="#fff" opacity="0.22"/>
+  <g transform="translate(80 145)">
+    <rect x="25" y="62" width="420" height="88" rx="26" fill="#2563eb"/>
+    <path d="M105 64 L165 20 H320 L385 64 Z" fill="#1d4ed8"/>
+    <path d="M175 60 L200 30 H258 V60 Z M274 60 V30 H315 L358 60 Z" fill="#dbeafe"/>
+    <circle cx="130" cy="150" r="32" fill="#0f172a"/><circle cx="130" cy="150" r="14" fill="#cbd5e1"/>
+    <circle cx="348" cy="150" r="32" fill="#0f172a"/><circle cx="348" cy="150" r="14" fill="#cbd5e1"/>
+    <rect x="430" y="92" width="24" height="16" rx="5" fill="#fbbf24"/>
+  </g>
+  <text x="40" y="365" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#475569" opacity="0.85">SEDAN</text>
+</svg>

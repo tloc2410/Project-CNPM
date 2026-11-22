@@ -1,0 +1,16 @@
+<article class="car-card">
+  <a class="car-card-image" href="{{ url_for('car_detail', car_id=car.carID) }}">
+    <img src="{{ car_image(car) }}" alt="{{ car.name }}" data-fallback="{{ url_for('static', filename='images/cars/car-placeholder.svg') }}" onerror="this.onerror=null;this.src=this.dataset.fallback">
+  </a>
+  <div class="car-card-body">
+    <h3 class="car-name"><a href="{{ url_for('car_detail', car_id=car.carID) }}">{{ car.name }}</a></h3>
+    <div class="g12-card-review"><span class="g12-card-stars" aria-hidden="true">★★★★★</span><span>{{ car.numberOfViews or 0 }} views</span></div>
+    <div class="car-card-footer">
+      <div class="g12-card-details">
+        <span>{{ car.numberOfSeats or '—' }} seats</span>
+        <span>•</span><span>{{ car.typeName or 'Vehicle' }}</span>
+      </div>
+      <div class="car-price"><strong>{{ format_price(car.pricePerDay) }}</strong></div>
+    </div>
+  </div>
+</article>

@@ -1,0 +1,52 @@
+name: Vehicle module tests
+
+on:
+  push:
+    paths:
+      - "SourceCode/**"
+      - "Database/**"
+  pull_request:
+    paths:
+      - "SourceCode/**"
+      - "Database/**"
+  workflow_dispatch:
+
+jobs:
+  unittest:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: SourceCode
+    env:
+      SECRET_KEY: ci-test-only-secret
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: SourceCode/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt pytest
+
+      - name: Run Vehicle tests (17)
+        run: python -m unittest discover -s Test -p "test_vehicle_*.py" -v
+
+      - name: Run Authentication tests (15)
+        run: python -m pytest Test/test_auth.py -v
+
+      - name: Run Rental Cart and Booking tests (25)
+        run: python -m pytest Test/test_cart_booking.py -v
+
+      - name: Run Payment tests (student demo mode)
+        env:
+          DEMO_PAYMENT_MODE: "1"
+        run: python -m pytest Test/test_payment_flow.py -v
+
+      - name: Run Admin integration tests
+        run: python -m pytest Test/test_admin_integration.py -v

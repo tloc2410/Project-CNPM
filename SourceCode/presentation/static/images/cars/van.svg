@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400" role="img" aria-label="Van">
+  <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e0e7ff"/><stop offset="1" stop-color="#fef3c7"/></linearGradient></defs>
+  <rect width="640" height="400" fill="url(#bg)"/>
+  <circle cx="525" cy="75" r="100" fill="#fff" opacity="0.22"/>
+  <g transform="translate(70 125)">
+    <rect x="25" y="65" width="460" height="125" rx="22" fill="#7c3aed"/>
+    <path d="M80 67 L120 18 H380 L440 67 Z" fill="#6d28d9"/>
+    <path d="M135 63 L160 28 H245 V63 Z M260 63 V28 H370 L415 63 Z" fill="#e0e7ff"/>
+    <circle cx="135" cy="190" r="38" fill="#0f172a"/><circle cx="135" cy="190" r="16" fill="#cbd5e1"/>
+    <circle cx="375" cy="190" r="38" fill="#0f172a"/><circle cx="375" cy="190" r="16" fill="#cbd5e1"/>
+  </g>
+  <text x="40" y="365" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#475569" opacity="0.85">VAN</text>
+</svg>

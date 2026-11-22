@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rental Orders — Group 12</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Inter", "Segoe UI", -apple-system, Arial, sans-serif;
+      background: #eef2f6; color: #1e293b; padding: 24px; min-height: 100vh;
+    }
+    .app-frame {
+      max-width: 1280px; margin: 0 auto; background: #f6f8fb; border-radius: 16px;
+      overflow: hidden; box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08); display: flex; min-height: 760px;
+    }
+    .sidebar { width: 228px; background: #ffffff; border-right: 1px solid #edf2f7; flex-shrink: 0; }
+    .logo-wrap { height: 76px; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid #f1f5f9; }
+    .logo-mark { font-size: 24px; font-weight: 900; letter-spacing: -0.6px; color: #0f172a; }
+    .logo-mark span { color: #f59e0b; font-style: italic; }
+    .nav-menu { padding: 16px 0; display: flex; flex-direction: column; gap: 4px; }
+    .nav-link {
+      position: relative; display: flex; align-items: center; gap: 12px;
+      padding: 12px 22px; text-decoration: none; color: #475569; font-size: 13.5px; font-weight: 500;
+    }
+    .nav-link:hover { background: #f8fafc; color: #0f172a; }
+    .nav-link.active { background: #fef9e7; color: #0f172a; font-weight: 600; }
+    .nav-link.active::before {
+      content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: #f59e0b;
+    }
+    .main-col { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .topbar {
+      height: 76px; background: #ffffff; border-bottom: 1px solid #edf2f7;
+      padding: 0 28px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .topbar-title { font-size: 22px; font-weight: 700; color: #0f172a; }
+    .topbar-right { display: flex; align-items: center; gap: 20px; }
+    .search-input {
+      width: 260px; height: 36px; padding: 0 14px; border-radius: 999px;
+      border: 1px solid #e2e8f0; background: #f8fafc; font-size: 12.5px; color: #1e293b; outline: none;
+    }
+    .profile-box { display: flex; align-items: center; gap: 10px; }
+    .profile-avatar {
+      width: 34px; height: 34px; border-radius: 50%; background: #1e293b;
+      color: #ffffff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center;
+    }
+    .profile-name { font-size: 13px; font-weight: 600; color: #0f172a; }
+    .profile-sub { font-size: 11px; color: #64748b; }
+    .workspace { padding: 22px 28px 30px; display: flex; flex-direction: column; gap: 18px; }
+    .box-card { background: #ffffff; border: 1px solid #edf2f7; border-radius: 12px; padding: 18px 20px; }
+    .card-heading { font-size: 15.5px; font-weight: 700; color: #0f172a; margin-bottom: 14px; }
+    .tbl-scroll { overflow-x: auto; }
+    table.figma-tbl { width: 100%; border-collapse: collapse; }
+    table.figma-tbl th {
+      background: #f1f5f9; color: #1e293b; font-size: 12px; font-weight: 600;
+      text-align: left; padding: 11px 14px; white-space: nowrap;
+    }
+    table.figma-tbl td {
+      padding: 12px 14px; font-size: 12.5px; color: #334155; border-bottom: 1px solid #f1f5f9; white-space: nowrap;
+    }
+    .st-pill { padding: 3px 9px; border-radius: 6px; font-size: 11.5px; font-weight: 600; background: #fef3c7; color: #b45309; }
+    .st-select { padding: 5px 8px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 12px; background: #fff; }
+    .btn-save {
+      padding: 5px 10px; border-radius: 6px; border: none; background: #f59e0b;
+      color: #fff; font-size: 12px; font-weight: 600; cursor: pointer;
+    }
+    .alert-ok { background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; padding: 10px 14px; border-radius: 10px; font-size: 13px; }
+    .alert-err { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 10px 14px; border-radius: 10px; font-size: 13px; }
+    @media (max-width: 980px) {
+      body { padding: 0; }
+      .app-frame { border-radius: 0; }
+      .sidebar { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-frame">
+    <aside class="sidebar">
+      <div class="logo-wrap"><div class="logo-mark">Group<span>12</span></div></div>
+      <nav class="nav-menu">
+        <a href="/admin/dashboard" class="nav-link">Home</a>
+        <a href="/admin/vehicles" class="nav-link">Vehicle Management</a>
+        <a href="/admin/users" class="nav-link">User Management</a>
+        <a href="/admin/orders" class="nav-link active">Rental Orders</a>
+        <a href="/admin/reports" class="nav-link">Reports</a>
+        <a href="/admin/payments" class="nav-link">Payment Verification</a>
+        <a href="/" class="nav-link">Customer Website</a>
+        <a href="/logout" class="nav-link">Log out</a>
+      </nav>
+    </aside>
+
+    <div class="main-col">
+      <header class="topbar">
+        <div class="topbar-title">Rental Orders</div>
+        <div class="topbar-right">
+          <input type="text" id="orderSearch" class="search-input" placeholder="Search rental orders..." />
+          <div class="profile-box">
+            <div class="profile-avatar">{{ (session.get('full_name') or 'A')|trim|first|upper }}</div>
+            <div>
+              <div class="profile-name">{{ session.get('full_name') or 'My Account' }}</div>
+              <div class="profile-sub">Administrator</div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="workspace">
+        {% if request.args.get('message') %}
+          <div class="alert-ok">{{ request.args.get('message') }}</div>
+        {% endif %}
+        {% if request.args.get('error') %}
+          <div class="alert-err">{{ request.args.get('error') }}</div>
+        {% endif %}
+
+        <section class="box-card">
+          <div class="card-heading">All Rental Orders</div>
+          <div class="tbl-scroll">
+            <table class="figma-tbl" id="ordersTable">
+              <thead>
+                <tr>
+                  <th>Order ID</th>
+                  <th>Customer</th>
+                  <th>Vehicle</th>
+                  <th>Pickup Date</th>
+                  <th>Return Date</th>
+                  <th>Total Amount</th>
+                  <th>Status</th>
+                  <th>Update Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for o in orders %}
+                  {% set code = o.order_code or o.id %}
+                  {% set state = (o.status or 'PENDING')|upper %}
+                  {% set next_statuses = order_transitions.get(state, []) %}
+                  <tr class="order-row">
+                    <td>{{ code }}</td>
+                    <td>{{ o.customer }}</td>
+                    <td>{{ o.vehicle }}</td>
+                    <td>{{ o.pickup_date }}</td>
+                    <td>{{ o.return_date }}</td>
+                    <td>{{ "{:,.0f}".format(o.total|float)|replace(",", ".") }}đ</td>
+                    <td><span class="st-pill">{{ o.status }}</span></td>
+                    <td>
+                      {% if next_statuses %}
+                      <form method="POST" action="/admin/orders/{{ code }}/status" style="display:flex; gap:6px; align-items:center;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <select name="status" class="st-select">
+                          {% for st in next_statuses|sort %}
+                            <option value="{{ st }}">{{ st|replace("_", " ")|title }}</option>
+                          {% endfor %}
+                        </select>
+                        <button type="submit" class="btn-save">Save</button>
+                      </form>
+                      {% else %}
+                      <span style="font-size:12px;color:#64748b;">Final status</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const input = document.getElementById("orderSearch");
+    if (input) {
+      input.addEventListener("input", function () {
+        const kw = this.value.trim().toLowerCase();
+        document.querySelectorAll("#ordersTable tbody tr.order-row").forEach((row) => {
+          row.style.display = row.textContent.toLowerCase().includes(kw) ? "" : "none";
+        });
+      });
+    }
+  </script>
+</body>
+</html>

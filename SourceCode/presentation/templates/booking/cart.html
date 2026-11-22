@@ -1,0 +1,244 @@
+{% extends "booking/base_booking.html" %}
+{% block title %}Your Cart - Group 12 Car Rental{% endblock %}
+{% block body_class %}booking-page page-cart{% endblock %}
+
+{% block content %}
+<div class="cart-container" data-page="cart">
+    
+    <div class="cart-top-bar">
+        <div class="cart-heading-group">
+            <svg class="cart-heading-icon" viewBox="0 0 28 28" fill="none" width="32" height="32">
+                <path d="M3 5h2.8l2.5 11.6a1.8 1.8 0 0 0 1.76 1.4h10.2a1.8 1.8 0 0 0 1.74-1.36L24 8.8H7.2"
+                      stroke="#111827" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="10.8" cy="22.5" r="1.7" fill="#111827"/>
+                <circle cx="19.6" cy="22.5" r="1.7" fill="#111827"/>
+            </svg>
+            <h1 class="cart-title">Your Cart (<span id="cart-title-count">{{ summary.total_count }}</span>)</h1>
+        </div>
+        <div class="cart-top-right">
+            <span class="cart-subtitle">Select items to checkout</span>
+            <a href="{{ url_for('booking.my_orders') }}" class="btn-outline-sm">Đơn đã đặt</a>
+        </div>
+    </div>
+
+    {% if summary["items"] %}
+        
+        <div class="cart-toolbar">
+            <label class="g12-checkbox-label">
+                <input type="checkbox"
+                       id="select-all-checkbox"
+                       class="g12-checkbox"
+                       {% if summary.all_selected %}checked{% endif %}>
+                <span>Select all</span>
+            </label>
+            <form method="POST" action="{{ url_for('booking.cart_remove_selected') }}" id="remove-selected-form">
+                <button type="submit"
+                        id="remove-selected-btn"
+                        class="btn-text-muted"
+                        {% if summary.selected_count == 0 %}disabled{% endif %}>
+                    Remove selected
+                </button>
+            </form>
+        </div>
+
+        
+        <div class="cart-grid">
+            <div class="cart-list" id="cart-items-list">
+                {% for item in summary["items"] %}
+                    <article class="cart-card {% if item.error %}has-error{% endif %}"
+                             data-car-id="{{ item.car_id }}"
+                             data-price="{{ item.car.pricePerDay if item.car else 0 }}">
+                        <div class="cart-card-check">
+                            <input type="checkbox"
+                                   class="g12-checkbox item-checkbox"
+                                   data-car-id="{{ item.car_id }}"
+                                   aria-label="Select {{ item.car.name if item.car else 'car' }}"
+                                   {% if item.selected %}checked{% endif %}>
+                        </div>
+
+                        <div class="cart-card-thumb-wrap">
+                            {% set pic = (item.car.pictures|car_img_url if item.car else url_for('static', filename='images/cars/car-placeholder.svg')) %}
+                            <img src="{{ pic }}"
+                                 alt="{{ item.car.name if item.car else 'Car' }}"
+                                 class="cart-card-thumb"
+                                 onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/cars/car-placeholder.svg') }}'">
+                        </div>
+
+                        <div class="cart-card-body">
+                            <div class="cart-card-header-row">
+                                <div>
+                                    <h2 class="cart-car-name">
+                                        {{ item.car.name if item.car else ('Xe #' ~ item.car_id) }}
+                                    </h2>
+                                    <p class="cart-car-specs">
+                                        {{ item.car.numberOfSeats if item.car and item.car.numberOfSeats else 4 }} seats
+                                        · {{ item.car.description if item.car and item.car.description else 'Automatic · Petrol' }}
+                                    </p>
+                                </div>
+
+                                <form method="POST"
+                                      action="{{ url_for('booking.cart_remove', car_id=item.car_id) }}"
+                                      class="remove-car-form"
+                                      data-car-id="{{ item.car_id }}">
+                                    <button type="submit" class="btn-icon-trash" title="Xóa xe khỏi giỏ" aria-label="Remove car">
+                                        <svg viewBox="0 0 24 24" fill="none" width="20" height="20">
+                                            <path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m-8 0l.8 12a1.5 1.5 0 0 0 1.5 1.4h5.4a1.5 1.5 0 0 0 1.5-1.4L17 7M10 11v6M14 11v6"
+                                                  stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                    </button>
+                                </form>
+                            </div>
+
+                            
+                            <div class="cart-dates-row">
+                                <div class="cart-date-field">
+                                    <label for="pickup-{{ item.car_id }}" class="sr-only">Ngày nhận xe</label>
+                                    <input type="date"
+                                           id="pickup-{{ item.car_id }}"
+                                           class="cart-date-input input-pickup"
+                                           data-car-id="{{ item.car_id }}"
+                                           value="{{ item.pickup_date }}">
+                                </div>
+                                <span class="cart-date-sep">–</span>
+                                <div class="cart-date-field">
+                                    <label for="return-{{ item.car_id }}" class="sr-only">Ngày trả xe</label>
+                                    <input type="date"
+                                           id="return-{{ item.car_id }}"
+                                           class="cart-date-input input-return"
+                                           data-car-id="{{ item.car_id }}"
+                                           value="{{ item.return_date }}">
+                                </div>
+                            </div>
+
+
+                            <div class="cart-card-footer-row">
+                                <div class="cart-price-block">
+                                    <span class="cart-unit-price">{{ (item.car.pricePerDay if item.car else 0)|vnd }}</span>
+                                    <span class="cart-unit-suffix">/day</span>
+                                    <span class="cart-line-subtotal" data-line-total="{{ item.car_id }}">
+                                        {% if item.rental_days > 0 %}
+                                            ({{ item.rental_days }} ngày: {{ item.line_total|vnd }})
+                                        {% endif %}
+                                    </span>
+                                </div>
+
+                                
+                                <div class="days-stepper" data-car-id="{{ item.car_id }}" title="Thay đổi số ngày thuê">
+                                    <button type="button" class="stepper-btn stepper-minus" data-car-id="{{ item.car_id }}" aria-label="Decrease rental days">−</button>
+                                    <span class="stepper-val" data-days-display="{{ item.car_id }}">{{ item.rental_days if item.rental_days > 0 else 1 }}</span>
+                                    <button type="button" class="stepper-btn stepper-plus" data-car-id="{{ item.car_id }}" aria-label="Increase rental days">+</button>
+                                </div>
+                            </div>
+
+                            
+                            <div class="item-error-banner" data-error-box="{{ item.car_id }}" {% if not item.error %}hidden{% endif %}>
+                                <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
+                                    <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.6"/>
+                                    <path d="M10 6.2v4.5M10 13.5h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                                </svg>
+                                <span data-error-text="{{ item.car_id }}">{{ item.error }}</span>
+                            </div>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+
+            
+            <aside class="summary-card cart-summary-card">
+                <h2 class="summary-title">Order Summary</h2>
+
+                <div class="summary-row">
+                    <span>Selected cars (<span id="summary-selected-count">{{ summary.selected_count }}</span>)</span>
+                    <strong id="summary-selected-subtotal">{{ summary.subtotal|vnd }}</strong>
+                </div>
+                <div class="summary-row summary-row-muted">
+                    <span>Rental fee</span>
+                    <span id="summary-rental-fee">{{ summary.subtotal|vnd }}</span>
+                </div>
+
+                <hr class="summary-divider">
+
+                <div class="summary-total-row">
+                    <span>Total</span>
+                    <strong id="summary-total">{{ summary.total|vnd }}</strong>
+                </div>
+
+                <a href="{{ url_for('booking.checkout') }}"
+                   id="proceed-checkout-btn"
+                   class="btn-checkout-cta {% if summary.is_valid %}is-enabled{% else %}is-disabled{% endif %}"
+                   {% if not summary.is_valid %}aria-disabled="true"{% endif %}>
+                    Proceed to Checkout
+                </a>
+
+                <p class="summary-helper" id="summary-helper-text">
+                    {% if summary.selected_count == 0 %}
+                        Select the cars you want to rent to calculate the order total.
+                    {% elif not summary.is_valid %}
+                        Vui lòng xử lý cảnh báo trùng lịch hoặc ngày thuê không hợp lệ trước khi thanh toán.
+                    {% else %}
+                        Đã sẵn sàng! Nhấn Proceed to Checkout để xác nhận thông tin và thanh toán.
+                    {% endif %}
+                </p>
+            </aside>
+        </div>
+    {% else %}
+        
+        <div class="empty-cart-box">
+            <svg viewBox="0 0 48 48" fill="none" width="54" height="54">
+                <path d="M6 10h5l4.4 20a3 3 0 0 0 2.9 2.4h17.2a3 3 0 0 0 2.9-2.3L41 16H13"
+                      stroke="#9CA3AF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="19" cy="39" r="2.6" fill="#9CA3AF"/>
+                <circle cx="34" cy="39" r="2.6" fill="#9CA3AF"/>
+            </svg>
+            <h2>Giỏ thuê xe của bạn đang trống</h2>
+            <p>Hãy chọn thêm xe bên dưới để bắt đầu đặt lịch thuê xe nhanh chóng.</p>
+        </div>
+    {% endif %}
+
+    
+    <section class="available-cars-section" id="available-cars">
+        <div class="section-header-row">
+            <div>
+                <h2 class="section-title">Available Vehicles</h2>
+                <p class="section-subtitle">Chọn thêm xe sẵn sàng cho thuê vào giỏ hàng của bạn</p>
+            </div>
+            {% if search_query %}
+                <a href="{{ url_for('booking.cart') }}" class="btn-outline-sm">Xóa lọc "{{ search_query }}"</a>
+            {% endif %}
+        </div>
+
+        {% if cars %}
+            <div class="available-cars-grid">
+                {% for car in cars %}
+                    <div class="avail-car-card">
+                        <div class="avail-car-img-wrap">
+                            {% set cpic = car.pictures|car_img_url %}
+                            <img src="{{ cpic }}"
+                                 alt="{{ car.name }}"
+                                 class="avail-car-img"
+                                 onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/cars/car-placeholder.svg') }}'">
+                            <span class="avail-badge">Available</span>
+                        </div>
+                        <div class="avail-car-info">
+                            <h3 class="avail-car-name">{{ car.name }}</h3>
+                            <p class="avail-car-specs">
+                                {{ car.numberOfSeats or 4 }} seats · {{ car.description or 'Automatic · Petrol' }}
+                            </p>
+                            <div class="avail-car-bottom">
+                                <div class="avail-car-price">
+                                    <strong>{{ car.pricePerDay|vnd }}</strong><span>/day</span>
+                                </div>
+                                <form method="POST" action="{{ url_for('booking.cart_add', car_id=car.carID) }}">
+                                    <button type="submit" class="btn-add-cart">+ Add to Cart</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="empty-note">Tất cả xe sẵn sàng đã nằm trong giỏ hàng hoặc không có xe khớp từ khóa.</p>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

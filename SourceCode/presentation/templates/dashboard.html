@@ -1,0 +1,187 @@
+{% extends 'base.html' %}
+{% block title %}My Account & My Rentals – Group 12 Car Rental{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/account.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="g12-account-page">
+  <div class="g12-account-shell">
+    <header class="g12-account-intro">
+      <div>
+        <p class="g12-account-eyebrow">GROUP 12 CAR RENTAL / CUSTOMER CENTER</p>
+        <h1>My Account<span class="g12-account-title-accent">.</span></h1>
+        <p>Manage your personal information and keep track of all your rental journeys.</p>
+      </div>
+      <a class="g12-account-explore" href="{{ url_for('cars') }}">
+        <span>Explore Vehicles</span><span aria-hidden="true">↗</span>
+      </a>
+    </header>
+
+    <div class="g12-account-layout">
+      <aside class="g12-account-sidebar" aria-label="My Account">
+        <div class="g12-account-person">
+          <div class="g12-account-avatar" aria-hidden="true">{{ (profile.fullName or session.get('full_name', 'G'))[0]|upper }}</div>
+          <div class="g12-account-person-meta">
+            <strong>{{ profile.fullName }}</strong>
+            <span>{{ profile.email }}</span>
+            <small><span class="g12-account-online-dot"></span> Customer account</small>
+          </div>
+        </div>
+
+        <p class="g12-account-nav-title">MY ACCOUNT</p>
+        <nav class="g12-account-side-nav">
+          <a class="g12-account-side-link {% if section == 'orders' %}is-active{% endif %}" href="{{ url_for('dashboard', section='orders') }}">
+            <span class="g12-account-side-icon">▤</span><span>My Rentals</span>
+          </a>
+          <a class="g12-account-side-link {% if section == 'profile' %}is-active{% endif %}" href="{{ url_for('dashboard', section='profile') }}">
+            <span class="g12-account-side-icon">♙</span><span>My Profile</span>
+          </a>
+          <a class="g12-account-side-link" href="{{ url_for('booking.cart') }}">
+            <span class="g12-account-side-icon">▣</span><span>Rental Cart</span>
+            <span class="g12-account-nav-count">{{ nav_cart_count }}</span>
+          </a>
+        </nav>
+        <p class="g12-account-nav-title g12-account-nav-title-secondary">SUPPORT & SECURITY</p>
+        <nav class="g12-account-side-nav">
+          <a class="g12-account-side-link" href="{{ url_for('forgot_password') }}"><span class="g12-account-side-icon">♧</span><span>Reset Password</span></a>
+          <a class="g12-account-side-link" href="{{ url_for('home') }}#contact"><span class="g12-account-side-icon">☏</span><span>Contact Support</span></a>
+          <a class="g12-account-side-link g12-account-signout" href="{{ url_for('logout') }}"><span class="g12-account-side-icon">↪</span><span>Log Out</span></a>
+        </nav>
+        <div class="g12-account-help">
+          <span class="g12-account-help-icon">✦</span>
+          <strong>Ready for your next journey?</strong>
+          <p>Find the perfect car for your next trip.</p>
+          <a href="{{ url_for('cars') }}">Browse Cars <span aria-hidden="true">→</span></a>
+        </div>
+      </aside>
+
+      <div class="g12-account-main">
+        {% if section == 'profile' %}
+          <div class="g12-account-panel">
+            <div class="g12-account-panel-head">
+              <div><p class="g12-account-eyebrow">YOUR INFORMATION</p><h2>My Profile</h2><p>Keep your contact details up to date for a smooth rental experience.</p></div>
+              <span class="g12-account-soft-icon">♙</span>
+            </div>
+            <form action="{{ url_for('account_update_profile') }}" method="POST" class="g12-profile-form">
+              <input type="hidden" name="csrf_token" value="{{ profile_csrf }}">
+              <div class="g12-profile-grid">
+                <div class="g12-profile-field"><label for="account-name">Full Name <span>*</span></label><input id="account-name" name="full_name" value="{{ profile.fullName }}" maxlength="100" minlength="2" required></div>
+                <div class="g12-profile-field"><label for="account-phone">Phone Number <span>*</span></label><input id="account-phone" name="phone" value="{{ profile.phone or '' }}" maxlength="20" required></div>
+                <div class="g12-profile-field"><label for="account-email">Email</label><input id="account-email" type="email" value="{{ profile.email }}" readonly><small>Your email address cannot be changed here.</small></div>
+                <div class="g12-profile-field"><label for="account-role">Account Type</label><input id="account-role" value="{{ profile.role or session.get('role', 'CUSTOMER') }}" readonly></div>
+                <div class="g12-profile-field g12-profile-address"><label for="account-address">Contact Address</label><input id="account-address" name="address" value="{{ profile.address or '' }}" maxlength="255" placeholder="Enter your address (optional)"></div>
+              </div>
+              <div class="g12-profile-actions"><span>Changes only apply to your signed-in account.</span><button class="g12-account-primary" type="submit">Save Changes <span aria-hidden="true">→</span></button></div>
+            </form>
+          </div>
+        {% else %}
+          <div class="g12-account-overview">
+            <div class="g12-account-welcome">
+              <p class="g12-account-eyebrow">YOUR RENTAL JOURNEY</p>
+              <h2>Hello, {{ profile.fullName }} <span>👋</span></h2>
+              <p>Track your rental orders and get ready for your next journey.</p>
+            </div>
+            <div class="g12-account-stat"><span>Total Rentals</span><strong>{{ order_counts.all }}</strong><small>Across your account</small></div>
+            <div class="g12-account-stat"><span>In Progress</span><strong>{{ order_counts.pending + order_counts.confirmed + order_counts.renting }}</strong><small>Pending / Confirmed / Renting</small></div>
+          </div>
+
+          <section class="g12-account-panel g12-account-orders-panel">
+            <div class="g12-account-panel-head">
+              <div><p class="g12-account-eyebrow">ORDER HISTORY</p><h2>My Rental Orders</h2><p>View and manage your rental orders, from booking to return.</p></div>
+              <a class="g12-account-small-link" href="{{ url_for('cars') }}">+ Book Another Car</a>
+            </div>
+            <nav class="g12-account-order-tabs" aria-label="Filter rental orders by status">
+              {% for value, title in order_tabs %}
+                <a class="g12-account-tab {% if active_status == value %}is-active{% endif %}" href="{{ url_for('dashboard', section='orders', status=value, q=order_query or None) }}" {% if active_status == value %}aria-current="page"{% endif %}>
+                  <span>{{ title }}</span><small>{{ order_counts[value] }}</small>
+                </a>
+              {% endfor %}
+            </nav>
+            <form class="g12-account-order-search" method="GET" action="{{ url_for('dashboard') }}">
+              <input type="hidden" name="section" value="orders">
+              <input type="hidden" name="status" value="{{ active_status }}">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8"/><path d="m16.5 16.5 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+              <input name="q" value="{{ order_query }}" placeholder="Search by order ID or car name..." aria-label="Search rental orders">
+              {% if order_query %}<a href="{{ url_for('dashboard', section='orders', status=active_status) }}" class="g12-account-search-clear" aria-label="Clear search">×</a>{% endif %}
+              <button type="submit">Search</button>
+            </form>
+
+            <div class="g12-account-order-list">
+              {% if orders %}
+                {% for order in orders %}
+                  {% set group = order_status_group(order.status) %}
+                  <article class="g12-account-order-card">
+                    <header class="g12-account-order-top">
+                      <div class="g12-account-order-identity"><strong>RENTAL ORDER #{{ order.oderID }}</strong><span>Placed on {{ order.orderTime|dt_str }}</span></div>
+                      <span class="g12-account-order-status g12-order-status-{{ group }}">
+                        {% if group == 'pending' %}Pending Confirmation{% elif group == 'confirmed' %}Confirmed{% elif group == 'renting' %}Currently Renting{% elif group == 'completed' %}Completed{% elif group == 'cancelled' %}Cancelled{% else %}{{ order.status or 'In Progress' }}{% endif %}
+                      </span>
+                    </header>
+                    {% for item in order["items"] %}
+                      <div class="g12-account-order-car">
+                        <a href="{{ url_for('car_detail', car_id=item.CarID) }}" class="g12-account-car-image">
+                          <img src="{{ item.pictures|car_img_url }}" alt="{{ item.carName }}" loading="lazy" onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/cars/car-placeholder.svg') }}'">
+                        </a>
+                        <div class="g12-account-car-details">
+                          <a href="{{ url_for('car_detail', car_id=item.CarID) }}"><h3>{{ item.carName }}</h3></a>
+                          <div class="g12-account-car-tags"><span>🚘 Self-Drive Rental</span><span>{{ item.rentalDays }} days</span></div>
+                          <p>Pick-up <strong>{{ item.pickupDate|vn_date }}</strong> <span aria-hidden="true">→</span> Return <strong>{{ item.returnDate|vn_date }}</strong></p>
+                          <span class="g12-account-car-unit">{{ item.unitPrice|vnd }}/day</span>
+                        </div>
+                        <strong class="g12-account-line-price">{{ item.lineTotal|vnd }}</strong>
+                      </div>
+                    {% endfor %}
+                    <footer class="g12-account-order-footer">
+                      <div class="g12-account-order-details">
+                        <span>Pick-up Method: <strong>{{ 'Pick up at Showroom' if order.receivingMethod == 'PICKUP' else 'Home Delivery' if order.receivingMethod == 'DELIVERY' else order.receiving_label }}</strong></span>
+                        <span>Payment: <strong>{{ order.payment_label }}</strong></span>
+                        <span>Paid: <strong>{{ order.paid_amount|vnd }}</strong></span>
+                        <span>Outstanding: <strong>{{ order.balance_due|vnd }}</strong></span>
+                        <span>Payment Status: <strong>{{ order.payment_status }}</strong></span>
+                        <span>Delivery Fee: <strong>{{ 'Free' if (order.deliveryFee or 0) == 0 else order.deliveryFee|vnd }}</strong></span>
+                      </div>
+                      <div class="g12-account-order-summary">
+                        <div><span>Total Amount</span><strong>{{ order.totalPrice|vnd }}</strong></div>
+                        <div class="g12-account-order-actions">
+                          {% if order.can_pay_remaining or order.pending_balance_request %}
+                            <a class="g12-account-outline-btn" href="{{ url_for('booking.pay_remaining', order_id=order.oderID) }}">{{ 'Review Payment' if order.pending_balance_request else 'Pay Remaining Balance' }}</a>
+                          {% endif %}
+                          <a class="g12-account-outline-btn" href="{{ url_for('booking.payment_receipt', order_id=order.oderID) }}">Payment Details</a>
+                          {% if order["items"] %}<a class="g12-account-outline-btn" href="{{ url_for('car_detail', car_id=order['items'][0].CarID) }}">Rent Again</a>{% endif %}
+                          {% if order.can_cancel %}
+                            <form method="POST" action="{{ url_for('booking.cancel_order', order_id=order.oderID) }}" class="g12-account-cancel-form">
+                              <button class="g12-account-outline-btn g12-account-danger-btn" type="submit" onclick="return confirm('Are you sure you want to cancel rental order #{{ order.oderID }}?')">Cancel Order</button>
+                            </form>
+                          {% endif %}
+                          <details class="g12-account-order-more"><summary>Order Details <span aria-hidden="true">⌄</span></summary>
+                            <div class="g12-account-order-breakdown">
+                              <span>Rental Order ID</span><strong>#{{ order.oderID }}</strong>
+                              <span>Deposit</span><strong>{{ order.deposit|vnd }}</strong>
+                              <span>Verified Paid</span><strong>{{ order.paid_amount|vnd }}</strong>
+                              <span>Remaining Balance</span><strong>{{ order.balance_due|vnd }}</strong>
+                              <span>Payment Method</span><strong>{{ order.payment_label }}</strong>
+                              <span>Order Status</span><strong>{{ order.status }}</strong>
+                            </div>
+                          </details>
+                        </div>
+                      </div>
+                    </footer>
+                  </article>
+                {% endfor %}
+              {% else %}
+                <div class="g12-account-empty">
+                  <span class="g12-account-empty-art">🚙</span>
+                  <h3>{% if order_query %}No matching rental orders found{% elif active_status != 'all' %}No orders in this category yet{% else %}You haven't rented a car yet{% endif %}</h3>
+                  <p>Try another order ID or car name, change the status filter, or explore available vehicles.</p>
+                  <a class="g12-account-primary" href="{{ url_for('cars') }}">Browse Vehicles <span aria-hidden="true">→</span></a>
+                </div>
+              {% endif %}
+            </div>
+          </section>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
