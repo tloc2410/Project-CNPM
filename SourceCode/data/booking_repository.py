@@ -175,7 +175,7 @@ def get_order_for_update(cursor, order_id):
     """Lock and return an order row by oderID inside a transaction."""
     cursor.execute(
         """
-        SELECT oderID, useID, status, totalPrice
+        SELECT oderID, useID, status, totalPrice, deposit, paymentMethod
         FROM Orders
         WHERE oderID = %s
         FOR UPDATE
