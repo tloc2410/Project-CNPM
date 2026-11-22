@@ -1,0 +1,110 @@
+{% extends "booking/base_booking.html" %}
+{% block title %}Pay Remaining Balance - Group 12 Car Rental{% endblock %}
+{% block body_class %}booking-page page-checkout{% endblock %}
+{% block extra_head %}
+<style>
+.g12-balance-shell{max-width:1060px;margin:36px auto 70px;padding:0 18px;color:#162034}
+.g12-balance-head{margin:0 0 25px}.g12-balance-head h1{font-size:29px;margin:8px 0}
+.g12-balance-head p{color:#64748b;margin:0}
+.g12-balance-columns{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(310px,.8fr);gap:20px;align-items:start}
+.g12-balance-card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:25px;box-shadow:0 8px 28px #1720330c}
+.g12-balance-card h2{font-size:19px;margin:0 0 14px}
+.g12-balance-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 0;border-bottom:1px solid #edf2f7}
+.g12-balance-row strong{font-weight:750;text-align:right}
+.g12-balance-row:last-child{border:0}
+.g12-balance-amount{font-size:31px;font-weight:850;letter-spacing:-.6px}
+.g12-balance-hint{color:#64748b;font-size:13px;line-height:1.6}
+.g12-balance-notice{background:#fffbeb;border:1px solid #fcd34d;color:#92400e;padding:14px;border-radius:12px;margin:16px 0;font-size:13px;line-height:1.5}
+.g12-methods{display:grid;gap:12px;margin:16px 0}
+.g12-method{display:flex;gap:12px;align-items:center;border:1px solid #e2e8f0;padding:15px;border-radius:12px;cursor:pointer}
+.g12-method input{accent-color:#fbbf24;width:16px;height:16px}
+.g12-action{width:100%;background:#fbbf24;color:#111827;padding:14px;border:0;border-radius:10px;cursor:pointer;font-weight:800;font-size:15px}
+.g12-action:hover{background:#f59e0b}
+.g12-action-secondary{background:#fff;color:#9f1239;border:1px solid #fecaca;padding:11px 15px;cursor:pointer;border-radius:10px}
+.g12-bal-qr{display:block;width:min(100%,270px);height:auto;aspect-ratio:1;object-fit:contain;margin:15px auto;border:10px solid #fff;border-radius:12px;background:#fff}
+.g12-balance-label{display:inline-flex;border:1px solid #fcd34d;background:#fffbeb;color:#92400e;border-radius:40px;padding:7px 10px;font-size:12px;font-weight:700}
+.g12-balance-tx{font-size:13px;color:#475569;overflow-wrap:anywhere}
+.g12-bal-back{display:inline-block;margin-top:21px;color:#475569;text-decoration:none}
+@media(max-width:790px){.g12-balance-columns{grid-template-columns:1fr}.g12-balance-card{padding:19px}}
+</style>
+{% endblock %}
+{% block content %}
+<div class="g12-balance-shell">
+  <header class="g12-balance-head">
+    <div class="g12-balance-label">RENTAL ORDER #{{ order.oderID }}</div>
+    <h1>Pay Remaining Balance</h1>
+    <p>Pay the remaining rental amount at pickup or request a QR transfer for staff verification.</p>
+  </header>
+  <div class="g12-balance-columns">
+    <section class="g12-balance-card">
+      <h2>Remaining Payment</h2>
+      {% if (order.status or '')|upper == 'CANCELLED' %}
+        <div class="g12-balance-notice">This booking has been cancelled. Further payments are disabled.</div>
+      {% elif order.balance_due == 0 %}
+        <div class="g12-balance-notice" style="color:#166534;background:#f0fdf4;border-color:#bbf7d0;">
+          Payment completed. Your rental order has been paid in full.
+        </div>
+      {% elif payment %}
+        <div class="g12-balance-label">Awaiting Verification</div>
+        <p class="g12-balance-hint">Your {{ 'E-Wallet' if payment.paymentMethod == 'E_WALLET' else 'Bank Transfer' if payment.paymentMethod == 'BANK_TRANSFER' else 'Cash' }} payment request is recorded but <strong>not yet marked as received</strong>.</p>
+        <div class="g12-balance-amount">{{ payment.amount|vnd }}</div>
+        {% if payment.paymentMethod in ('E_WALLET', 'BANK_TRANSFER') %}
+          {% if qr_image %}
+          <img class="g12-bal-qr" src="{{ qr_image }}" alt="{{ 'Bank VietQR' if qr_type == 'BANK_TRANSFER' else 'MoMo merchant QR' }}" loading="eager">
+          {% if payment.paymentMethod == 'BANK_TRANSFER' %}
+          <p class="g12-balance-tx">Bank: <strong>{{ bank_details.bank }}</strong></p>
+          <p class="g12-balance-tx">Account: <strong>{{ bank_details.account }}</strong></p>
+          {% if bank_details.holder %}<p class="g12-balance-tx">Receiver: <strong>{{ bank_details.holder }}</strong></p>{% endif %}
+          <p class="g12-balance-tx">Amount: <strong>{{ payment.amount|vnd }}</strong> · Transfer reference: <strong>{{ payment.transactionCode }}</strong></p>
+          {% else %}
+          <p class="g12-balance-hint">This is a merchant-provided static QR. Enter the amount shown above manually if the MoMo app does not prefill it.</p>
+          {% endif %}
+          {% else %}
+          <div class="g12-balance-notice">QR receiver is not configured by the project administrator. Do not transfer money until the recipient details have been verified.</div>
+          {% endif %}
+        {% else %}
+          <div class="g12-balance-notice">Pay this amount directly to staff when receiving the vehicle. Staff will mark it Paid after collecting the cash.</div>
+        {% endif %}
+        <p class="g12-balance-hint">Reference: {{ payment.transactionCode }}. A QR scan does not confirm successful payment; staff must check the actual transfer or cash receipt.</p>
+        <form method="POST" style="margin-top:20px;" onsubmit="return confirm('Cancel this unverified payment request and choose another method?');">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <input type="hidden" name="action" value="cancel_pending">
+          <button type="submit" class="g12-action-secondary">Cancel Request / Change Method</button>
+        </form>
+      {% elif order.can_pay_remaining %}
+        <div class="g12-balance-label">Deposit Verified</div>
+        <p class="g12-balance-hint">Your deposit is recorded as Paid. Choose how to pay the outstanding amount.</p>
+        <div class="g12-balance-amount">{{ order.balance_due|vnd }}</div>
+        <form method="POST">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <input type="hidden" name="action" value="request">
+          <div class="g12-methods">
+            <label class="g12-method"><input type="radio" name="payment_method" value="E_WALLET" checked><span><strong>E-Wallet (MoMo)</strong><small style="display:block;color:#64748b;">Merchant QR · manual verification</small></span></label>
+            <label class="g12-method"><input type="radio" name="payment_method" value="BANK_TRANSFER"><span><strong>Bank Transfer</strong><small style="display:block;color:#64748b;">VietQR · prefilled amount and reference</small></span></label>
+            <label class="g12-method"><input type="radio" name="payment_method" value="CASH"><span><strong>Cash at Pickup</strong><small style="display:block;color:#64748b;">Staff collects the balance when you receive the car</small></span></label>
+          </div>
+          <div class="g12-balance-notice">Submitting creates a Pending payment request. It does not charge money or confirm that a QR transfer succeeded.</div>
+          <button type="submit" class="g12-action">Create Remaining Payment Request</button>
+        </form>
+      {% else %}
+        <div class="g12-balance-notice">
+          The deposit or another payment is still awaiting verification. You can pay the remaining balance after staff verifies your deposit.
+        </div>
+      {% endif %}
+      <a href="{{ url_for('booking.payment_receipt', order_id=order.oderID) }}" class="g12-bal-back">← Back to Payment Details</a>
+    </section>
+    <aside class="g12-balance-card">
+      <h2>Rental Payment Summary</h2>
+      <div class="g12-balance-row"><span>Total rental</span><strong>{{ order.totalPrice|vnd }}</strong></div>
+      <div class="g12-balance-row"><span>Deposit (30%)</span><strong>{{ order.deposit|vnd }}</strong></div>
+      <div class="g12-balance-row"><span>Verified paid</span><strong style="color:#15803d;">{{ order.paid_amount|vnd }}</strong></div>
+      <div class="g12-balance-row"><span>Pending verification</span><strong>{{ order.pending_amount|vnd }}</strong></div>
+      <div class="g12-balance-row"><strong>Outstanding</strong><strong>{{ order.balance_due|vnd }}</strong></div>
+      <p class="g12-balance-hint">Payments are tracked separately in the transaction history, so the deposit is never charged twice.</p>
+      {% for item in order['items'] %}
+      <div class="g12-balance-row"><span>{{ item.carName }}</span><strong>{{ item.rentalDays }} day(s)</strong></div>
+      {% endfor %}
+    </aside>
+  </div>
+</div>
+{% endblock %}
