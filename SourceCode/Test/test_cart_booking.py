@@ -165,6 +165,17 @@ CREATE TABLE Orders (
     FOREIGN KEY (useID) REFERENCES Users(UserID)
 );
 
+CREATE TABLE Payments (
+    paymentID INTEGER PRIMARY KEY AUTOINCREMENT,
+    oderID INTEGER NOT NULL,
+    amount REAL NOT NULL,
+    paymentMethod TEXT,
+    paymentStatus TEXT,
+    transactionCode TEXT,
+    paidAt TEXT,
+    FOREIGN KEY (oderID) REFERENCES Orders(oderID)
+);
+
 CREATE TABLE Oderitem (
     OderitemID INTEGER PRIMARY KEY AUTOINCREMENT,
     OderID INTEGER NOT NULL,
@@ -1149,3 +1160,110 @@ def test_account_static_copy_is_english_only():
     assert "My Rental Orders" in template
     assert "Pick up at Showroom" in template
     assert "Your profile has been updated" not in template
+
+
+
+# ===========================================================================
+# Payment integration regression tests (demo only, no real gateway)
+# ===========================================================================
+def test_online_deposit_payment_persists_atomically(booking_db):
+    raw, tracker = booking_db
+    from datetime import timedelta
+    from business import payment_service
+    start = date.today() + timedelta(days=15)
+    end = start + timedelta(days=2)
+    cart = [{"car_id": 1, "pickup_date": start.isoformat(),
+             "return_date": end.isoformat(), "selected": True}]
+    order_id = svc.place_order(1, cart, "PICKUP", "CARD")
+    row = raw.execute(
+        "SELECT amount, paymentMethod, paymentStatus, transactionCode FROM Payments WHERE oderID = ?",
+        (order_id,),
+    ).fetchone()
+    assert row["paymentStatus"] == "Paid"
+    assert row["paymentMethod"] == "CARD"
+    assert row["amount"] == 360000
+    assert row["transactionCode"].startswith("DEMO-")
+    assert payment_service.balance_due(1200000, row["paymentStatus"], row["amount"]) == 840000
+
+
+def test_declined_demo_payment_rolls_back_order_and_items(booking_db):
+    raw, tracker = booking_db
+    from datetime import timedelta
+    start = date.today() + timedelta(days=25)
+    end = start + timedelta(days=1)
+    cart = [{"car_id": 1, "pickup_date": start.isoformat(),
+             "return_date": end.isoformat(), "selected": True}]
+    with pytest.raises(svc.BookingError, match="declined"):
+        svc.place_order(1, cart, "PICKUP", "CARD", demo_outcome="declined")
+    for table in ("Orders", "Oderitem", "Payments"):
+        assert raw.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0] == 0
+    assert tracker["rollbacks"] > 0
+
+
+def test_offline_payment_statuses_and_cancellation(booking_db):
+    raw, tracker = booking_db
+    from datetime import timedelta
+    start = date.today() + timedelta(days=35)
+    end = start + timedelta(days=1)
+    cart = [{"car_id": 1, "pickup_date": start.isoformat(),
+             "return_date": end.isoformat(), "selected": True}]
+    order_id = svc.place_order(1, cart, "PICKUP", "BANK_TRANSFER")
+    payment = raw.execute(
+        "SELECT paymentStatus, amount FROM Payments WHERE oderID = ?", (order_id,)
+    ).fetchone()
+    assert payment["paymentStatus"] == "Pending"
+    assert payment["amount"] == 180000
+    svc.cancel_order(1, order_id)
+    payment = raw.execute(
+        "SELECT paymentStatus FROM Payments WHERE oderID = ?", (order_id,)
+    ).fetchone()
+    assert payment["paymentStatus"] == "Cancelled"
+
+
+def test_paid_demo_order_cancel_marks_demo_refund(booking_db):
+    raw, tracker = booking_db
+    from datetime import timedelta
+    start = date.today() + timedelta(days=38)
+    end = start + timedelta(days=1)
+    cart = [{"car_id": 1, "pickup_date": start.isoformat(),
+             "return_date": end.isoformat(), "selected": True}]
+    order_id = svc.place_order(1, cart, "PICKUP", "E_WALLET")
+    svc.cancel_order(1, order_id)
+    assert raw.execute(
+        "SELECT paymentStatus FROM Payments WHERE oderID = ?", (order_id,)
+    ).fetchone()[0] == "Refunded"
+
+
+def test_payment_receipt_is_customer_scoped(flask_client, booking_db):
+    raw, _ = booking_db
+    from datetime import timedelta
+    start = date.today() + timedelta(days=42)
+    end = start + timedelta(days=1)
+    cart = [{"car_id": 1, "pickup_date": start.isoformat(),
+             "return_date": end.isoformat(), "selected": True}]
+    order_id = svc.place_order(1, cart, "PICKUP", "CARD")
+    _login_session(flask_client, user_id=1)
+    good = flask_client.get(f"/orders/{order_id}/payment")
+    assert good.status_code == 200
+    assert b"Remaining balance" in good.data
+    _login_session(flask_client, user_id=2)
+    denied = flask_client.get(f"/orders/{order_id}/payment")
+    assert denied.status_code == 404
+
+
+def test_demo_checkout_payment_decline_preserves_cart(flask_client, booking_db):
+    from datetime import timedelta
+    raw, _ = booking_db
+    _login_session(flask_client)
+    start = (date.today() + timedelta(days=43)).isoformat()
+    end = (date.today() + timedelta(days=44)).isoformat()
+    flask_client.post("/cart/add/1", data={"pickup_date": start, "return_date": end})
+    response = flask_client.post("/checkout", data={
+        "pickup_date": start, "return_date": end,
+        "receiving_method": "PICKUP", "payment_method": "CARD",
+        "demo_outcome": "declined", "agree_terms": "on",
+    })
+    assert response.status_code == 302
+    with flask_client.session_transaction() as sess:
+        assert len(sess.get("rental_cart", [])) == 1
+    assert raw.execute("SELECT COUNT(*) FROM Orders").fetchone()[0] == 0
