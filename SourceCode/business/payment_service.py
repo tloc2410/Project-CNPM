@@ -27,7 +27,7 @@ class PaymentPlan:
     paid_at: datetime | None
 
 
-def plan_payment(method, order_id, total, deposit, demo_outcome="success"):
+def plan_payment(method, order_id, total, deposit, demo_outcome="success", transfer_reference=None):
     """Prepare a payment row, without charging a real payment instrument.
 
     Online demo methods mark ONLY the 30% booking deposit Paid. Bank transfers
@@ -49,7 +49,7 @@ def plan_payment(method, order_id, total, deposit, demo_outcome="success"):
     if method == "BANK_TRANSFER":
         return PaymentPlan(
             amount=Decimal(str(deposit)), status="Pending",
-            transaction_code=f"G12-{order_id}", paid_at=None,
+            transaction_code=transfer_reference or f"G12-{order_id}", paid_at=None,
         )
     return PaymentPlan(
         amount=Decimal(str(total)), status="Pending",
