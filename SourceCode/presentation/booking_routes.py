@@ -8,6 +8,8 @@ Integrates cleanly with the Account/Auth session created in SourceCode/run.py:
 
 from datetime import datetime
 from functools import wraps
+import secrets
+import time
 
 from flask import (
     Blueprint,
@@ -26,6 +28,29 @@ booking_bp = Blueprint("booking", __name__)
 
 CART_KEY = "rental_cart"
 DIRECT_BOOKING_KEY = "direct_booking"  # never included in rental_cart
+PAYMENT_DRAFT_KEY = "pending_payment"
+PAYMENT_DRAFT_LIFETIME = 15 * 60  # expire unpaid checkout drafts after 15 minutes
+
+
+def _payment_draft():
+    """Read a short-lived, signed-session checkout draft; it is not an order."""
+    draft = session.get(PAYMENT_DRAFT_KEY)
+    if not isinstance(draft, dict):
+        return None
+    try:
+        valid = (
+            draft.get("user_id") == session.get("user_id")
+            and draft.get("payment_method") in svc.PAYMENT_METHODS
+            and draft.get("receiving_method") in svc.RECEIVING_METHODS
+            and bool(draft.get("items"))
+            and 0 <= time.time() - float(draft.get("created_at", 0)) < PAYMENT_DRAFT_LIFETIME
+        )
+    except (TypeError, ValueError):
+        valid = False
+    if not valid:
+        session.pop(PAYMENT_DRAFT_KEY, None)
+        return None
+    return draft
 
 
 
@@ -502,30 +527,32 @@ def checkout():
             flash("Vui lòng đồng ý với Điều khoản và Chính sách bảo mật trước khi đặt xe.", "error")
             return redirect(checkout_again)
 
+        # Checkout does NOT write Orders/Payments. Stage a short-lived draft for
+        # a separate Payment page. The final POST recalculates DB prices and
+        # availability and commits order + payment in one transaction.
         payment_method = request.form.get("payment_method", "CARD")
-        demo_outcome = request.form.get("demo_outcome", "success")
-        try:
-            order_id = svc.place_order(
-                user_id=session["user_id"],
-                cart=selected_items,
-                receiving_method=receiving,
-                payment_method=payment_method,
-                demo_outcome=demo_outcome,
-            )
-        except svc.BookingError as exc:
-            flash(str(exc), "error")
+        if payment_method not in svc.PAYMENT_METHODS:
+            flash("Please select a valid payment method.", "error")
+            return redirect(checkout_again)
+        summary = svc.build_cart_summary(
+            selected_items, receiving_method=receiving, selected_only=True
+        )
+        if not summary["is_valid"]:
+            flash(next((i["error"] for i in summary["items"] if i["error"]),
+                       "Please check your rental dates."), "error")
             return redirect(checkout_again)
 
-        if direct_mode:
-            # Instant booking was never in rental_cart; do not remove cars.
-            session.pop(DIRECT_BOOKING_KEY, None)
-        else:
-            remaining = svc.remove_car_ids_from_cart(
-                checkout_items, [i["car_id"] for i in selected_items]
-            )
-            _save_cart(remaining)
-        flash(f"Đặt xe thành công! Mã đơn hàng của bạn là #{order_id}.", "success")
-        return redirect(url_for("booking.my_orders"))
+        session[PAYMENT_DRAFT_KEY] = {
+            "user_id": session["user_id"],
+            "items": selected_items,
+            "receiving_method": receiving,
+            "payment_method": payment_method,
+            "direct_mode": direct_mode,
+            "created_at": int(time.time()),
+            "csrf": secrets.token_urlsafe(32),
+        }
+        session.modified = True
+        return redirect(url_for("booking.payment_page"))
 
     summary = svc.build_cart_summary(
         checkout_items, receiving_method=receiving, selected_only=True
@@ -551,6 +578,81 @@ def checkout():
         renter=renter,
         full_name=session.get("full_name", ""),
         free_delivery_threshold=int(svc.FREE_DELIVERY_THRESHOLD),
+    )
+
+
+# ------------------------------------------------------------------ payment (separate third step)
+@booking_bp.route("/payment", methods=["GET", "POST"])
+@login_required
+def payment_page():
+    draft = _payment_draft()
+    if not draft:
+        flash("No pending checkout or the payment session expired. Please review your booking.", "error")
+        return redirect(url_for("booking.cart"))
+
+    summary = svc.build_cart_summary(
+        draft["items"], receiving_method=draft["receiving_method"], selected_only=True
+    )
+    if not summary["is_valid"]:
+        session.pop(PAYMENT_DRAFT_KEY, None)
+        flash(next((i["error"] for i in summary["items"] if i["error"]),
+                   "The selected car is no longer available."), "error")
+        return redirect(url_for(
+            "booking.checkout", **({"mode": "now"} if draft["direct_mode"] else {})
+        ))
+
+    payment_error = None
+    if request.method == "POST":
+        token = str(request.form.get("payment_csrf") or "")
+        expected = str(draft.get("csrf") or "")
+        if not expected or not secrets.compare_digest(token, expected):
+            return "Invalid payment request.", 400
+
+        action = request.form.get("payment_action")
+        if action == "declined":
+            # Demo refusal: NOT a booking, NOT a payment and NOT a cart change.
+            payment_error = "Demo payment declined. No order was placed. Please try again."
+        elif action != "confirm":
+            return "Invalid payment action.", 400
+        else:
+            try:
+                # Offline methods require explicit simulated confirmation too:
+                # no bank or cash payment is actually processed.
+                outcome = "success" if draft["payment_method"] in ("CARD", "E_WALLET") else "confirmed"
+                order_id = svc.place_order(
+                    user_id=session["user_id"],
+                    cart=draft["items"],
+                    receiving_method=draft["receiving_method"],
+                    payment_method=draft["payment_method"],
+                    demo_outcome=outcome,
+                )
+            except svc.BookingError as exc:
+                payment_error = str(exc)
+            else:
+                if draft["direct_mode"]:
+                    if session.get(DIRECT_BOOKING_KEY) == draft["items"][0]:
+                        session.pop(DIRECT_BOOKING_KEY, None)
+                else:
+                    def was_purchased(item):
+                        return any(
+                            item["car_id"] == staged["car_id"]
+                            and item["pickup_date"] == staged["pickup_date"]
+                            and item["return_date"] == staged["return_date"]
+                            for staged in draft["items"]
+                        )
+                    _save_cart([item for item in _get_cart() if not was_purchased(item)])
+                session.pop(PAYMENT_DRAFT_KEY, None)
+                flash(f"Demo payment confirmed. Booking #{order_id} was created.", "success")
+                return redirect(url_for("booking.payment_receipt", order_id=order_id))
+
+    method_labels = svc.PAYMENT_METHOD_LABELS
+    return render_template(
+        "booking/payment.html",
+        draft=draft,
+        summary=summary,
+        payment_method_label=method_labels[draft["payment_method"]],
+        payment_error=payment_error,
+        direct_mode=draft["direct_mode"],
     )
 
 
