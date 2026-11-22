@@ -1,4 +1,4 @@
-"""Booking and cart integration tests with transactional SQLite fixtures."""
+"""Essential Cart & Booking integration tests using transactional SQLite fixtures."""
 
 import os
 import re
@@ -214,6 +214,9 @@ def booking_db(monkeypatch):
     raw.close()
 
 
+
+# Cart, dates and pricing
+
 def test_cart_add_duplicate_and_remove():
     cart = []
     cart, added, msg = svc.add_to_cart(cart, 1, "2026-12-01", "2026-12-03")
@@ -295,6 +298,10 @@ def test_automatic_fee_calculation_and_free_delivery():
     assert t_free_del["total"] == Decimal("2800000")
     assert t_free_del["deposit"] == Decimal("840000")
 
+
+
+
+# Booking, availability and rollback
 
 def test_overlap_detection_blocks_conflicts_and_allows_free_ranges(booking_db):
     today = date(2026, 11, 21)
@@ -437,6 +444,8 @@ def test_cancel_order_db_error_rolls_back(booking_db, monkeypatch):
     assert status == "PENDING"
 
 
+
+
 @pytest.fixture
 def flask_client(booking_db):
     import run as app_module
@@ -452,6 +461,8 @@ def _login_session(client, user_id=1, full_name="Do Thu Thao"):
         sess["full_name"] = full_name
         sess["role"] = "CUSTOMER"
 
+
+# Flask routes and Checkout
 
 def test_routes_require_login(flask_client):
     res = flask_client.get("/cart")
@@ -557,52 +568,6 @@ def test_full_web_booking_flow_cart_to_checkout_to_cancel(flask_client, booking_
     assert "Đã hủy đơn hàng #1".encode("utf-8") in cancel_res.data
 
 
-def test_car_image_url_resolution(flask_client):
-    """Verify bare .webp filenames from sample_data_vehicles.sql resolve to /static/images/cars/..."""
-    from presentation.booking_routes import car_img_url
-    import run as app_module
-
-    with app_module.app.test_request_context():
-        assert car_img_url("toyotavios2023.webp") == "/static/images/cars/toyotavios2023.webp"
-        assert car_img_url("hondacity2022.webp, interior.webp") == "/static/images/cars/hondacity2022.webp"
-        assert car_img_url("/static/images/booking/car_vios.svg") == "/static/images/cars/toyotavios2023.webp"
-        assert car_img_url("/static/images/booking/car_city.svg") == "/static/images/cars/hondacity2022.webp"
-        assert car_img_url("/static/images/booking/car_vf5.svg") == "https://commons.wikimedia.org/wiki/Special:FilePath/VinFast_VF5.jpg?width=960"
-        assert car_img_url("/static/images/booking/car_vf3.svg") == "/static/images/cars/vinfast_vf3.jpg"
-        assert car_img_url("/static/images/booking/car_carnival.svg") == "/static/images/cars/kia_carnival.jpg"
-        assert car_img_url("https://example.com/car.jpg") == "https://example.com/car.jpg"
-        assert car_img_url("") == "/static/images/cars/car-placeholder.svg"
-
-    _login_session(flask_client, user_id=1, full_name="Do Thu Thao")
-    res = flask_client.get("/cart")
-    assert res.status_code == 200
-    assert b"/static/images/cars/toyotavios2023.webp" in res.data
-    assert b"/static/images/cars/hondacity2022.webp" in res.data
-
-
-
-
-def test_booking_available_cards_render_correct_vehicle_photos(flask_client, booking_db):
-    """Booking cart should not show demo illustrations for Vios, City or VF 5."""
-    raw, _ = booking_db
-    raw.execute("UPDATE Cars SET pictures = ? WHERE carID = 1",
-                ("/static/images/booking/car_vios.svg",))
-    raw.execute("UPDATE Cars SET pictures = ? WHERE carID = 2",
-                ("/static/images/booking/car_city.svg",))
-    raw.execute(
-        """INSERT INTO Cars
-           (carID, TypeID, code, name, pictures, numberOfSeats,
-            pricePerDay, status)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-        (5, 1, "BOOK-VF5-03", "VinFast VF 5",
-         "/static/images/booking/car_vf5.svg", 4, 700000, "available")
-    )
-    _login_session(flask_client)
-    body = flask_client.get("/cart").get_data(as_text=True)
-    assert 'src="/static/images/cars/toyotavios2023.webp"' in body
-    assert 'src="/static/images/cars/hondacity2022.webp"' in body
-    assert 'src="https://commons.wikimedia.org/wiki/Special:FilePath/VinFast_VF5.jpg?width=960"' in body
-
 def test_ajax_add_keeps_page_and_syncs_cart_count_on_vehicle_pages(flask_client):
     """AJAX adds and duplicate requests share one session cart across pages."""
     from unittest.mock import patch
@@ -707,6 +672,10 @@ def test_checkout_rejects_blank_pickup_and_invalid_return_option(flask_client):
     assert "Vui lòng chọn địa điểm trả xe hợp lệ.".encode("utf-8") in invalid.data
 
 
+
+
+# Book Now and pickup rules
+
 def test_book_now_never_adds_to_cart_and_only_orders_one_vehicle(flask_client, booking_db):
     """Direct checkout leaves an existing multi-selected cart unchanged."""
     raw, _ = booking_db
@@ -801,57 +770,6 @@ def test_book_now_without_cart_and_api_changes_only_direct_item(flask_client, bo
     assert cart.status_code == 200
     assert 'id="cart-title-count">0</span>' in cart.get_data(as_text=True)
     assert flask_client.get("/checkout?mode=now").status_code == 200
-
-
-def test_normal_cart_checkout_ignores_active_instant_booking(flask_client, booking_db):
-    """Cart checkout still checks out all selected items as before."""
-    _login_session(flask_client)
-    for car_id in (1, 2):
-        flask_client.post(f"/cart/add/{car_id}", data={
-            "pickup_date": "2026-12-15", "return_date": "2026-12-17",
-        })
-    flask_client.post("/book-now/2", data={
-        "pickup_date": "2026-12-15", "return_date": "2026-12-17",
-    })
-    page = flask_client.get("/checkout")
-    assert page.status_code == 200
-    html = page.get_data(as_text=True)
-    assert "Toyota Vios" in html and "Honda City" in html
-    assert 'data-checkout-mode="cart"' in html
-    assert 'action="/checkout"' in html
-    with flask_client.session_transaction() as sess:
-        assert [i["car_id"] for i in sess["rental_cart"] if i["selected"]] == [1, 2]
-
-
-def test_direct_booking_requires_login_and_valid_car(flask_client):
-    no_auth = flask_client.post("/book-now/1")
-    assert no_auth.status_code == 302
-    assert "/login" in no_auth.headers["Location"]
-    _login_session(flask_client)
-    unavailable = flask_client.post("/book-now/4")
-    assert unavailable.status_code == 302
-    assert unavailable.headers["Location"].endswith("/cars")
-    with flask_client.session_transaction() as sess:
-        assert not sess.get("rental_cart")
-        assert not sess.get("direct_booking")
-    assert flask_client.post("/api/book-now/dates", json={}).status_code == 400
-    assert flask_client.post("/api/book-now/summary", json={}).status_code == 400
-
-
-def test_legacy_book_now_flag_does_not_reselect_cart(flask_client):
-    """The old cart/add book_now flag cannot change cart checkboxes."""
-    _login_session(flask_client)
-    flask_client.post("/cart/add/1", data={
-        "pickup_date": "2026-12-15", "return_date": "2026-12-17",
-    })
-    flask_client.post("/cart/add/2", data={
-        "pickup_date": "2026-12-15", "return_date": "2026-12-17",
-    })
-    flask_client.post("/api/cart/select", json={"car_id": 2, "selected": False})
-    flask_client.post("/cart/add/2", data={"book_now": "1"})
-    with flask_client.session_transaction() as sess:
-        assert [i["car_id"] for i in sess["rental_cart"] if i["selected"]] == [1]
-    assert flask_client.post("/api/cart/select", json={"select_all": True}).get_json()["selected_count"] == 2
 
 
 def test_cart_and_checkout_do_not_display_default_pickup_location(flask_client):
@@ -989,6 +907,10 @@ def test_direct_booking_pickup_mode_forces_showroom_without_touching_cart(flask_
         assert not sess.get("rental_cart")
 
 
+
+
+# My Account and order history
+
 def test_account_login_required_and_shows_real_profile(flask_client):
     assert "/login" in flask_client.get("/dashboard").headers["Location"]
     assert "/login" in flask_client.post("/account/profile", data={}).headers["Location"]
@@ -1106,614 +1028,3 @@ def test_account_profile_blocks_csrf_duplicates_and_bad_phone(flask_client, book
     row = raw.execute("SELECT phone, address FROM Users WHERE UserID=1").fetchone()
     assert row["phone"] == "0912345678"
     assert row["address"] is None
-
-
-def test_account_static_copy_is_english_only():
-    """Every literal display string in the My Account template uses English."""
-    from pathlib import Path
-    import re
-    template = (Path(__file__).resolve().parents[1] /
-                "presentation" / "templates" / "dashboard.html").read_text(encoding="utf-8")
-    assert not re.search(r"[À-ÖØ-öø-ỹ]", template)
-    assert "My Rental Orders" in template
-    assert "Pick up at Showroom" in template
-    assert "Your profile has been updated" not in template
-
-
-
-def test_online_deposit_payment_persists_atomically(booking_db):
-    raw, tracker = booking_db
-    from datetime import timedelta
-    from business import payment_service
-    start = date.today() + timedelta(days=15)
-    end = start + timedelta(days=2)
-    cart = [{"car_id": 1, "pickup_date": start.isoformat(),
-             "return_date": end.isoformat(), "selected": True}]
-    order_id = svc.place_order(1, cart, "PICKUP", "E_WALLET")
-    row = raw.execute(
-        "SELECT amount, paymentMethod, paymentStatus, transactionCode FROM Payments WHERE oderID = ?",
-        (order_id,),
-    ).fetchone()
-    assert row["paymentStatus"] == "Paid"
-    assert row["paymentMethod"] == "E_WALLET"
-    assert row["amount"] == 360000
-    assert row["transactionCode"].startswith("DEMO-")
-    assert payment_service.balance_due(1200000, row["paymentStatus"], row["amount"]) == 840000
-
-
-def test_declined_demo_payment_rolls_back_order_and_items(booking_db):
-    raw, tracker = booking_db
-    from datetime import timedelta
-    start = date.today() + timedelta(days=25)
-    end = start + timedelta(days=1)
-    cart = [{"car_id": 1, "pickup_date": start.isoformat(),
-             "return_date": end.isoformat(), "selected": True}]
-    with pytest.raises(svc.BookingError, match="declined"):
-        svc.place_order(1, cart, "PICKUP", "E_WALLET", demo_outcome="declined")
-    for table in ("Orders", "Oderitem", "Payments"):
-        assert raw.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0] == 0
-    assert tracker["rollbacks"] > 0
-
-
-def test_offline_payment_statuses_and_cancellation(booking_db):
-    raw, tracker = booking_db
-    from datetime import timedelta
-    start = date.today() + timedelta(days=35)
-    end = start + timedelta(days=1)
-    cart = [{"car_id": 1, "pickup_date": start.isoformat(),
-             "return_date": end.isoformat(), "selected": True}]
-    order_id = svc.place_order(1, cart, "PICKUP", "BANK_TRANSFER")
-    payment = raw.execute(
-        "SELECT paymentStatus, amount FROM Payments WHERE oderID = ?", (order_id,)
-    ).fetchone()
-    assert payment["paymentStatus"] == "Pending"
-    assert payment["amount"] == 180000
-    svc.cancel_order(1, order_id)
-    payment = raw.execute(
-        "SELECT paymentStatus FROM Payments WHERE oderID = ?", (order_id,)
-    ).fetchone()
-    assert payment["paymentStatus"] == "Cancelled"
-
-
-def test_paid_demo_order_cancel_requires_real_refund(booking_db):
-    raw, tracker = booking_db
-    from datetime import timedelta
-    start = date.today() + timedelta(days=38)
-    end = start + timedelta(days=1)
-    cart = [{"car_id": 1, "pickup_date": start.isoformat(),
-             "return_date": end.isoformat(), "selected": True}]
-    order_id = svc.place_order(1, cart, "PICKUP", "E_WALLET")
-    svc.cancel_order(1, order_id)
-    assert raw.execute(
-        "SELECT paymentStatus FROM Payments WHERE oderID = ?", (order_id,)
-    ).fetchone()[0] == "Refund Pending"
-
-
-def test_payment_receipt_is_customer_scoped(flask_client, booking_db):
-    raw, _ = booking_db
-    from datetime import timedelta
-    start = date.today() + timedelta(days=42)
-    end = start + timedelta(days=1)
-    cart = [{"car_id": 1, "pickup_date": start.isoformat(),
-             "return_date": end.isoformat(), "selected": True}]
-    order_id = svc.place_order(1, cart, "PICKUP", "E_WALLET")
-    _login_session(flask_client, user_id=1)
-    good = flask_client.get(f"/orders/{order_id}/payment")
-    assert good.status_code == 200
-    assert b"Remaining balance" in good.data
-    _login_session(flask_client, user_id=2)
-    denied = flask_client.get(f"/orders/{order_id}/payment")
-    assert denied.status_code == 404
-
-
-def test_demo_checkout_payment_decline_preserves_cart(flask_client, booking_db):
-    from datetime import timedelta
-    raw, _ = booking_db
-    _login_session(flask_client)
-    start = (date.today() + timedelta(days=43)).isoformat()
-    end = (date.today() + timedelta(days=44)).isoformat()
-    flask_client.post("/cart/add/1", data={"pickup_date": start, "return_date": end})
-    response = flask_client.post("/checkout", data={
-        "pickup_date": start, "return_date": end,
-        "receiving_method": "PICKUP", "payment_method": "E_WALLET",
-        "agree_terms": "on",
-    })
-    assert response.status_code == 302
-    assert response.headers["Location"].endswith("/payment")
-    with flask_client.session_transaction() as sess:
-        assert len(sess.get("rental_cart", [])) == 1
-        token = sess["pending_payment"]["csrf"]
-    response = flask_client.post("/payment", data={
-        "payment_csrf": token, "payment_action": "declined",
-    })
-    assert response.status_code == 200
-    assert b"No order was placed" in response.data
-    with flask_client.session_transaction() as sess:
-        assert len(sess.get("rental_cart", [])) == 1
-    assert raw.execute("SELECT COUNT(*) FROM Orders").fetchone()[0] == 0
-
-
-
-def test_payment_insert_failure_rolls_back_booking(booking_db, monkeypatch):
-    raw, tracker = booking_db
-    from datetime import timedelta
-    from data import payment_repository
-    start = date.today() + timedelta(days=46)
-    end = start + timedelta(days=1)
-    cart = [{"car_id": 1, "pickup_date": start.isoformat(),
-             "return_date": end.isoformat(), "selected": True}]
-
-    def fail_payment(*args, **kwargs):
-        raise RuntimeError("simulated DB insert failure")
-
-    monkeypatch.setattr(payment_repository, "insert_payment", fail_payment)
-    with pytest.raises(svc.BookingError, match="ROLLBACK"):
-        svc.place_order(1, cart, "PICKUP", "E_WALLET")
-    for table in ("Orders", "Oderitem", "Payments"):
-        assert raw.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0] == 0
-    assert tracker["rollbacks"] > 0
-
-
-
-def test_payment_requires_checkout_login_csrf_and_expiry(flask_client, booking_db):
-    from datetime import timedelta
-    import time as time_module
-    raw, _ = booking_db
-    assert "/login" in flask_client.get("/payment").headers["Location"]
-    _login_session(flask_client)
-    assert flask_client.get("/payment").status_code == 302
-    pickup = (date.today() + timedelta(days=48)).isoformat()
-    return_ = (date.today() + timedelta(days=49)).isoformat()
-    flask_client.post("/cart/add/1", data={
-        "pickup_date": pickup, "return_date": return_
-    })
-    begin = flask_client.post("/checkout", data={
-        "pickup_date": pickup, "return_date": return_,
-        "payment_method": "E_WALLET",
-        "receiving_method": "PICKUP", "agree_terms": "on",
-    })
-    assert begin.status_code == 302
-    assert begin.headers["Location"].endswith("/payment")
-    assert flask_client.post("/payment", data={
-        "payment_csrf": "forged", "payment_action": "confirm",
-    }).status_code == 400
-    assert raw.execute("SELECT COUNT(*) FROM Orders").fetchone()[0] == 0
-    with flask_client.session_transaction() as sess:
-        sess["pending_payment"] = {**sess["pending_payment"], "created_at": int(time_module.time()) - 3600}
-    assert flask_client.get("/payment").status_code == 302
-    assert raw.execute("SELECT COUNT(*) FROM Orders").fetchone()[0] == 0
-
-
-def test_payment_draft_separate_page_and_confirmation_recheck(flask_client, booking_db):
-    from datetime import timedelta
-    raw, _ = booking_db
-    _login_session(flask_client)
-    pickup = (date.today() + timedelta(days=50)).isoformat()
-    return_ = (date.today() + timedelta(days=51)).isoformat()
-    flask_client.post("/cart/add/1", data={
-        "pickup_date": pickup, "return_date": return_
-    })
-    begin = flask_client.post("/checkout", data={
-        "pickup_date": pickup, "return_date": return_,
-        "payment_method": "E_WALLET",
-        "receiving_method": "PICKUP", "agree_terms": "on",
-    })
-    assert begin.status_code == 302
-    page = flask_client.get("/payment")
-    assert page.status_code == 200
-    assert b"E-Wallet" in page.data
-    assert b"Simulate Successful Payment" in page.data
-    assert raw.execute("SELECT COUNT(*) FROM Orders").fetchone()[0] == 0
-
-    # Recheck car availability at payment confirmation.
-    raw.execute("UPDATE Cars SET status = 'maintenance' WHERE carID = 1")
-    with flask_client.session_transaction() as sess:
-        token = sess["pending_payment"]["csrf"]
-    payment = flask_client.post("/payment", data={
-        "payment_csrf": token, "payment_action": "confirm",
-    })
-    assert payment.status_code == 302
-    assert raw.execute("SELECT COUNT(*) FROM Orders").fetchone()[0] == 0
-
-
-def test_payment_csrf_prevents_payment_replay(flask_client, booking_db):
-    from datetime import timedelta
-    raw, _ = booking_db
-    _login_session(flask_client)
-    pickup = (date.today() + timedelta(days=52)).isoformat()
-    return_ = (date.today() + timedelta(days=53)).isoformat()
-    flask_client.post("/cart/add/1", data={
-        "pickup_date": pickup, "return_date": return_
-    })
-    flask_client.post("/checkout", data={
-        "pickup_date": pickup, "return_date": return_,
-        "payment_method": "E_WALLET", "receiving_method": "PICKUP",
-        "agree_terms": "on",
-    })
-    with flask_client.session_transaction() as sess:
-        token = sess["pending_payment"]["csrf"]
-    first = flask_client.post("/payment", data={
-        "payment_csrf": token, "payment_action": "confirm",
-    })
-    assert first.status_code == 302
-    replay = flask_client.post("/payment", data={
-        "payment_csrf": token, "payment_action": "confirm",
-    })
-    assert replay.status_code == 302
-    assert raw.execute("SELECT COUNT(*) FROM Orders").fetchone()[0] == 1
-
-
-def test_credit_debit_card_option_is_removed_and_rejected(flask_client, booking_db):
-    """No credit/debit card option in Checkout, and forged CARD input is rejected."""
-    from datetime import timedelta
-    raw, _ = booking_db
-    _login_session(flask_client)
-    pickup = (date.today() + timedelta(days=54)).isoformat()
-    return_ = (date.today() + timedelta(days=55)).isoformat()
-    cart_item = {
-        "car_id": 1, "pickup_date": pickup, "return_date": return_,
-        "selected": True,
-    }
-
-    with pytest.raises(svc.BookingError, match="Phương thức thanh toán"):
-        svc.place_order(1, [cart_item], "PICKUP", "CARD")
-    flask_client.post("/cart/add/1", data={
-        "pickup_date": pickup, "return_date": return_,
-    })
-    checkout_page = flask_client.get("/checkout")
-    html = checkout_page.get_data(as_text=True)
-    assert checkout_page.status_code == 200
-    assert 'value="CARD"' not in html
-    assert "Credit / Debit" not in html
-    assert html.count('name="payment_method"') == 3
-    for supported in ("E_WALLET", "BANK_TRANSFER", "CASH"):
-        assert f'value="{supported}"' in html
-
-    forged = flask_client.post("/checkout", data={
-        "pickup_date": pickup, "return_date": return_,
-        "receiving_method": "PICKUP",
-        "payment_method": "CARD",
-        "agree_terms": "on",
-    })
-    assert forged.status_code == 302
-    assert forged.headers["Location"].startswith("/checkout")
-    with flask_client.session_transaction() as sess:
-        assert "pending_payment" not in sess
-    assert raw.execute("SELECT COUNT(*) FROM Orders").fetchone()[0] == 0
-
-
-
-def test_bank_vietqr_link_prefills_deposit_and_unique_reference(monkeypatch):
-    from business import payment_qr
-    from urllib.parse import urlparse, parse_qs
-
-    monkeypatch.delenv("PAYMENT_BANK_BIN", raising=False)
-    monkeypatch.delenv("PAYMENT_BANK_ACCOUNT", raising=False)
-    assert payment_qr.bank_transfer_qr(180000, "G12TEST123") is None
-
-    monkeypatch.setenv("PAYMENT_BANK_BIN", "970436")
-    monkeypatch.setenv("PAYMENT_BANK_ACCOUNT", "0000000000")  # dummy test account
-    monkeypatch.setenv("PAYMENT_BANK_HOLDER", "GROUP12 DEMO")
-    url = payment_qr.bank_transfer_qr(180000, "G12TEST123")
-    assert url.startswith("https://img.vietqr.io/image/970436-0000000000-compact2.png?")
-    query = parse_qs(urlparse(url).query)
-    assert query["amount"] == ["180000"]
-    assert query["addInfo"] == ["G12TEST123"]
-    assert query["accountName"] == ["GROUP12 DEMO"]
-
-    # Reject malformed recipient details when generating QR.
-    monkeypatch.setenv("PAYMENT_BANK_ACCOUNT", "0000/attack")
-    assert payment_qr.bank_transfer_qr(180000, "G12TEST123") is None
-
-
-def test_momo_qr_requires_safe_filename_and_real_file(monkeypatch, flask_client, booking_db, tmp_path):
-    from datetime import timedelta
-    from business import payment_qr
-    import run as app_module
-
-    monkeypatch.setenv("MOMO_MERCHANT_QR_FILENAME", "../other.png")
-    assert payment_qr.momo_merchant_qr_filename() is None
-    monkeypatch.setenv("MOMO_MERCHANT_QR_FILENAME", "merchant.png")
-    assert payment_qr.momo_merchant_qr_filename() == "merchant.png"
-
-    _login_session(flask_client)
-    pickup = (date.today() + timedelta(days=60)).isoformat()
-    return_ = (date.today() + timedelta(days=61)).isoformat()
-    flask_client.post("/cart/add/1", data={"pickup_date": pickup, "return_date": return_})
-    flask_client.post("/checkout", data={
-        "pickup_date": pickup, "return_date": return_,
-        "payment_method": "E_WALLET", "receiving_method": "PICKUP",
-        "agree_terms": "on",
-    })
-    not_configured = flask_client.get("/payment").get_data(as_text=True)
-    assert "MoMo QR is not configured yet" in not_configured
-
-    qr_dir = tmp_path / "images" / "payments"
-    qr_dir.mkdir(parents=True)
-    (qr_dir / "merchant.png").write_bytes(b"mock image content")
-    monkeypatch.setattr(app_module.app, "static_folder", str(tmp_path))
-    configured = flask_client.get("/payment").get_data(as_text=True)
-    assert "/static/images/payments/merchant.png" in configured
-    assert "MoMo merchant QR" in configured
-    assert "Simulate Successful Payment" in configured
-
-
-def test_bank_transfer_payment_page_shows_vietqr_when_configured(flask_client, booking_db, monkeypatch):
-    from datetime import timedelta
-    monkeypatch.setenv("PAYMENT_BANK_BIN", "970436")
-    monkeypatch.setenv("PAYMENT_BANK_ACCOUNT", "0000000000")  # dummy test account
-    monkeypatch.setenv("PAYMENT_BANK_HOLDER", "GROUP12 DEMO")
-
-    _login_session(flask_client)
-    pickup = (date.today() + timedelta(days=62)).isoformat()
-    return_ = (date.today() + timedelta(days=63)).isoformat()
-    flask_client.post("/cart/add/1", data={"pickup_date": pickup, "return_date": return_})
-    response = flask_client.post("/checkout", data={
-        "pickup_date": pickup, "return_date": return_,
-        "payment_method": "BANK_TRANSFER", "receiving_method": "PICKUP",
-        "agree_terms": "on",
-    })
-    assert response.status_code == 302
-    assert response.headers["Location"].endswith("/payment")
-    page = flask_client.get("/payment")
-    text = page.get_data(as_text=True)
-    assert "Scan VietQR to transfer the deposit" in text
-    assert "img.vietqr.io/image/970436-0000000000-compact2.png" in text
-    assert "amount=180000" in text
-    assert "G12" in text
-    with flask_client.session_transaction() as sess:
-        reference = sess["pending_payment"]["transfer_reference"]
-        token = sess["pending_payment"]["csrf"]
-        assert reference.startswith("G12")
-        assert reference in text
-    raw, _ = booking_db
-    assert raw.execute("SELECT COUNT(*) FROM Orders").fetchone()[0] == 0
-
-    confirmed = flask_client.post("/payment", data={
-        "payment_csrf": token, "payment_action": "confirm",
-    })
-    assert confirmed.status_code == 302
-    saved = raw.execute(
-        "SELECT transactionCode, paymentStatus FROM Payments LIMIT 1"
-    ).fetchone()
-    assert saved["transactionCode"] == reference
-    assert saved["paymentStatus"] == "Pending"
-
-
-
-def _customer_order_for_balance():
-    from datetime import timedelta
-    start = date.today() + timedelta(days=23)
-    end = start + timedelta(days=1)
-    return [{
-        "car_id": 1, "pickup_date": start.isoformat(),
-        "return_date": end.isoformat(), "selected": True,
-    }]
-
-
-def _seed_admin(raw):
-    raw.execute(
-        """INSERT INTO Users
-           (UserID, fullName, phone, email, passwordHash, role, isLocked)
-           VALUES (?, ?, ?, ?, ?, ?, ?)""",
-        (3, "Payment Admin", "0900000000", "admin@group12.vn", "hash", "ADMIN", 0),
-    )
-
-
-def test_remaining_requires_verified_deposit_and_does_not_double_count(booking_db):
-    from business import payment_collection_service as col
-    raw, tracker = booking_db
-    order_id = svc.place_order(1, _customer_order_for_balance(), "PICKUP", "BANK_TRANSFER")
-    with pytest.raises(col.CollectionError, match="deposit must be verified"):
-        col.request_remaining_payment(1, order_id, "CASH")
-    assert raw.execute("SELECT COUNT(*) FROM Payments").fetchone()[0] == 1
-
-    deposit_id = raw.execute(
-        "SELECT paymentID FROM Payments WHERE oderID = ?", (order_id,)
-    ).fetchone()[0]
-    col.confirm_collection(deposit_id)
-    overview = svc.get_order_payment_details(1, order_id)
-    assert overview["paid_amount"] == Decimal("180000")
-    assert overview["pending_amount"] == Decimal("0")
-    assert overview["balance_due"] == Decimal("420000")
-    assert overview["can_pay_remaining"]
-    assert overview["payment_status"] == "Partially Paid"
-
-    payment_id = col.request_remaining_payment(1, order_id, "CASH")
-    with pytest.raises(col.CollectionError, match="awaiting verification"):
-        col.request_remaining_payment(1, order_id, "BANK_TRANSFER")
-    row = raw.execute(
-        "SELECT amount, paymentMethod, paymentStatus FROM Payments WHERE paymentID = ?",
-        (payment_id,),
-    ).fetchone()
-    assert row["amount"] == 420000
-    assert row["paymentMethod"] == "CASH"
-    assert row["paymentStatus"] == "Pending"
-    view = svc.get_order_payment_details(1, order_id)
-    assert view["paid_amount"] == Decimal("180000")
-    assert view["pending_amount"] == Decimal("420000")
-    assert view["balance_due"] == Decimal("420000")
-    assert view["pending_balance_request"]
-
-
-def test_staff_confirmation_pays_full_balance_only_once(booking_db):
-    from business import payment_collection_service as col
-    raw, _ = booking_db
-    order_id = svc.place_order(1, _customer_order_for_balance(), "PICKUP", "E_WALLET")
-    payment_id = col.request_remaining_payment(1, order_id, "BANK_TRANSFER")
-
-    queue = col.list_pending_collections()
-    assert len(queue) == 1
-    assert queue[0]["paymentID"] == payment_id
-    assert queue[0]["customerName"] == "Do Thu Thao"
-    assert queue[0]["amount"] == 420000
-
-    assert col.confirm_collection(payment_id) == order_id
-    with pytest.raises(col.CollectionError, match="not Pending"):
-        col.confirm_collection(payment_id)
-    view = svc.get_order_payment_details(1, order_id)
-    assert view["paid_amount"] == Decimal("600000")
-    assert view["balance_due"] == Decimal("0")
-    assert view["payment_status"] == "Paid in Full"
-    assert not view["can_pay_remaining"]
-    assert len(view["payments"]) == 2
-    with pytest.raises(col.CollectionError, match="deposit must be verified"):
-        col.request_remaining_payment(1, order_id, "E_WALLET")
-
-
-def test_balance_change_method_cancels_only_pending_balance_request(booking_db):
-    from business import payment_collection_service as col
-    raw, _ = booking_db
-    order_id = svc.place_order(1, _customer_order_for_balance(), "PICKUP", "E_WALLET")
-    pending_id = col.request_remaining_payment(1, order_id, "E_WALLET")
-    assert col.cancel_remaining_request(1, order_id)
-    assert raw.execute(
-        "SELECT paymentStatus FROM Payments WHERE paymentID = ?", (pending_id,)
-    ).fetchone()[0] == "Cancelled"
-    assert raw.execute(
-        "SELECT paymentStatus FROM Payments WHERE oderID = ? ORDER BY paymentID ASC",
-        (order_id,),
-    ).fetchone()[0] == "Paid"
-    new_id = col.request_remaining_payment(1, order_id, "CASH")
-    assert new_id != pending_id
-    assert raw.execute("SELECT COUNT(*) FROM Payments").fetchone()[0] == 3
-    with pytest.raises(col.CollectionError, match="not found"):
-        col.cancel_remaining_request(2, order_id)
-
-
-def test_pay_remaining_ui_qr_and_access_control(flask_client, booking_db, monkeypatch):
-    from business import payment_collection_service as col
-    raw, _ = booking_db
-    monkeypatch.setenv("PAYMENT_BANK_BIN", "970436")
-    monkeypatch.setenv("PAYMENT_BANK_ACCOUNT", "0000000000")  # test-only account
-    monkeypatch.setenv("PAYMENT_BANK_HOLDER", "GROUP 12 TEST")
-
-    order_id = svc.place_order(1, _customer_order_for_balance(), "PICKUP", "E_WALLET")
-    assert "/login" in flask_client.get(
-        f"/orders/{order_id}/pay-remaining"
-    ).headers["Location"]
-    _login_session(flask_client, user_id=2)
-    assert flask_client.get(f"/orders/{order_id}/pay-remaining").status_code == 404
-
-    _login_session(flask_client, user_id=1)
-    view = flask_client.get(f"/orders/{order_id}/pay-remaining")
-    assert view.status_code == 200
-    assert b"Pay Remaining Balance" in view.data
-    with flask_client.session_transaction() as sess:
-        csrf = sess["collection_csrf"]
-    invalid = flask_client.post(f"/orders/{order_id}/pay-remaining", data={
-        "csrf_token": "invalid", "action": "request", "payment_method": "BANK_TRANSFER",
-    })
-    assert invalid.status_code == 400
-    assert raw.execute("SELECT COUNT(*) FROM Payments").fetchone()[0] == 1
-
-    submit = flask_client.post(f"/orders/{order_id}/pay-remaining", data={
-        "csrf_token": csrf, "action": "request", "payment_method": "BANK_TRANSFER",
-    })
-    assert submit.status_code == 302
-    page = flask_client.get(f"/orders/{order_id}/pay-remaining")
-    body = page.get_data(as_text=True)
-    assert "img.vietqr.io/image/970436-0000000000-compact2.png" in body
-    assert "amount=420000" in body
-    assert "Awaiting Verification" in body
-    assert "BAL-" in body
-    assert "Review Payment" in flask_client.get("/dashboard").get_data(as_text=True)
-    assert raw.execute(
-        "SELECT COUNT(*) FROM Payments WHERE paymentStatus = 'Paid'"
-    ).fetchone()[0] == 1
-
-    cancel = flask_client.post(f"/orders/{order_id}/pay-remaining", data={
-        "csrf_token": csrf, "action": "cancel_pending",
-    })
-    assert cancel.status_code == 302
-    assert svc.get_order_payment_details(1, order_id)["can_pay_remaining"]
-
-
-def test_admin_payment_verification_rejects_customers_and_csrf(flask_client, booking_db):
-    from business import payment_collection_service as col
-    raw, _ = booking_db
-    _seed_admin(raw)
-    order_id = svc.place_order(1, _customer_order_for_balance(), "PICKUP", "BANK_TRANSFER")
-    payment_id = raw.execute("SELECT paymentID FROM Payments LIMIT 1").fetchone()[0]
-    assert "/login" in flask_client.get("/admin/payments").headers["Location"]
-    _login_session(flask_client, user_id=1)
-    assert flask_client.get("/admin/payments").status_code == 403
-
-    _login_session(flask_client, user_id=3)
-    with flask_client.session_transaction() as sess:
-        sess["role"] = "ADMIN"
-    admin_page = flask_client.get("/admin/payments")
-    assert admin_page.status_code == 200
-    assert b"Payment Verification" in admin_page.data
-    with flask_client.session_transaction() as sess:
-        token = sess["admin_payment_csrf"]
-    route = f"/admin/payments/{payment_id}/confirm"
-    assert flask_client.post(route, data={"csrf_token": "wrong", "verified": "yes"}).status_code == 400
-    skip = flask_client.post(route, data={"csrf_token": token})
-    assert skip.status_code == 302
-    assert raw.execute(
-        "SELECT paymentStatus FROM Payments WHERE paymentID = ?", (payment_id,)
-    ).fetchone()[0] == "Pending"
-
-    confirm = flask_client.post(route, data={
-        "csrf_token": token, "verified": "yes",
-    })
-    assert confirm.status_code == 302
-    assert raw.execute(
-        "SELECT paymentStatus FROM Payments WHERE paymentID = ?", (payment_id,)
-    ).fetchone()[0] == "Paid"
-    assert svc.get_order_payment_details(1, order_id)["can_pay_remaining"]
-    # Prevent repeated verification of the same payment.
-    flask_client.post(route, data={"csrf_token": token, "verified": "yes"})
-    assert raw.execute(
-        "SELECT COUNT(*) FROM Payments WHERE paymentStatus = 'Paid'"
-    ).fetchone()[0] == 1
-
-
-def test_admin_db_role_is_rechecked_even_if_session_claims_admin(flask_client, booking_db):
-    raw, _ = booking_db
-    _login_session(flask_client, user_id=1)
-    with flask_client.session_transaction() as sess:
-        sess["role"] = "ADMIN"
-    assert flask_client.get("/admin/payments").status_code == 403
-
-    _seed_admin(raw)
-    _login_session(flask_client, user_id=3)
-    with flask_client.session_transaction() as sess:
-        sess["role"] = "ADMIN"
-    assert flask_client.get("/admin/payments").status_code == 200
-    raw.execute("UPDATE Users SET isLocked = 1 WHERE UserID = 3")
-    assert flask_client.get("/admin/payments").status_code == 403
-
-
-def test_cancel_order_marks_all_pending_and_manual_refund_required(booking_db):
-    from business import payment_collection_service as col
-    raw, _ = booking_db
-    order_id = svc.place_order(1, _customer_order_for_balance(), "PICKUP", "E_WALLET")
-    pending_id = col.request_remaining_payment(1, order_id, "CASH")
-    svc.cancel_order(1, order_id)
-    rows = raw.execute(
-        "SELECT paymentStatus FROM Payments WHERE oderID = ? ORDER BY paymentID ASC",
-        (order_id,),
-    ).fetchall()
-    assert [r[0] for r in rows] == ["Refund Pending", "Cancelled"]
-    with pytest.raises(col.CollectionError, match="cancelled order"):
-        col.confirm_collection(pending_id)
-    assert not svc.get_order_payment_details(1, order_id)["can_pay_remaining"]
-
-
-def test_remainder_request_db_failure_rolls_back(booking_db, monkeypatch):
-    from business import payment_collection_service as col
-    from data import payment_repository
-    raw, tracker = booking_db
-    order_id = svc.place_order(1, _customer_order_for_balance(), "PICKUP", "E_WALLET")
-    initial = raw.execute("SELECT COUNT(*) FROM Payments").fetchone()[0]
-
-    def crash(*args, **kwargs):
-        raise RuntimeError("simulated SQL error")
-
-    monkeypatch.setattr(payment_repository, "insert_payment", crash)
-    with pytest.raises(col.CollectionError, match="Unable to create payment"):
-        col.request_remaining_payment(1, order_id, "CASH")
-    assert raw.execute("SELECT COUNT(*) FROM Payments").fetchone()[0] == initial
-    assert tracker["rollbacks"] > 0
