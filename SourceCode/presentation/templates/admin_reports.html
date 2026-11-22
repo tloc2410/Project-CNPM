@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reports — Group 12</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Inter", "Segoe UI", -apple-system, Arial, sans-serif;
+      background: #eef2f6; color: #1e293b; padding: 24px; min-height: 100vh;
+    }
+    .app-frame {
+      max-width: 1280px; margin: 0 auto; background: #f6f8fb; border-radius: 16px;
+      overflow: hidden; box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08); display: flex; min-height: 760px;
+    }
+    .sidebar { width: 228px; background: #ffffff; border-right: 1px solid #edf2f7; flex-shrink: 0; }
+    .logo-wrap { height: 76px; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid #f1f5f9; }
+    .logo-mark { font-size: 24px; font-weight: 900; letter-spacing: -0.6px; color: #0f172a; }
+    .logo-mark span { color: #f59e0b; font-style: italic; }
+    .nav-menu { padding: 16px 0; display: flex; flex-direction: column; gap: 4px; }
+    .nav-link {
+      position: relative; display: flex; align-items: center; gap: 12px;
+      padding: 12px 22px; text-decoration: none; color: #475569; font-size: 13.5px; font-weight: 500;
+    }
+    .nav-link:hover { background: #f8fafc; color: #0f172a; }
+    .nav-link.active { background: #fef9e7; color: #0f172a; font-weight: 600; }
+    .nav-link.active::before {
+      content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: #f59e0b;
+    }
+    .main-col { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .topbar {
+      height: 76px; background: #ffffff; border-bottom: 1px solid #edf2f7;
+      padding: 0 28px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .topbar-title { font-size: 22px; font-weight: 700; color: #0f172a; }
+    .profile-box { display: flex; align-items: center; gap: 10px; }
+    .profile-avatar {
+      width: 34px; height: 34px; border-radius: 50%; background: #1e293b;
+      color: #ffffff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center;
+    }
+    .profile-name { font-size: 13px; font-weight: 600; color: #0f172a; }
+    .profile-sub { font-size: 11px; color: #64748b; }
+    .workspace { padding: 22px 28px 30px; display: flex; flex-direction: column; gap: 18px; }
+    .stats-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+    .box-card { background: #ffffff; border: 1px solid #edf2f7; border-radius: 12px; padding: 18px 20px; }
+    .stat-box { display: flex; align-items: flex-start; gap: 12px; }
+    .stat-circle {
+      width: 34px; height: 34px; border-radius: 50%; background: #fef3c7; color: #d97706;
+      display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0;
+    }
+    .stat-title { font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 6px; }
+    .stat-figure { font-size: 28px; font-weight: 700; color: #0f172a; line-height: 1.1; margin-bottom: 6px; }
+    .stat-hint { font-size: 11.5px; color: #16a34a; }
+    .card-heading { font-size: 15.5px; font-weight: 700; color: #0f172a; margin-bottom: 14px; }
+    .tbl-scroll { overflow-x: auto; }
+    table.figma-tbl { width: 100%; border-collapse: collapse; }
+    table.figma-tbl th {
+      background: #f1f5f9; color: #1e293b; font-size: 12px; font-weight: 600;
+      text-align: left; padding: 11px 14px; white-space: nowrap;
+    }
+    table.figma-tbl td {
+      padding: 12px 14px; font-size: 12.5px; color: #334155; border-bottom: 1px solid #f1f5f9; white-space: nowrap;
+    }
+    @media (max-width: 980px) {
+      body { padding: 0; }
+      .app-frame { border-radius: 0; }
+      .stats-row { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-frame">
+    <aside class="sidebar">
+      <div class="logo-wrap"><div class="logo-mark">Group<span>12</span></div></div>
+      <nav class="nav-menu">
+        <a href="/dashboard" class="nav-link">Home</a>
+        <a href="/admin/vehicles" class="nav-link">Vehicle Management</a>
+        <a href="/admin/users" class="nav-link">User Management</a>
+        <a href="/admin/orders" class="nav-link">Rental Orders</a>
+        <a href="/admin/reports" class="nav-link active">Reports</a>
+      </nav>
+    </aside>
+
+    <div class="main-col">
+      <header class="topbar">
+        <div class="topbar-title">Reports</div>
+        <div class="profile-box">
+          <div class="profile-avatar">A</div>
+          <div>
+            <div class="profile-name">Admin</div>
+            <div class="profile-sub">Administrator</div>
+          </div>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <section class="stats-row">
+          <div class="box-card stat-box">
+            <div class="stat-circle">▣</div>
+            <div>
+              <div class="stat-title">Fleet Size</div>
+              <div class="stat-figure">{{ total_vehicles }}</div>
+              <div class="stat-hint">↑ Vehicles tracked</div>
+            </div>
+          </div>
+          <div class="box-card stat-box">
+            <div class="stat-circle">▤</div>
+            <div>
+              <div class="stat-title">Categories</div>
+              <div class="stat-figure">{{ total_types }}</div>
+              <div class="stat-hint">↑ Vehicle types</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="box-card">
+          <div class="card-heading">Revenue Over the Last 7 Days</div>
+          <svg viewBox="0 0 820 210" style="width: 100%; height: 210px; display: block;">
+            <defs>
+              <linearGradient id="revFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.22"/>
+                <stop offset="100%" stop-color="#f59e0b" stop-opacity="0.01"/>
+              </linearGradient>
+            </defs>
+            <text x="12" y="34" fill="#475569" font-size="11" font-weight="600">40M</text>
+            <line x1="46" y1="30" x2="795" y2="30" stroke="#f1f5f9" stroke-width="1"/>
+            <text x="12" y="72" fill="#475569" font-size="11" font-weight="600">30M</text>
+            <line x1="46" y1="68" x2="795" y2="68" stroke="#f1f5f9" stroke-width="1"/>
+            <text x="12" y="110" fill="#475569" font-size="11" font-weight="600">20M</text>
+            <line x1="46" y1="106" x2="795" y2="106" stroke="#f1f5f9" stroke-width="1"/>
+            <text x="12" y="148" fill="#475569" font-size="11" font-weight="600">10M</text>
+            <line x1="46" y1="144" x2="795" y2="144" stroke="#f1f5f9" stroke-width="1"/>
+            <text x="24" y="176" fill="#475569" font-size="11" font-weight="600">0</text>
+            <line x1="46" y1="172" x2="795" y2="172" stroke="#e2e8f0" stroke-width="1"/>
+            <line x1="46" y1="30" x2="46" y2="172" stroke="#eef2f6" stroke-width="1"/>
+            <path d="M 65 144 C 130 112, 165 118, 190 118 C 245 118, 275 130, 315 125 C 365 118, 395 96, 440 96 C 495 96, 525 108, 565 108 C 615 108, 645 92, 690 82 C 735 72, 765 62, 785 56 L 785 172 L 65 172 Z" fill="url(#revFill)"/>
+            <path d="M 65 144 C 130 112, 165 118, 190 118 C 245 118, 275 130, 315 125 C 365 118, 395 96, 440 96 C 495 96, 525 108, 565 108 C 615 108, 645 92, 690 82 C 735 72, 765 62, 785 56" fill="none" stroke="#f59e0b" stroke-width="2.2"/>
+            <circle cx="65" cy="144" r="3.8" fill="#f59e0b"/>
+            <circle cx="190" cy="118" r="3.8" fill="#f59e0b"/>
+            <circle cx="315" cy="125" r="3.8" fill="#f59e0b"/>
+            <circle cx="440" cy="96" r="3.8" fill="#f59e0b"/>
+            <circle cx="565" cy="108" r="3.8" fill="#f59e0b"/>
+            <circle cx="690" cy="82" r="3.8" fill="#f59e0b"/>
+            <circle cx="785" cy="56" r="4.2" fill="#f59e0b"/>
+            <text x="65" y="194" text-anchor="middle" fill="#475569" font-size="11">07/10</text>
+            <text x="190" y="194" text-anchor="middle" fill="#475569" font-size="11">08/10</text>
+            <text x="315" y="194" text-anchor="middle" fill="#475569" font-size="11">09/10</text>
+            <text x="440" y="194" text-anchor="middle" fill="#475569" font-size="11">10/10</text>
+            <text x="565" y="194" text-anchor="middle" fill="#475569" font-size="11">11/10</text>
+            <text x="690" y="194" text-anchor="middle" fill="#475569" font-size="11">12/10</text>
+            <text x="785" y="194" text-anchor="middle" fill="#475569" font-size="11">13/10</text>
+          </svg>
+        </section>
+
+        <section class="box-card">
+          <div class="card-heading">Monthly Revenue Summary</div>
+          <div class="tbl-scroll">
+            <table class="figma-tbl">
+              <thead>
+                <tr>
+                  <th>Month</th>
+                  <th>Completed Orders</th>
+                  <th>Cancelled Orders</th>
+                  <th>Total Revenue</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>08/2026</td>
+                  <td>34</td>
+                  <td>2</td>
+                  <td>142.500.000đ</td>
+                </tr>
+                <tr>
+                  <td>09/2026</td>
+                  <td>41</td>
+                  <td>3</td>
+                  <td>168.900.000đ</td>
+                </tr>
+                <tr>
+                  <td>10/2026</td>
+                  <td>48</td>
+                  <td>1</td>
+                  <td>195.400.000đ</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

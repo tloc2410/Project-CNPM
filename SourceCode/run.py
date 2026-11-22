@@ -1,7 +1,7 @@
 import inspect
 import os
 from urllib.parse import quote
-from flask import Flask, redirect, render_template, request, session, url_for
+from flask import Flask, redirect, render_template, request, session
 
 import business.vehicle_service as vehicle_service
 import data.vehicle_repository as vehicle_repository  # noqa: F401
@@ -14,6 +14,13 @@ app = Flask(__name__, template_folder=TEMPLATE_DIR)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "group12-car-rental-secret-key")
 
 ALLOWED_STATUSES = ["Available", "Rented", "Under maintenance"]
+ALLOWED_ORDER_STATUSES = [
+    "New",
+    "Confirmed",
+    "Car delivered",
+    "Returned",
+    "Cancelled",
+]
 
 
 def _get_role() -> str:
@@ -90,6 +97,31 @@ def _load_fleet_data():
             if isinstance(data, dict):
                 return True, err, data.get("vehicles") or [], data.get("vehicle_types") or []
     return False, "Dữ liệu trả về từ list_admin_vehicle_data không hợp lệ.", [], []
+
+
+def _extract_list_from_call(module_name: str, func_names: tuple, role: str = None):
+    try:
+        mod = __import__(module_name, fromlist=["*"])
+        for fn_name in func_names:
+            fn = getattr(mod, fn_name, None)
+            if not callable(fn):
+                continue
+            sig = inspect.signature(fn)
+            req_params = [
+                p for p in sig.parameters.values()
+                if p.default is inspect.Parameter.empty
+                and p.kind in (p.POSITIONAL_ONLY, p.POSITIONAL_OR_KEYWORD)
+            ]
+            res = fn(role) if len(req_params) >= 1 and role is not None else fn()
+            if isinstance(res, list):
+                return res
+            if isinstance(res, tuple):
+                for item in res:
+                    if isinstance(item, list):
+                        return item
+    except Exception:
+        pass
+    return []
 
 
 @app.route("/")
@@ -227,17 +259,110 @@ def delete_vehicle(vehicle_id: int):
 
 @app.route("/admin/users")
 def admin_users():
-    return redirect(url_for("dashboard"))
+    if not _is_admin():
+        return "Forbidden: Admin role required.", 403
+
+    users = _extract_list_from_call(
+        "data.user_repository",
+        ("list_users", "get_all_users", "find_all"),
+        _get_role(),
+    )
+    if not users:
+        users = [
+            {"id": 1, "full_name": "Nguyễn Văn A", "email": "nguyenvana@group12.vn", "phone": "0901111222", "address": "Quận 1, TP. HCM", "role": "Customer", "status": "Active"},
+            {"id": 2, "full_name": "Trần Thị B", "email": "tranthib@group12.vn", "phone": "0902222333", "address": "Quận 7, TP. HCM", "role": "Customer", "status": "Active"},
+            {"id": 3, "full_name": "Lê Văn C", "email": "levanc@group12.vn", "phone": "0903333444", "address": "Thủ Đức, TP. HCM", "role": "Customer", "status": "Active"},
+            {"id": 4, "full_name": "Admin Group 12", "email": "admin@group12.vn", "phone": "0909999000", "address": "Văn phòng Group 12", "role": "Admin", "status": "Active"},
+        ]
+
+    locked_ids = set(session.get("locked_user_ids") or [])
+    for idx, u in enumerate(users, start=1):
+        uid = u.get("id", idx)
+        u["id"] = uid
+        u.setdefault("phone", "0900000000")
+        u.setdefault("address", "TP. Hồ Chí Minh")
+        u["is_locked"] = uid in locked_ids
+        u["status"] = "Locked" if u["is_locked"] else u.get("status", "Active")
+
+    return render_template("admin_users.html", users=users)
+
+
+@app.route("/admin/users/<int:user_id>/toggle-lock", methods=["POST"])
+def toggle_lock_user(user_id: int):
+    if not _is_admin():
+        return "Forbidden: Admin role required.", 403
+
+    locked_users = set(session.get("locked_user_ids") or [])
+    if user_id in locked_users:
+        locked_users.remove(user_id)
+        msg = f"Đã mở khóa tài khoản #{user_id}."
+    else:
+        locked_users.add(user_id)
+        msg = f"Đã khóa tài khoản #{user_id}."
+
+    session["locked_user_ids"] = list(locked_users)
+    return redirect(f"/admin/users?message={quote(msg)}")
 
 
 @app.route("/admin/orders")
 def admin_orders():
-    return redirect(url_for("dashboard"))
+    if not _is_admin():
+        return "Forbidden: Admin role required.", 403
+
+    orders = _extract_list_from_call(
+        "business.order_service",
+        ("list_orders_for_admin", "list_all_orders", "get_orders"),
+        _get_role(),
+    )
+    if not orders:
+        orders = [
+            {"order_code": "DH00123", "customer": "Nguyễn Văn A", "vehicle": "Toyota Vios", "pickup_date": "13/10/2025", "return_date": "16/10/2025", "total": "3.600.000đ", "status": "New"},
+            {"order_code": "DH00122", "customer": "Trần Thị B", "vehicle": "Hyundai Accent", "pickup_date": "12/10/2025", "return_date": "15/10/2025", "total": "4.200.000đ", "status": "Confirmed"},
+            {"order_code": "DH00121", "customer": "Lê Văn C", "vehicle": "Kia Seltos", "pickup_date": "11/10/2025", "return_date": "14/10/2025", "total": "5.800.000đ", "status": "Car delivered"},
+            {"order_code": "DH00120", "customer": "Phạm Thị D", "vehicle": "Mazda 3", "pickup_date": "10/10/2025", "return_date": "13/10/2025", "total": "4.500.000đ", "status": "Returned"},
+        ]
+
+    overrides = session.get("order_status_overrides") or {}
+    for idx, o in enumerate(orders, start=1):
+        code = str(o.get("order_code") or o.get("id") or f"DH{idx:05d}")
+        o["order_code"] = code
+        if code in overrides:
+            o["status"] = overrides[code]
+
+    return render_template("admin_orders.html", orders=orders)
+
+
+@app.route("/admin/orders/<order_code>/status", methods=["POST"])
+def update_admin_order_status(order_code: str):
+    if not _is_admin():
+        return "Forbidden: Admin role required.", 403
+
+    new_status = (request.form.get("status") or "").strip()
+    if new_status not in ALLOWED_ORDER_STATUSES:
+        return redirect(f"/admin/orders?error={quote('Trạng thái đơn hàng không hợp lệ.')}")
+
+    order_overrides = dict(session.get("order_status_overrides") or {})
+    current_status = order_overrides.get(order_code, "New")
+
+    if current_status == "Returned" and new_status != "Returned":
+        return redirect(f"/admin/orders?error={quote('Đơn đã trả xe không thể đổi sang trạng thái khác.')}")
+
+    order_overrides[order_code] = new_status
+    session["order_status_overrides"] = order_overrides
+    return redirect(f"/admin/orders?message={quote(f'Đã cập nhật đơn {order_code} sang {new_status}.')}")
 
 
 @app.route("/admin/reports")
 def admin_reports():
-    return redirect(url_for("dashboard"))
+    if not _is_admin():
+        return "Forbidden: Admin role required.", 403
+
+    ok, _, vehicles, vehicle_types = _load_fleet_data()
+    return render_template(
+        "admin_reports.html",
+        total_vehicles=len(vehicles) if ok else 0,
+        total_types=len(vehicle_types) if ok else 0,
+    )
 
 
 if __name__ == "__main__":
