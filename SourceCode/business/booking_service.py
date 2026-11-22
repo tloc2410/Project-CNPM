@@ -17,6 +17,7 @@ from data import booking_repository as repo
 from data import database
 from data import payment_repository
 from business import payment_service
+from business import payment_collection_service as collection_service
 
 ORDER_STATUS_PENDING = "PENDING"
 ORDER_STATUS_CANCELLED = "CANCELLED"
@@ -503,15 +504,16 @@ def cancel_order(user_id, order_id):
             raise BookingError("Đơn hàng này không thể hủy ở trạng thái hiện tại.")
 
         repo.update_order_status(cursor, order_id, ORDER_STATUS_CANCELLED)
-        payment = payment_repository.latest_payment_for_update(cursor, order_id)
-        if payment:
-            previous = str(payment.get("paymentStatus") or "")
-            if previous == "Paid":
-                # Sandbox-only: status update, not a real gateway refund.
+        # Cancel ALL pending requests, not only the most recent one.
+        # A received payment needs a separate verified refund; do not pretend
+        # that updating the DB transferred the money back to the customer.
+        for payment in payment_repository.list_payments_for_orders(cursor, [order_id]):
+            state = str(payment.get("paymentStatus") or "")
+            if state == "Paid":
                 payment_repository.update_payment_status(
-                    cursor, payment["paymentID"], "Refunded"
+                    cursor, payment["paymentID"], "Refund Pending"
                 )
-            elif previous == "Pending":
+            elif state == "Pending":
                 payment_repository.update_payment_status(
                     cursor, payment["paymentID"], "Cancelled"
                 )
@@ -537,9 +539,9 @@ def get_user_orders(user_id):
         order_ids = [o["oderID"] for o in orders]
         items = repo.list_items_by_order_ids(cursor, order_ids)
         payments = payment_repository.list_payments_for_orders(cursor, order_ids)
-        latest = {}
+        payments_by_order = {}
         for row in payments:
-            latest.setdefault(row["oderID"], row)
+            payments_by_order.setdefault(row["oderID"], []).append(row)
         for order in orders:
             order_items = [i for i in items if i["OderID"] == order["oderID"]]
             for oi in order_items:
@@ -547,16 +549,12 @@ def get_user_orders(user_id):
                     oi.get("unitPrice") or 0, oi.get("rentalDays") or 0
                 )
             order["items"] = order_items
-            order["payment"] = latest.get(order["oderID"])
-            order["payment_status"] = (
-                order["payment"]["paymentStatus"] if order["payment"] else "Not recorded"
-            )
-            order["payment_amount"] = (
-                order["payment"]["amount"] if order["payment"] else Decimal("0")
-            )
-            order["balance_due"] = payment_service.balance_due(
-                order["totalPrice"], order["payment_status"], order["payment_amount"]
-            )
+            order_payments = payments_by_order.get(order["oderID"], [])
+            order["payments"] = order_payments
+            order["payment"] = order_payments[0] if order_payments else None
+            overview = collection_service.payment_overview(order, order_payments)
+            order.update(overview)
+            order["payment_amount"] = overview["paid_amount"]
             order["can_cancel"] = (order["status"] or "").upper() in CANCELLABLE_STATUSES
             order["payment_label"] = PAYMENT_METHOD_LABELS.get(
                 order.get("paymentMethod"), order.get("paymentMethod") or ""
@@ -584,16 +582,11 @@ def get_order_payment_details(user_id, order_id):
             raise BookingError("Order not found.")
         order["items"] = repo.list_items_by_order_ids(cursor, [order_id])
         payments = payment_repository.list_payments_for_orders(cursor, [order_id])
+        order["payments"] = payments
         order["payment"] = payments[0] if payments else None
-        order["payment_status"] = (
-            order["payment"]["paymentStatus"] if order["payment"] else "Not recorded"
-        )
-        order["payment_amount"] = (
-            order["payment"]["amount"] if order["payment"] else Decimal("0")
-        )
-        order["balance_due"] = payment_service.balance_due(
-            order["totalPrice"], order["payment_status"], order["payment_amount"]
-        )
+        overview = collection_service.payment_overview(order, payments)
+        order.update(overview)
+        order["payment_amount"] = overview["paid_amount"]
         order["payment_label"] = PAYMENT_METHOD_LABELS.get(
             order["paymentMethod"], order["paymentMethod"]
         )
