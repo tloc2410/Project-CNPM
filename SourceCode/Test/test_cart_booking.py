@@ -1267,3 +1267,24 @@ def test_demo_checkout_payment_decline_preserves_cart(flask_client, booking_db):
     with flask_client.session_transaction() as sess:
         assert len(sess.get("rental_cart", [])) == 1
     assert raw.execute("SELECT COUNT(*) FROM Orders").fetchone()[0] == 0
+
+
+
+def test_payment_insert_failure_rolls_back_booking(booking_db, monkeypatch):
+    raw, tracker = booking_db
+    from datetime import timedelta
+    from data import payment_repository
+    start = date.today() + timedelta(days=46)
+    end = start + timedelta(days=1)
+    cart = [{"car_id": 1, "pickup_date": start.isoformat(),
+             "return_date": end.isoformat(), "selected": True}]
+
+    def fail_payment(*args, **kwargs):
+        raise RuntimeError("simulated DB insert failure")
+
+    monkeypatch.setattr(payment_repository, "insert_payment", fail_payment)
+    with pytest.raises(svc.BookingError, match="ROLLBACK"):
+        svc.place_order(1, cart, "PICKUP", "CARD")
+    for table in ("Orders", "Oderitem", "Payments"):
+        assert raw.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0] == 0
+    assert tracker["rollbacks"] > 0
