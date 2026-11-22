@@ -55,7 +55,6 @@ def _payment_draft():
     if not valid:
         session.pop(PAYMENT_DRAFT_KEY, None)
         return None
-    # Upgrading an in-progress checkout created by an older app version.
     if not draft.get("transfer_reference"):
         draft = dict(draft)
         draft["transfer_reference"] = "G12" + secrets.token_hex(6).upper()
@@ -538,9 +537,7 @@ def checkout():
             flash("Vui lòng đồng ý với Điều khoản và Chính sách bảo mật trước khi đặt xe.", "error")
             return redirect(checkout_again)
 
-        # Checkout does NOT write Orders/Payments. Stage a short-lived draft for
-        # a separate Payment page. The final POST recalculates DB prices and
-        # availability and commits order + payment in one transaction.
+        # Create orders only after Payment, with fresh availability checks.
         payment_method = request.form.get("payment_method", "E_WALLET")
         if payment_method not in svc.PAYMENT_METHODS:
             flash("Please select a valid payment method.", "error")
@@ -593,7 +590,7 @@ def checkout():
     )
 
 
-# ------------------------------------------------------------------ payment (separate third step)
+# Payment step
 @booking_bp.route("/payment", methods=["GET", "POST"])
 @login_required
 def payment_page():
@@ -622,14 +619,12 @@ def payment_page():
 
         action = request.form.get("payment_action")
         if action == "declined":
-            # Demo refusal: NOT a booking, NOT a payment and NOT a cart change.
             payment_error = "Demo payment declined. No order was placed. Please try again."
         elif action != "confirm":
             return "Invalid payment action.", 400
         else:
             try:
-                # Offline methods require explicit simulated confirmation too:
-                # no bank or cash payment is actually processed.
+                # Bank/Cash confirmation is a demo request, not actual payment.
                 outcome = "success" if draft["payment_method"] == "E_WALLET" else "confirmed"
                 order_id = svc.place_order(
                     user_id=session["user_id"],
@@ -658,8 +653,7 @@ def payment_page():
                 flash(f"Demo payment confirmed. Booking #{order_id} was created.", "success")
                 return redirect(url_for("booking.payment_receipt", order_id=order_id))
 
-    # Only display a real recipient QR if the project owner configured one.
-    # QR display by itself is NOT payment verification.
+    # QR display does not verify money was received.
     qr_image = None
     qr_kind = None
     bank_details = None
@@ -701,7 +695,7 @@ def payment_page():
     )
 
 
-# ------------------------------------------------------------------ remaining balance (customer)
+# Remaining balance
 def _collection_csrf(key):
     if key not in session:
         session[key] = secrets.token_urlsafe(32)
@@ -785,7 +779,7 @@ def pay_remaining(order_id):
     )
 
 
-# ------------------------------------------------------------------ payment verification (administrator)
+# Admin payment verification
 def admin_payment_required(view):
     @wraps(view)
     def guarded(*args, **kwargs):
