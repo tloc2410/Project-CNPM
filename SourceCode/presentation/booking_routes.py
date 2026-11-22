@@ -635,6 +635,7 @@ def payment_page():
                     receiving_method=draft["receiving_method"],
                     payment_method=draft["payment_method"],
                     demo_outcome=outcome,
+                    transfer_reference=draft.get("transfer_reference"),
                 )
             except svc.BookingError as exc:
                 payment_error = str(exc)
