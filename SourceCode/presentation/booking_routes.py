@@ -503,12 +503,14 @@ def checkout():
             return redirect(checkout_again)
 
         payment_method = request.form.get("payment_method", "CARD")
+        demo_outcome = request.form.get("demo_outcome", "success")
         try:
             order_id = svc.place_order(
                 user_id=session["user_id"],
                 cart=selected_items,
                 receiving_method=receiving,
                 payment_method=payment_method,
+                demo_outcome=demo_outcome,
             )
         except svc.BookingError as exc:
             flash(str(exc), "error")
@@ -558,6 +560,16 @@ def checkout():
 def my_orders():
     orders = svc.get_user_orders(session["user_id"])
     return render_template("booking/orders.html", orders=orders)
+
+
+@booking_bp.route("/orders/<int:order_id>/payment")
+@login_required
+def payment_receipt(order_id):
+    try:
+        order = svc.get_order_payment_details(session["user_id"], order_id)
+    except svc.BookingError:
+        return render_template("error.html", error_code="404", error_message="Order not found."), 404
+    return render_template("booking/payment_receipt.html", order=order)
 
 
 @booking_bp.route("/orders/<int:order_id>/cancel", methods=["POST"])
