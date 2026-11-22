@@ -27,15 +27,11 @@ if app.secret_key == "dev-only-change-me":
     app.logger.warning("SECRET_KEY is not set; using a development-only fallback.")
 
 
-# ---------------------------------------------------------------------------
-# Shared presentation helpers
-# ---------------------------------------------------------------------------
 def car_image(car):
     """Resolve a vehicle photo, including legacy image paths from booking demo rows."""
     image = vehicle_service.primary_picture_name(car)
     fallback = url_for("static", filename="images/cars/car-placeholder.svg")
-    # Booking demo cars have legacy drawing paths. Resolve to real photos
-    # even before the user updates existing MySQL records.
+    # Map legacy Booking image paths to current vehicle photos.
     code = str((car or {}).get("code", "")).upper()
     real_booking_photos = {
         "BOOK-VIOS-01": "images/cars/toyotavios2023.webp",
@@ -44,7 +40,7 @@ def car_image(car):
     if code in real_booking_photos:
         return url_for("static", filename=real_booking_photos[code])
     if code == "BOOK-VF5-03":
-        # Real VinFast VF5 photo; Wikimedia Commons CC0, photographer Bún bòa.
+        # VinFast VF5 image: Wikimedia Commons CC0, photographer Bún bòa.
         return "https://commons.wikimedia.org/wiki/Special:FilePath/VinFast_VF5.jpg?width=960"
     if image:
         image = str(image).strip()
@@ -58,7 +54,7 @@ def car_image(car):
             rel = image
         else:
             rel = "images/cars/" + image
-        # Old Booking rows may point to SVG assets that are not part of this branch.
+        # Map legacy Booking image paths to current vehicle photos.
         if os.path.isfile(os.path.join(app.static_folder, rel.replace("/", os.sep))):
             return url_for("static", filename=rel)
 
@@ -116,9 +112,6 @@ def _car_types_or_empty():
         return []
 
 
-# ---------------------------------------------------------------------------
-# Authentication (existing module)
-# ---------------------------------------------------------------------------
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -254,7 +247,6 @@ def reset_password(token):
     return render_template("reset_password.html")
 
 
-# Customer account center: Shopee-style order tabs adapted to rentals.
 _ACCOUNT_ORDER_GROUPS = {
     "PENDING": "pending", "NEW": "pending",
     "CONFIRMED": "confirmed",
@@ -355,9 +347,6 @@ def account_update_profile():
     return redirect(url_for("dashboard", section="profile"))
 
 
-# ---------------------------------------------------------------------------
-# Customer vehicle pages
-# ---------------------------------------------------------------------------
 @app.route("/")
 def home():
     db_error = None
@@ -368,8 +357,6 @@ def home():
     vehicle_showcase = []
     try:
         all_cars, _, total_pages, _ = vehicle_service.list_vehicles({"sort": "popular"})
-        # Collect the remaining vehicle pages so a brand is not hidden
-        # simply because it was absent from the top twelve cars.
         all_cars = list(all_cars)
         for page in range(2, min(total_pages, 10) + 1):
             next_cars, _, _, _ = vehicle_service.list_vehicles(
@@ -464,13 +451,7 @@ def car_detail(car_id):
     return render_template("car_detail.html", car=car, related=related, gallery=car_gallery(car))
 
 
-# ---------------------------------------------------------------------------
-# Admin vehicle management removed: assigned to a separate module.
 
-
-# ---------------------------------------------------------------------------
-# Error pages
-# ---------------------------------------------------------------------------
 @app.errorhandler(403)
 def forbidden(error):
     return render_template(
@@ -492,8 +473,7 @@ def internal_error(error):
     ), 500
 
 
-# Register Thu Thao's rental cart and booking routes in the shared Flask app.
-# The customer Figma pages, authentication routes and MySQL connection stay intact.
+# Keep the in-memory test database open until teardown.
 from presentation.booking_routes import booking_bp
 app.register_blueprint(booking_bp)
 

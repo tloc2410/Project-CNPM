@@ -11,7 +11,7 @@
     {% block extra_head %}{% endblock %}
 </head>
 <body class="{% block body_class %}booking-page{% endblock %}">
-    <!-- Shared Group 12 Navigation Bar (Figma Design) -->
+    
     <header class="g12-header">
         <div class="g12-header-inner">
             <a href="{{ url_for('home') }}" class="g12-logo-link" aria-label="Group 12 Car Rental">
@@ -82,7 +82,7 @@
         </div>
     </header>
 
-    <!-- Flash Notifications -->
+    
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             <div class="g12-flash-wrap">

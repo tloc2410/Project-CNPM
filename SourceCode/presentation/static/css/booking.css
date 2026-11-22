@@ -1,9 +1,4 @@
-/* ==========================================================================
-   Module: Rental Cart & Booking (Do Thu Thao)
-   Design system strictly aligned with Group 12 Figma frames:
-     - Frame "Cart" (1440x900)
-     - Frame "Thanh Toan" / Checkout (1536x1024)
-   ========================================================================== */
+
 
 :root {
     --bg-canvas: #F7F8FA;
@@ -66,7 +61,7 @@ a {
     white-space: nowrap;
 }
 
-/* =========================== Shared Header =========================== */
+
 .g12-header {
     background: var(--surface);
     border-bottom: 1px solid var(--border);
@@ -280,7 +275,7 @@ a {
     background: #F3F4F6;
 }
 
-/* =========================== Flash Banners =========================== */
+
 .g12-flash-wrap {
     max-width: 1220px;
     margin: 18px auto 0;
@@ -321,7 +316,7 @@ a {
     flex-shrink: 0;
 }
 
-/* =========================== Main Container =========================== */
+
 .g12-main {
     padding: 28px 24px 64px;
 }
@@ -333,7 +328,7 @@ a {
     margin: 0 auto;
 }
 
-/* =========================== Cart Page (Figma) =========================== */
+
 .cart-top-bar {
     display: flex;
     align-items: center;
@@ -631,7 +626,7 @@ a {
     color: #B45309;
 }
 
-/* Days Stepper (- 1 +) matching Figma pill stepper */
+
 .days-stepper {
     display: inline-flex;
     align-items: center;
@@ -694,7 +689,7 @@ a {
     margin-top: 1px;
 }
 
-/* Order Summary Card (Cart) */
+
 .summary-card {
     background: var(--surface);
     border: 1px solid var(--border-soft);
@@ -781,7 +776,7 @@ a {
     color: var(--text-muted);
 }
 
-/* Empty Cart */
+
 .empty-cart-box {
     background: var(--surface);
     border: 1px solid var(--border-soft);
@@ -802,7 +797,7 @@ a {
     font-size: 14.5px;
 }
 
-/* Available Cars Quick-Add Grid */
+
 .available-cars-section {
     margin-top: 40px;
 }
@@ -933,7 +928,7 @@ a {
     font-size: 14px;
 }
 
-/* =========================== Checkout Page (Figma) =========================== */
+
 .checkout-stepper {
     display: flex;
     align-items: center;
@@ -1126,7 +1121,7 @@ a {
     font-weight: 600;
 }
 
-/* Payment Method: E-Wallet, Bank Transfer, Cash */
+
 .payment-options-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -1219,7 +1214,7 @@ a {
     font-weight: 500;
 }
 
-/* Security Banner (Figma) */
+
 .security-banner {
     background: var(--surface);
     border: 1px solid #E3E6EC;
@@ -1268,7 +1263,7 @@ a {
 }
 
 
-/* Checkout Right Summary */
+
 .co-cars-list {
     display: flex;
     flex-direction: column;
@@ -1382,7 +1377,7 @@ a {
     color: var(--text-primary);
 }
 
-/* =========================== Orders Page =========================== */
+
 .orders-list {
     display: flex;
     flex-direction: column;
@@ -1551,7 +1546,7 @@ a {
     background: #FEE2E2;
 }
 
-/* =========================== Responsive =========================== */
+
 @media (max-width: 1024px) {
     .g12-nav {
         display: none;
@@ -1598,7 +1593,7 @@ a {
     }
 }
 
-/* Checkout: custom pickup address and two return-point choices. */
+
 .location-help-text {
     display: block;
     margin-top: 6px;
@@ -1617,8 +1612,7 @@ a {
     text-overflow: ellipsis;
 }
 
-/* Pickup rules: free collection is locked to Group 12's showroom.
-   A delivery address is editable only when home delivery is selected. */
+/* Showroom pickup is fixed; only delivery addresses are editable. */
 #co-pickup-location.is-showroom-locked,
 #co-pickup-location[readonly] {
     color: #354152;

@@ -1,21 +1,5 @@
-"""Data access layer for module Rental Cart & Booking (Do Thu Thao).
+"""Booking SQL; transaction ownership stays in the business service."""
 
-Strictly adheres to the team's shared MySQL schema in
-Database/group12_car_rental.sql:
-  - Users(UserID, fullName, phone, email, address, ...)
-  - CarTypes(typeId, typeName, description)
-  - Cars(carID, TypeID, code, name, pictures, description,
-         numberOfSeats, pricePerDay, status, numberOfViews)
-  - Orders(oderID, useID, orderTime, status, receivingMethod,
-           deliveryFee, deposit, totalPrice, paymentMethod)
-  - Oderitem(OderitemID, OderID, CarID, unitPrice, rentalDays,
-             pickupDate, returnDate)
-
-All transactional functions receive an open ``cursor`` so the business layer
-exclusively controls ``start_transaction()``, ``commit()``, and ``rollback()``.
-"""
-
-# Orders in these statuses do NOT block a car's booking calendar.
 INACTIVE_STATUSES = ("CANCELLED", "COMPLETED", "RETURNED")
 
 
@@ -39,7 +23,7 @@ def get_cars_by_ids(cursor, car_ids, lock=False):
         return {}
     placeholders = ", ".join(["%s"] * len(unique_ids))
     if lock:
-        # Lock rows in deterministic primary-key order to avoid deadlocks.
+        # Lock cars in a stable order to avoid deadlocks.
         sql = (
             "SELECT carID, TypeID, code, name, pictures, description, "
             "numberOfSeats, pricePerDay, status "

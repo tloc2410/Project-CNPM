@@ -32,7 +32,6 @@ class VehicleRouteTests(unittest.TestCase):
         run.app.config.update(TESTING=True, WTF_CSRF_ENABLED=False)
         self.client = run.app.test_client()
 
-    # -- public customer-facing pages -------------------------------------------------------
     def test_home_renders_cars_from_service(self):
         with patch.object(vehicle_service, "list_vehicles",
                           return_value=([CAR], 1, 1, FILTERS)), \

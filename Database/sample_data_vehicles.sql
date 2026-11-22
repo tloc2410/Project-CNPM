@@ -1,7 +1,5 @@
--- Sample data for the vehicle module (Issue #3 - Vehicle Management).
--- Chay sau Database/group12_car_rental.sql.
--- Du lieu minh hoa, khong chua thong tin khach hang that.
--- INSERT IGNORE giup chay file nay nhieu lan ma khong bi trung khoa chinh.
+-- Run after Database/group12_car_rental.sql.
+-- INSERT IGNORE permits repeated seeding without duplicate rows.
 
 USE group12_car_rental;
 
@@ -29,12 +27,8 @@ VALUES
     (11, 6, 'ELEC-02',  'Tesla Model 3',     'teslamodel3.webp',           'Xe dien, vanh xe tu dong, noi that toi gian.',              5, 2600000.00, 'maintenance', 88),
     (12, 2, 'SUV-03',   'Honda CR-V 2021',   'hondacrV2021.webp',          'SUV 7 cho, 7 airbag, phu hop gia dinh lon.',                7, 1500000.00, 'available',   71);
 
--- Kiem tra nhanh sau khi chay:
--- SELECT c.carID, c.code, c.name, t.typeName, c.pricePerDay, c.status
--- FROM Cars c LEFT JOIN CarTypes t ON t.typeId = c.TypeID
--- ORDER BY c.carID;
 
--- Cap nhat anh cho database da co san (INSERT IGNORE khong ghi de du cu).
+-- Update photo paths of previously seeded vehicles.
 UPDATE Cars SET pictures = 'toyotavios2023.webp'     WHERE carID = 1;
 UPDATE Cars SET pictures = 'hondacity2022.webp'      WHERE carID = 2;
 UPDATE Cars SET pictures = 'toyotacorollacross.webp' WHERE carID = 3;

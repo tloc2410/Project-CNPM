@@ -67,7 +67,6 @@ def _pending_id(raw, order_id):
     ).fetchone()[0]
 
 
-# PAYMENT METHODS & QR
 
 
 def test_payment_01_bank_deposit_pending_with_reference():
@@ -116,7 +115,6 @@ def test_payment_04_momo_page_requires_existing_merchant_qr_file(
     assert "MoMo merchant QR" in updated
 
 
-# CHECKOUT AND DEPOSIT
 
 
 def test_payment_05_checkout_stages_draft_without_order_or_payment(
@@ -189,7 +187,6 @@ def test_payment_09_successful_payment_post_cannot_be_replayed(
     assert raw.execute("SELECT COUNT(*) FROM Payments").fetchone()[0] == 1
 
 
-# REMAINING 70%
 
 
 def test_payment_10_unverified_bank_deposit_blocks_second_payment(booking_db):
@@ -244,7 +241,6 @@ def test_payment_13_bank_balance_page_shows_qr_of_70_percent(
     assert "Awaiting Verification" in view
 
 
-# ADMIN VERIFICATION
 
 
 def test_payment_14_session_admin_spoof_fails_database_role_check(
@@ -318,7 +314,6 @@ def test_payment_18_cancellation_requires_manual_refund_not_fake_refunded(bookin
     assert [x[0] for x in rows] == ["Refund Pending", "Cancelled"]
 
 
-# TRANSACTION ROLLBACK
 
 
 def test_payment_19_failed_initial_payment_insert_rolls_back_everything(

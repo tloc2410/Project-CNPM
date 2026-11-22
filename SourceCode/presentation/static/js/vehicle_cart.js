@@ -1,4 +1,4 @@
-/* Customer-facing cart: add without navigation, update one shared session-backed badge. */
+
 (function () {
   "use strict";
   const badge = document.querySelector("[data-cart-badge]");
@@ -32,9 +32,6 @@
     toastTimeout = window.setTimeout(function () { toast.hidden = true; }, 3600);
   }
 
-  // If user navigates to the home, listing, or detail page, the server-side
-  // count is already rendered from the same rental_cart Flask session.
-  // AJAX updates it immediately on the page currently open.
   document.addEventListener("submit", async function (event) {
     const form = event.target.closest("form[data-ajax-add-to-cart]");
     if (!form) return;
@@ -70,7 +67,5 @@
     }
   });
 
-  // A page reached with a full navigation already receives its current count
-  // from the backend session. Keep the badge accessible to screen readers.
   if (badge && !badge.hidden) updateBadge(badge.textContent);
 })();

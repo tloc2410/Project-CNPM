@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="cart-container" data-page="cart">
-    <!-- Page Title Row (Figma: Cart icon + Your Cart (N) | Select items to checkout) -->
+    
     <div class="cart-top-bar">
         <div class="cart-heading-group">
             <svg class="cart-heading-icon" viewBox="0 0 28 28" fill="none" width="32" height="32">
@@ -22,7 +22,7 @@
     </div>
 
     {% if summary["items"] %}
-        <!-- Bulk Selection Toolbar (Figma: Select all | Remove selected) -->
+        
         <div class="cart-toolbar">
             <label class="g12-checkbox-label">
                 <input type="checkbox"
@@ -41,7 +41,7 @@
             </form>
         </div>
 
-        <!-- 2-Column Main Layout: Cart Cards (Left) + Order Summary (Right) -->
+        
         <div class="cart-grid">
             <div class="cart-list" id="cart-items-list">
                 {% for item in summary["items"] %}
@@ -89,7 +89,7 @@
                                 </form>
                             </div>
 
-                            <!-- Interactive Pickup / Return Dates (triggers instant overlap check & price calc) -->
+                            
                             <div class="cart-dates-row">
                                 <div class="cart-date-field">
                                     <label for="pickup-{{ item.car_id }}" class="sr-only">Ngày nhận xe</label>
@@ -122,7 +122,7 @@
                                     </span>
                                 </div>
 
-                                <!-- Rental Days Stepper (- N +) synced with dates -->
+                                
                                 <div class="days-stepper" data-car-id="{{ item.car_id }}" title="Thay đổi số ngày thuê">
                                     <button type="button" class="stepper-btn stepper-minus" data-car-id="{{ item.car_id }}" aria-label="Decrease rental days">−</button>
                                     <span class="stepper-val" data-days-display="{{ item.car_id }}">{{ item.rental_days if item.rental_days > 0 else 1 }}</span>
@@ -130,7 +130,7 @@
                                 </div>
                             </div>
 
-                            <!-- Overlap / Validation Alert Banner -->
+                            
                             <div class="item-error-banner" data-error-box="{{ item.car_id }}" {% if not item.error %}hidden{% endif %}>
                                 <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
                                     <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.6"/>
@@ -143,7 +143,7 @@
                 {% endfor %}
             </div>
 
-            <!-- Right Column: Order Summary Card (Figma) -->
+            
             <aside class="summary-card cart-summary-card">
                 <h2 class="summary-title">Order Summary</h2>
 
@@ -182,7 +182,7 @@
             </aside>
         </div>
     {% else %}
-        <!-- Empty Cart State -->
+        
         <div class="empty-cart-box">
             <svg viewBox="0 0 48 48" fill="none" width="54" height="54">
                 <path d="M6 10h5l4.4 20a3 3 0 0 0 2.9 2.4h17.2a3 3 0 0 0 2.9-2.3L41 16H13"
@@ -195,7 +195,7 @@
         </div>
     {% endif %}
 
-    <!-- Quick-Add Available Cars Section (Standalone testing & easy adding to cart) -->
+    
     <section class="available-cars-section" id="available-cars">
         <div class="section-header-row">
             <div>

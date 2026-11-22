@@ -36,7 +36,7 @@ a {
   font-family: "Inter-Medium";
   src: local("Inter-Medium");
 }
-/* LOGIN */
+
 .login {
   background-color: #f8fafc;
   width: 100%;
@@ -856,7 +856,7 @@ a {
   font-family: "Plus Jakarta Sans-Regular";
   src: local("Plus Jakarta Sans-Regular");
 }
-/* SIGN UP */
+
 .sign-up {
   background-color: #ffffff;
   overflow: hidden;
@@ -1765,7 +1765,7 @@ a {
     cursor: pointer;
 }
 
-/*       FORGOT PASSWORD      */
+
 @font-face {
   font-family: "Liberation Sans-Regular";
   src: local("Liberation Sans-Regular");
@@ -2352,7 +2352,7 @@ a {
   white-space: nowrap;
 }
 
-/* Forgot Password: icon alignment and clickable navigation */
+
 .forgot_password .link,
 .forgot_password .link-sign-in { text-decoration: none; cursor: pointer; }
 .forgot_password .prefix-icon-user .SVG { width: 16px; height: 16px; }
@@ -2374,15 +2374,15 @@ a {
     padding: 0;
 }
 
-/* Khi nhấn vào ô nhập */
+
 .forgot_password .container-2:focus {
     border: none !important;
     outline: none !important;
     box-shadow: none !important;
 }
 
-/* RESET PASSWORD */
-/* Scoped to this page so existing Login / Sign Up / Forgot Password styles stay untouched. */
+
+/* Reset styles are scoped to avoid changing login/sign-up. */
     .reset-password-page, .reset-password-page * { box-sizing: border-box; }
     .reset-password-page {
       min-height: 100vh;

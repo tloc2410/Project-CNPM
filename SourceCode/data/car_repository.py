@@ -1,8 +1,4 @@
-"""MySQL access for the vehicle module (tables ``Cars`` and ``CarTypes``).
-
-This module is the only place allowed to build SQL for vehicles. Business
-rules and validation live in ``business.vehicle_service``.
-"""
+"""Vehicle SQL access; filtering rules live in vehicle_service."""
 from data.database import get_db_connection
 
 _CAR_SELECT = """
@@ -11,8 +7,7 @@ _CAR_SELECT = """
     t.typeName
 """
 
-# The team schema currently spells the order-item table ``Oderitem``. Support
-# the corrected spelling too, without breaking when that module is not ready.
+# Support legacy Oderitem and corrected OrderItem table names.
 _RENTAL_TABLE = None
 _RENTAL_TABLE_RESOLVED = False
 
@@ -46,7 +41,6 @@ def _rental_count_expression():
     table = _rental_table()
     if not table:
         return "0"
-    # Table name comes from the fixed whitelist above, never from user input.
     return f"(SELECT COUNT(*) FROM `{table}` oi WHERE oi.CarID = c.carID)"
 
 

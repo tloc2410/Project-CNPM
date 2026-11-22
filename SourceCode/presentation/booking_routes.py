@@ -1,10 +1,4 @@
-"""Flask Blueprint for module Rental Cart & Booking (Do Thu Thao).
-
-Integrates cleanly with the Account/Auth session created in SourceCode/run.py:
-  - session["user_id"]
-  - session["full_name"]
-  - session["role"]
-"""
+"""Flask routes for rental cart, checkout, payments and orders."""
 
 from datetime import datetime
 from functools import wraps
@@ -171,10 +165,7 @@ def car_img_url(pictures):
     if raw:
         first = raw.replace("\n", ",").replace(";", ",").split(",")[0].strip()
         if first:
-            # Booking's original demo rows saved illustrations in the Cars
-            # table. Map those specific paths to photographs even when users
-            # have not rerun Database/booking_setup.sql on their local MySQL.
-            # Keep this in the Booking filter: its cards do not call run.car_image.
+            # Map legacy Booking image paths to current vehicle photos.
             legacy_booking_photos = {
                 "car_vios.svg": "images/cars/toyotavios2023.webp",
                 "car_city.svg": "images/cars/hondacity2022.webp",
@@ -190,7 +181,7 @@ def car_img_url(pictures):
                 if picture_name in legacy_booking_photos:
                     return url_for("static", filename=legacy_booking_photos[picture_name])
                 if picture_name == "car_vf5.svg":
-                    # Commons CC0 photograph of an actual VinFast VF 5.
+                    # VinFast VF5 image: Wikimedia Commons CC0, photographer Bún bòa.
                     return "https://commons.wikimedia.org/wiki/Special:FilePath/VinFast_VF5.jpg?width=960"
             if first.startswith(("http://", "https://", "//", "/")):
                 return first
@@ -212,7 +203,6 @@ def inject_booking_nav():
     }
 
 
-# ------------------------------------------------------------------ cart
 @booking_bp.route("/cart")
 @login_required
 def cart():
@@ -234,7 +224,6 @@ def cart():
 @booking_bp.route("/cart/add/<int:car_id>", methods=["POST"])
 @login_required
 def cart_add(car_id):
-    # JSON requests are handled without navigation; ordinary POST forms still work.
     payload = request.get_json(silent=True) if request.is_json else request.form
     payload = payload or {}
     pickup = str(payload.get("pickup_date", "")).strip()
@@ -452,12 +441,9 @@ def api_cart_summary():
     )
 
 
-# ------------------------------------------------------------------ checkout
 @booking_bp.route("/checkout", methods=["GET", "POST"])
 @login_required
 def checkout():
-    # Plain /checkout processes the selected saved cart items.
-    # /checkout?mode=now processes ONE temporary item and never changes cart.
     direct_mode = request.values.get("mode") == "now"
     if direct_mode:
         item = _get_direct_booking()
@@ -488,8 +474,7 @@ def checkout():
         form_return_loc = request.form.get("return_location", "").strip()
         return_choice = request.form.get("return_choice")
 
-        # PICKUP always means collection at our showroom. Do not trust
-        # a forged/old pickup_location submitted by the browser.
+        # Validate pickup addresses server-side to reject forged locations.
         if receiving == "PICKUP":
             form_pickup_loc = svc.SHOWROOM_LOCATION
         elif not form_pickup_loc or form_pickup_loc in svc.LOCATIONS:
@@ -508,7 +493,6 @@ def checkout():
                 else form_pickup_loc
             )
         elif receiving == "PICKUP":
-            # Keep legacy POST forms consistent with showroom pickup.
             form_return_loc = svc.SHOWROOM_LOCATION
 
         dates_modified = request.form.get("dates_modified") == "1"
@@ -537,7 +521,6 @@ def checkout():
             flash("Vui lòng đồng ý với Điều khoản và Chính sách bảo mật trước khi đặt xe.", "error")
             return redirect(checkout_again)
 
-        # Create orders only after Payment, with fresh availability checks.
         payment_method = request.form.get("payment_method", "E_WALLET")
         if payment_method not in svc.PAYMENT_METHODS:
             flash("Please select a valid payment method.", "error")
@@ -590,7 +573,6 @@ def checkout():
     )
 
 
-# Payment step
 @booking_bp.route("/payment", methods=["GET", "POST"])
 @login_required
 def payment_page():
@@ -624,7 +606,6 @@ def payment_page():
             return "Invalid payment action.", 400
         else:
             try:
-                # Bank/Cash confirmation is a demo request, not actual payment.
                 outcome = "success" if draft["payment_method"] == "E_WALLET" else "confirmed"
                 order_id = svc.place_order(
                     user_id=session["user_id"],
@@ -653,7 +634,7 @@ def payment_page():
                 flash(f"Demo payment confirmed. Booking #{order_id} was created.", "success")
                 return redirect(url_for("booking.payment_receipt", order_id=order_id))
 
-    # QR display does not verify money was received.
+    # QR display does not prove payment receipt.
     qr_image = None
     qr_kind = None
     bank_details = None
@@ -695,7 +676,6 @@ def payment_page():
     )
 
 
-# Remaining balance
 def _collection_csrf(key):
     if key not in session:
         session[key] = secrets.token_urlsafe(32)
@@ -779,7 +759,6 @@ def pay_remaining(order_id):
     )
 
 
-# Admin payment verification
 def admin_payment_required(view):
     @wraps(view)
     def guarded(*args, **kwargs):
@@ -818,7 +797,6 @@ def admin_confirm_payment(payment_id):
     return redirect(url_for("booking.admin_payments"))
 
 
-# ------------------------------------------------------------------ orders
 @booking_bp.route("/orders")
 @login_required
 def my_orders():

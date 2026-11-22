@@ -1,14 +1,4 @@
-"""Business logic layer for module Rental Cart & Booking (Do Thu Thao).
-
-Responsibilities:
-- Pure cart state manipulation (add, remove, bulk remove, selection toggle,
-  date & location updates, rental-days stepping).
-- Date validation, anti-overlap calendar checks against MySQL, and automatic
-  fee calculation (line totals, subtotal, delivery fee with >= 2,000,000 VND
-  free-delivery rule, 30% deposit, grand total).
-- Atomic transactional order placement (Orders + Oderitem) and cancellation
-  with strict ROLLBACK on any business or database error.
-"""
+"""Cart, availability, pricing and atomic rental booking logic."""
 
 from datetime import date, datetime, timedelta
 from decimal import Decimal, ROUND_HALF_UP
@@ -62,7 +52,6 @@ class BookingError(Exception):
     """Business rule violation whose message can be shown safely to the user."""
 
 
-# ---------------------------------------------------------------- helpers
 def _money(value):
     return Decimal(value).quantize(Decimal("1"), rounding=ROUND_HALF_UP)
 
@@ -149,7 +138,6 @@ def _normalize_cart_item(item):
     }
 
 
-# ---------------------------------------------------------------- cart (pure)
 def add_to_cart(
     cart,
     car_id,
@@ -263,7 +251,6 @@ def get_selected_cart_items(cart):
     return [i for i in (_normalize_cart_item(x) for x in (cart or [])) if i["selected"]]
 
 
-# ---------------------------------------------------------------- DB reads
 def get_available_cars(keyword=""):
     conn = database.get_db_connection()
     cursor = conn.cursor(dictionary=True)
@@ -366,7 +353,6 @@ def build_cart_summary(cart, receiving_method="PICKUP", today=None, selected_onl
         conn.close()
 
 
-# ---------------------------------------------------------------- transactions
 def place_order(
     user_id,
     cart,
@@ -400,7 +386,6 @@ def place_order(
     if payment_method not in PAYMENT_METHODS:
         raise BookingError("Phương thức thanh toán không hợp lệ.")
 
-    # Validate dates and prevent duplicate car IDs before starting DB transaction.
     seen_car_ids = set()
     parsed = []
     for item in items:
@@ -419,7 +404,6 @@ def place_order(
     try:
         conn.start_transaction()
 
-        # Lock car rows to prevent race-condition double booking.
         cars = repo.get_cars_by_ids(cursor, [p[0] for p in parsed], lock=True)
 
         line_totals = []
@@ -460,7 +444,7 @@ def place_order(
                 return_date=r_date,
             )
 
-        # Payment and booking share a transaction; failure rolls back both.
+        # Booking and Payment must commit or roll back together.
         plan = payment_service.plan_payment(
             payment_method, order_id, totals["total"], totals["deposit"],
             demo_outcome, transfer_reference=transfer_reference,
@@ -503,7 +487,7 @@ def cancel_order(user_id, order_id):
             raise BookingError("Đơn hàng này không thể hủy ở trạng thái hiện tại.")
 
         repo.update_order_status(cursor, order_id, ORDER_STATUS_CANCELLED)
-        # Cancel all Pending payments; Paid amounts require a real refund.
+        # Refund Pending still requires actual settlement; no transfer is made here.
         for payment in payment_repository.list_payments_for_orders(cursor, [order_id]):
             state = str(payment.get("paymentStatus") or "")
             if state == "Paid":

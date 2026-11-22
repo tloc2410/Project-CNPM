@@ -1,5 +1,4 @@
-/* Identical header styling from booking.css, scoped to the three vehicle pages.
-   This file does not import booking.css to avoid changing the vehicle page grids. */
+/* Scoped header avoids changing vehicle page layouts. */
 .g12-figma-site {
   --border: #E6EAF0;
   --border-input: #DCE2EA;
@@ -221,7 +220,7 @@ display: block;
 background: #F3F4F6;
 }
 
-/* The Vehicle List submenu is retained from the Vehicle module. */
+
 .g12-figma-site .g12-header-inner { position:relative; }
 .g12-figma-site .g12-nav-vehicle-group { display:inline-flex; align-items:center; gap:3px; }
 .g12-figma-site .g12-nav-seat-toggle {

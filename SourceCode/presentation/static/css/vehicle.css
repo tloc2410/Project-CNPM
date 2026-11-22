@@ -1,4 +1,4 @@
-/* Group12 Car Rental - vehicle module design tokens (match auth.css) */
+
 :root {
   --primary: #f59e0b;
   --primary-dark: #d97706;
@@ -41,7 +41,7 @@ code { background: #eef2f7; padding: 1px 5px; border-radius: 5px; font-size: 12p
 .section { padding: 48px 0; }
 .section-narrow { max-width: 900px; }
 
-/* Buttons */
+
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   padding: 11px 18px; border-radius: 12px; border: 1px solid transparent;
@@ -58,7 +58,7 @@ code { background: #eef2f7; padding: 1px 5px; border-radius: 5px; font-size: 12p
 .link-btn:hover { text-decoration: underline; }
 .link-danger { color: var(--danger); }
 
-/* Header / footer */
+
 .site-header { background: rgba(255, 255, 255, 0.94); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 20; backdrop-filter: blur(8px); }
 .nav { display: flex; align-items: center; gap: 28px; min-height: 70px; }
 .brand { display: flex; align-items: center; gap: 9px; font-size: 19px; font-weight: 800; color: var(--ink); letter-spacing: -0.4px; }
@@ -72,7 +72,7 @@ code { background: #eef2f7; padding: 1px 5px; border-radius: 5px; font-size: 12p
 .site-footer { border-top: 1px solid var(--line); background: var(--surface); color: var(--muted); font-size: 12px; }
 .footer-inner { display: flex; justify-content: space-between; gap: 16px; padding: 22px 0; flex-wrap: wrap; }
 
-/* Flash + notices */
+
 .flash-stack { display: grid; gap: 8px; padding-top: 16px; }
 .flash, .notice { padding: 12px 16px; border-radius: 12px; border: 1px solid; font-weight: 500; }
 .flash-success, .notice-warning { background: #fffbeb; border-color: #fde68a; color: #92400e; }
@@ -80,7 +80,7 @@ code { background: #eef2f7; padding: 1px 5px; border-radius: 5px; font-size: 12p
 .flash-info { background: var(--soft); border-color: #bfdbfe; color: #1e40af; }
 .notice { margin-bottom: 20px; }
 
-/* Hero */
+
 .hero { background: linear-gradient(120deg, #fff7ed 0%, #ffffff 55%, #eff6ff 100%); border-bottom: 1px solid var(--line); overflow: hidden; }
 .hero-inner { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 40px; align-items: center; padding: 68px 0; }
 .eyebrow { color: var(--primary-dark); font-size: 11px; font-weight: 800; letter-spacing: 1.6px; text-transform: uppercase; margin-bottom: 10px; }
@@ -100,7 +100,7 @@ code { background: #eef2f7; padding: 1px 5px; border-radius: 5px; font-size: 12p
 .hero-art-circle { position: absolute; width: 280px; height: 280px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, #fde68a, #f59e0b); opacity: 0.35; }
 .hero-art-car { position: relative; font-size: 150px; color: var(--primary); transform: rotate(-12deg); text-shadow: 0 20px 30px rgba(217, 119, 6, 0.28); }
 
-/* Headings / grids */
+
 .section-heading, .page-heading { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; margin-bottom: 24px; flex-wrap: wrap; }
 .page-subtitle { color: var(--muted); margin: 0; }
 .result-count { background: var(--surface); border: 1px solid var(--line); padding: 10px 16px; border-radius: 12px; color: var(--muted); }
@@ -108,7 +108,7 @@ code { background: #eef2f7; padding: 1px 5px; border-radius: 5px; font-size: 12p
 .heading-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .car-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
 
-/* Car card */
+
 .car-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); transition: transform 0.18s ease, box-shadow 0.18s ease; }
 .car-card:hover { transform: translateY(-3px); box-shadow: 0 16px 30px -14px rgba(15, 23, 42, 0.25); }
 .car-card-image { display: block; position: relative; aspect-ratio: 16 / 10; background: #eef2f7; overflow: hidden; }
@@ -127,7 +127,7 @@ code { background: #eef2f7; padding: 1px 5px; border-radius: 5px; font-size: 12p
 .car-price strong { color: var(--ink); font-size: 16px; }
 .car-price span { color: var(--muted); font-size: 12px; }
 
-/* Empty / features */
+
 .empty-state { text-align: center; background: var(--surface); border: 1px dashed var(--line); border-radius: var(--radius); padding: 56px 24px; color: var(--muted); }
 .empty-state h1, .empty-state h3 { margin-bottom: 8px; }
 .empty-icon { display: block; font-size: 38px; margin-bottom: 10px; color: var(--primary); font-weight: 800; }
@@ -136,7 +136,7 @@ code { background: #eef2f7; padding: 1px 5px; border-radius: 5px; font-size: 12p
 .feature-item p { color: var(--muted); margin: 0; }
 .feature-icon { display: inline-grid; place-items: center; width: 42px; height: 42px; border-radius: 12px; background: #fff7ed; font-size: 20px; margin-bottom: 12px; }
 
-/* Filters */
+
 .filter-bar { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; margin-bottom: 24px; }
 .filter-field { display: grid; gap: 6px; min-width: 140px; }
 .filter-grow { flex: 1 1 220px; }
@@ -151,14 +151,14 @@ input:focus, select:focus, textarea:focus { outline: 2px solid #fde68a; border-c
 .range-pair span { color: var(--muted); }
 .filter-actions { display: flex; gap: 8px; }
 
-/* Pagination */
+
 .pagination { display: flex; justify-content: center; gap: 6px; margin-top: 28px; flex-wrap: wrap; }
 .page-btn { min-width: 38px; padding: 8px 12px; text-align: center; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; color: var(--body); font-weight: 600; }
 .page-btn:hover { border-color: var(--primary); color: var(--primary-dark); }
 .page-btn.active { background: var(--primary); border-color: var(--primary); color: #fff; }
 .page-dots { padding: 8px 4px; color: var(--muted); }
 
-/* Detail */
+
 .breadcrumb { display: flex; gap: 8px; color: var(--muted); font-size: 12px; margin-bottom: 24px; flex-wrap: wrap; }
 .breadcrumb a:hover { color: var(--primary-dark); }
 .detail-layout { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 32px; align-items: start; }
@@ -181,7 +181,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid #fde68a; border-c
 .booking-action { display: grid; gap: 6px; justify-items: end; }
 .booking-action small { color: var(--muted); max-width: 230px; text-align: right; font-size: 11px; }
 
-/* Shared authenticated dashboard styles (customer) */
+
 .form-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 28px; box-shadow: var(--shadow); }
 .dashboard-links { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
 
@@ -195,7 +195,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid #fde68a; border-c
 }
 
 
-/* Figma Page 1 / Danh Sách Xe (frame 138:4) */
+
 .figma-cars-page {background:#f7f7f7; min-height:100vh;color:#191919}
 .figma-cars-banner {height:235px; margin:0 auto; width:calc(100% - 36px);max-width:1500px;border-radius:16px;overflow:hidden;display:flex;align-items:center;background:linear-gradient(90deg,rgba(0,0,0,.75),rgba(0,0,0,.2) 60%),url('../images/cars/toyotavios2023.webp') center 48%/cover}
 .figma-cars-banner-content {padding:30px 7%; color:#f8fafc;letter-spacing:2px;font-size:13px}
@@ -239,10 +239,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid #fde68a; border-c
 @media(max-width:750px){.figma-cars-banner{height:170px}.figma-cars-layout{grid-template-columns:1fr}.figma-cars-container{width:calc(100% - 26px)}.figma-cars-sidebar{padding:14px}.figma-cars-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.figma-cars-toolbar{grid-template-columns:1fr 1fr}.figma-cars-toolbar input{grid-column:1/-1}.figma-cars-results-heading{flex-wrap:wrap}}
 @media(max-width:480px){.figma-cars-grid{grid-template-columns:1fr}.figma-cars-toolbar{grid-template-columns:1fr}.figma-cars-toolbar input{grid-column:auto}.figma-cars-banner-content{padding:20px}.figma-banner-benefits{gap:8px;font-size:9px}}
 
-/* ==========================================================
-   Group12 Figma customer screens (1440 px source designs)
-   Admin styles intentionally excluded.
-   ========================================================== */
+/* Customer-only styles; admin styles are separate. */
 .g12-figma-site {background:#fff;color:#111;font-family:Inter,Arial,sans-serif;font-size:15px}
 .g12-figma-site h1,.g12-figma-site h2,.g12-figma-site h3{color:#111}
 .g12-site-header{width:100%;background:white;position:relative;z-index:30;border-bottom:1px solid #f0f0f0}
@@ -377,7 +374,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid #fde68a; border-c
  .g12-process-card small{font-size:11px}
 }
 
-/* Figma car detail — design frame 41:3, desktop width 1440 */
+
 .g12-detail-page{background:#fff;min-height:1100px;color:#101010;padding:0 0 140px}
 .g12-detail-width{width:min(1200px,calc(100% - 60px));margin:0 auto}
 .g12-detail-breadcrumb{display:flex;align-items:center;gap:22px;padding:30px 0 38px;font-size:16px;color:#141414}
@@ -426,7 +423,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid #fde68a; border-c
 @media(max-width:1050px){.g12-detail-overview h1{font-size:36px}.g12-detail-meta{font-size:13px;gap:7px}.g12-detail-meta svg{width:19px}.g12-detail-price{margin-top:34px}.g12-detail-price strong{font-size:27px}.g12-detail-description{font-size:16px;min-height:0}.g12-detail-cta{font-size:15px;min-height:54px;border-radius:12px}.g12-detail-primary{height:320px}.g12-detail-bottom{margin-top:80px}}
 @media(max-width:730px){.g12-detail-width{width:calc(100% - 25px)}.g12-detail-main{grid-template-columns:1fr;gap:22px}.g12-detail-breadcrumb{padding:22px 0;gap:10px}.g12-detail-primary{height:280px}.g12-detail-thumbs{margin-top:12px;gap:8px}.g12-detail-thumb{height:70px}.g12-detail-overview h1{font-size:35px}.g12-detail-meta{font-size:15px}.g12-detail-price{margin-top:26px}.g12-detail-actions{gap:8px}.g12-detail-cta{padding:10px;font-size:14px}.g12-detail-bottom{margin-top:65px;padding:14px}.g12-detail-tabs{margin:0 0 12px;gap:0}.g12-detail-tabs button{font-size:12px}.g12-detail-panel{grid-template-columns:1fr;gap:10px}.g12-detail-panel>div+div{padding:0;border-left:0}.g12-detail-page{padding-bottom:65px}}
 
-/* Figma Vehicle List — frame 138:4 at 1440 × 1100 */
+
 .g12-figma-site .figma-cars-page{background:#f7f7f7}
 .g12-figma-site .figma-cars-banner {
     height: 234px;
@@ -501,7 +498,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid #fde68a; border-c
 @media(max-width:1150px){.g12-figma-site .figma-cars-layout{grid-template-columns:240px minmax(0,1fr)}.g12-figma-site .figma-cars-toolbar{grid-template-columns:1fr 1fr}.g12-figma-site .figma-cars-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:730px){.g12-figma-site .figma-cars-container{width:calc(100% - 28px)}.g12-figma-site .figma-cars-layout{grid-template-columns:1fr}.g12-figma-site .figma-cars-banner{width:calc(100% - 20px);height:165px}.g12-figma-site .figma-cars-toolbar{grid-template-columns:1fr 1fr}.g12-figma-site .figma-cars-toolbar .g12-input-icon{grid-column:1/-1}.g12-figma-site .figma-cars-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:480px){.g12-figma-site .figma-cars-grid{grid-template-columns:1fr}.g12-figma-site .figma-cars-toolbar{grid-template-columns:1fr}.g12-figma-site .figma-cars-toolbar .g12-input-icon{grid-column:auto}.g12-figma-site .figma-cars-banner-content{padding:20px}.g12-figma-site .figma-banner-benefits{gap:8px;font-size:9px}}
-/* Banner trang chủ */
+
 .g12-home-hero {
     background: #121b23;
 }
@@ -514,17 +511,17 @@ input:focus, select:focus, textarea:focus { outline: 2px solid #fde68a; border-c
     mix-blend-mode: normal;
 }
 
-/* Ẩn chữ trên banner Trang chủ */
+
 .g12-home-hero .g12-hero-copy {
     display: none !important;
 }
 
-/* Ẩn chữ và biểu tượng trên banner Danh sách xe */
+
 .figma-cars-banner-content {
     display: none !important;
 }
 
-/* Figma nav: Vehicle List expands to a four-seat pill navigation bar. */
+
 .g12-site-nav { position: relative; }
 .g12-nav-vehicle-group { display: inline-flex; align-items: center; gap: 3px; }
 .g12-nav-seat-toggle {
@@ -562,7 +559,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid #fde68a; border-c
 }
 
 
-/* Featured Vehicles: switch car recommendations in-place by brand */
+
 .g12-brand-tabs .g12-brand-tab {
   flex: 1; min-width: 0; border: 0; border-radius: 999px;
   padding: 8px 12px; margin: 0;
@@ -584,7 +581,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid #fde68a; border-c
   .g12-brand-panel .g12-featured-grid { min-height: 300px; }
 }
 
-/* Unified session-backed cart badge and AJAX confirmation for customer pages */
+
 .g12-header-cart{position:relative}
 .g12-cart-count{
   position:absolute;top:-7px;right:-5px;min-width:18px;height:18px;

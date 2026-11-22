@@ -1,8 +1,4 @@
-"""Business rules for the vehicle module.
-
-The presentation layer calls this module; it never talks to the repository
-directly. All user input is validated here before reaching MySQL.
-"""
+"""Vehicle business rules; input validation occurs before repository calls."""
 import math
 import re
 
@@ -115,7 +111,6 @@ def list_vehicles(args=None):
     total = car_repository.count_cars(**common)
     total_pages = max(1, math.ceil(total / PAGE_SIZE))
 
-    # A deleted/invalid page number falls back to the last available page.
     if filters["page"] > total_pages:
         filters["page"] = total_pages
         offset = (total_pages - 1) * PAGE_SIZE

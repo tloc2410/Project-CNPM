@@ -1,19 +1,4 @@
-"""Automated test suite for module Rental Cart & Booking (Do Thu Thao).
-
-Executes real SQL from SourceCode/data/booking_repository.py against an
-in-memory transactional SQLite database mirroring the exact schema of
-Database/group12_car_rental.sql (Users, CarTypes, Cars, Orders, Oderitem).
-
-Covers:
-  1. Cart management (add, duplicate check, remove, select/unselect, bulk remove)
-  2. Date validation (empty, past, return <= pickup, > 60 days)
-  3. Automatic fee calculation (line total, subtotal, PICKUP vs DELIVERY,
-     free delivery >= 2,000,000 VND, 30% deposit)
-  4. Anti-overlap booking check (exact, partial, boundary, non-overlap, cancelled)
-  5. Transactional place_order + mid-transaction failure ROLLBACK verification
-  6. Transactional cancel_order + ownership/status guards + ROLLBACK verification
-  7. End-to-end Flask Blueprint route tests (/cart, /api/cart/*, /checkout, /orders)
-"""
+"""Booking and cart integration tests with transactional SQLite fixtures."""
 
 import os
 import re
@@ -23,7 +8,6 @@ from decimal import Decimal
 
 import pytest
 
-# Ensure run.py can be imported cleanly even without a local .env file
 os.environ.setdefault("SECRET_KEY", "test-secret-key-booking-suite")
 
 from business import booking_service as svc
@@ -31,9 +15,6 @@ from data import booking_repository as repo
 from data import database
 
 
-# ---------------------------------------------------------------------------
-# Transactional SQLite adapter mimicking mysql.connector (Real SQL + ROLLBACK)
-# ---------------------------------------------------------------------------
 class _SQLiteMySQLCursor:
     def __init__(self, conn, dictionary=False):
         self._conn = conn
@@ -44,7 +25,7 @@ class _SQLiteMySQLCursor:
 
     @staticmethod
     def _adapt_sql(sql):
-        # Convert MySQL %s placeholders to SQLite ? and strip FOR UPDATE
+        # SQLite adapter maps MySQL placeholders and ignores FOR UPDATE.
         adapted = sql.replace("%s", "?")
         adapted = re.sub(r"\bFOR\s+UPDATE\b", "", adapted, flags=re.IGNORECASE)
         return adapted
@@ -112,7 +93,7 @@ class _SQLiteMySQLConnection:
         self._raw.rollback()
 
     def close(self):
-        # Keep the shared in-memory DB alive for the duration of the test case.
+        # Keep the in-memory test database open until teardown.
         pass
 
 
@@ -196,7 +177,6 @@ def booking_db(monkeypatch):
     raw.row_factory = sqlite3.Row
     raw.executescript(SCHEMA_SQL)
 
-    # Seed users, car types, and cars matching Figma + group schema
     raw.executemany(
         "INSERT INTO Users (UserID, fullName, phone, email, passwordHash, role) VALUES (?, ?, ?, ?, ?, ?)",
         [
@@ -234,9 +214,6 @@ def booking_db(monkeypatch):
     raw.close()
 
 
-# ===========================================================================
-# 1. Cart Pure Operations Tests
-# ===========================================================================
 def test_cart_add_duplicate_and_remove():
     cart = []
     cart, added, msg = svc.add_to_cart(cart, 1, "2026-12-01", "2026-12-03")
@@ -245,13 +222,11 @@ def test_cart_add_duplicate_and_remove():
     assert cart[0]["car_id"] == 1
     assert cart[0]["selected"] is True
 
-    # Adding same car again must be rejected
     cart, added_again, msg2 = svc.add_to_cart(cart, 1)
     assert added_again is False
     assert len(cart) == 1
     assert "đã có" in msg2.lower()
 
-    # Add second car then remove first
     cart, added2, _ = svc.add_to_cart(cart, 2, "2026-12-05", "2026-12-07")
     assert added2 is True
     assert len(cart) == 2
@@ -277,9 +252,6 @@ def test_cart_selection_and_remove_selected():
     assert all(i["selected"] for i in cart)
 
 
-# ===========================================================================
-# 2. Date Validation & Automatic Pricing Tests
-# ===========================================================================
 def test_validate_dates_invalid_and_valid():
     today = date(2026, 11, 21)
 
@@ -303,24 +275,20 @@ def test_validate_dates_invalid_and_valid():
 
 
 def test_automatic_fee_calculation_and_free_delivery():
-    # 1 car x 2 days = 1,200,000 VND
     line1 = svc.calculate_line_total(Decimal("600000"), 2)
     assert line1 == Decimal("1200000")
 
-    # PICKUP: delivery fee is always 0
     t_pickup = svc.calculate_totals([line1], receiving_method="PICKUP")
     assert t_pickup["subtotal"] == Decimal("1200000")
     assert t_pickup["delivery_fee"] == Decimal("0")
     assert t_pickup["total"] == Decimal("1200000")
     assert t_pickup["deposit"] == Decimal("360000")
 
-    # DELIVERY under 2,000,000 VND -> 100,000 VND fee
     t_del = svc.calculate_totals([line1], receiving_method="DELIVERY")
     assert t_del["delivery_fee"] == Decimal("100000")
     assert t_del["total"] == Decimal("1300000")
     assert t_del["deposit"] == Decimal("390000")
 
-    # DELIVERY >= 2,000,000 VND -> Free delivery!
     line2 = svc.calculate_line_total(Decimal("1400000"), 2)  # 2,800,000
     t_free_del = svc.calculate_totals([line2], receiving_method="DELIVERY")
     assert t_free_del["delivery_fee"] == Decimal("0")
@@ -328,18 +296,13 @@ def test_automatic_fee_calculation_and_free_delivery():
     assert t_free_del["deposit"] == Decimal("840000")
 
 
-# ===========================================================================
-# 3. Overlap Check Tests (Real SQL)
-# ===========================================================================
 def test_overlap_detection_blocks_conflicts_and_allows_free_ranges(booking_db):
     today = date(2026, 11, 21)
 
-    # First customer books Toyota Vios (carID=1) for 2026-12-10 -> 2026-12-15
     cart1 = [{"car_id": 1, "pickup_date": "2026-12-10", "return_date": "2026-12-15", "selected": True}]
     order_id = svc.place_order(1, cart1, "PICKUP", "E_WALLET", today=today)
     assert order_id > 0
 
-    # Overlapping cases MUST be blocked
     overlapping_ranges = [
         ("2026-12-10", "2026-12-15"),  # exact same range
         ("2026-12-08", "2026-12-12"),  # overlaps start
@@ -356,15 +319,11 @@ def test_overlap_detection_blocks_conflicts_and_allows_free_ranges(booking_db):
         with pytest.raises(svc.BookingError, match="trùng lịch"):
             svc.place_order(2, cart_conflict, "PICKUP", "CASH", today=today)
 
-    # Non-overlapping range MUST succeed
     cart_ok = [{"car_id": 1, "pickup_date": "2026-12-16", "return_date": "2026-12-19", "selected": True}]
     order_id_2 = svc.place_order(2, cart_ok, "PICKUP", "CASH", today=today)
     assert order_id_2 > order_id
 
 
-# ===========================================================================
-# 4. Transaction & ROLLBACK Verification Tests
-# ===========================================================================
 def test_place_order_success_persists_order_and_items(booking_db):
     raw, tracker = booking_db
     today = date(2026, 11, 21)
@@ -384,7 +343,6 @@ def test_place_order_success_persists_order_and_items(booking_db):
     assert order_row["status"] == "PENDING"
     assert order_row["receivingMethod"] == "DELIVERY"
     assert order_row["paymentMethod"] == "BANK_TRANSFER"
-    # 1,850,000 + 100,000 delivery = 1,950,000
     assert order_row["deliveryFee"] == 100000.0
     assert order_row["totalPrice"] == 1950000.0
     assert order_row["deposit"] == 585000.0
@@ -438,9 +396,6 @@ def test_place_order_unavailable_car_rolls_back(booking_db):
     assert raw.execute("SELECT COUNT(*) FROM Orders").fetchone()[0] == 0
 
 
-# ===========================================================================
-# 5. Cancel Order & Calendar Release Tests
-# ===========================================================================
 def test_cancel_order_frees_calendar_and_enforces_ownership(booking_db):
     raw, tracker = booking_db
     today = date(2026, 11, 21)
@@ -448,20 +403,16 @@ def test_cancel_order_frees_calendar_and_enforces_ownership(booking_db):
     cart = [{"car_id": 1, "pickup_date": "2026-12-20", "return_date": "2026-12-23", "selected": True}]
     order_id = svc.place_order(1, cart, today=today)
 
-    # Another user CANNOT cancel user 1's order
     with pytest.raises(svc.BookingError, match="Không tìm thấy"):
         svc.cancel_order(2, order_id)
 
-    # User 1 cancels own order -> succeeds
     assert svc.cancel_order(1, order_id) is True
     status = raw.execute("SELECT status FROM Orders WHERE oderID = ?", (order_id,)).fetchone()[0]
     assert status == "CANCELLED"
 
-    # Cancelling again is rejected
     with pytest.raises(svc.BookingError, match="không thể hủy"):
         svc.cancel_order(1, order_id)
 
-    # Same car and exact same dates can now be booked by user 2!
     order_id_2 = svc.place_order(2, cart, today=today)
     assert order_id_2 > order_id
 
@@ -486,9 +437,6 @@ def test_cancel_order_db_error_rolls_back(booking_db, monkeypatch):
     assert status == "PENDING"
 
 
-# ===========================================================================
-# 6. Flask Blueprint End-to-End Integration Tests
-# ===========================================================================
 @pytest.fixture
 def flask_client(booking_db):
     import run as app_module
@@ -519,13 +467,11 @@ def test_full_web_booking_flow_cart_to_checkout_to_cancel(flask_client, booking_
     raw, _ = booking_db
     _login_session(flask_client, user_id=1, full_name="Do Thu Thao")
 
-    # 1. Open cart page
     res = flask_client.get("/cart")
     assert res.status_code == 200
     assert b"Your Cart" in res.data
     assert b"Toyota Vios" in res.data
 
-    # 2. Add Toyota Vios (car 1) and Honda City (car 2)
     res = flask_client.post(
         "/cart/add/1",
         data={"pickup_date": "2026-12-10", "return_date": "2026-12-12"},
@@ -539,7 +485,6 @@ def test_full_web_booking_flow_cart_to_checkout_to_cancel(flask_client, booking_
         data={"pickup_date": "2026-12-10", "return_date": "2026-12-11"},
     )
 
-    # 3. Unselect car 2 via API -> summary should only reflect car 1 (2 days * 600k = 1,200,000)
     sel_res = flask_client.post("/api/cart/select", json={"car_id": 2, "selected": False})
     sel_data = sel_res.get_json()
     assert sel_data["ok"] is True
@@ -547,7 +492,6 @@ def test_full_web_booking_flow_cart_to_checkout_to_cancel(flask_client, booking_
     assert sel_data["subtotal"] == 1200000
     assert sel_data["is_valid"] is True
 
-    # 4. Update car 1 dates via API (3 days -> 1,800,000)
     date_res = flask_client.post(
         "/api/cart/dates",
         json={"car_id": 1, "pickup_date": "2026-12-10", "return_date": "2026-12-13"},
@@ -556,14 +500,12 @@ def test_full_web_booking_flow_cart_to_checkout_to_cancel(flask_client, booking_
     assert date_data["subtotal"] == 1800000
     assert date_data["is_valid"] is True
 
-    # 5. Open Checkout page
     co_get = flask_client.get("/checkout")
     assert co_get.status_code == 200
     assert b"Rental Information" in co_get.data
     assert b"Payment Method" in co_get.data
     assert b"Proceed to Payment" in co_get.data
 
-    # 6. Submit Checkout without agreeing to terms -> blocked with flash
     co_no_terms = flask_client.post(
         "/checkout",
         data={
@@ -576,7 +518,6 @@ def test_full_web_booking_flow_cart_to_checkout_to_cancel(flask_client, booking_
     )
     assert "Điều khoản".encode("utf-8") in co_no_terms.data
 
-    # 7. Checkout stages an unpaid draft. The separate Payment step creates the order.
     co_ok = flask_client.post(
         "/checkout",
         data={
@@ -607,12 +548,10 @@ def test_full_web_booking_flow_cart_to_checkout_to_cancel(flask_client, booking_
     assert complete.status_code == 200
     assert b"Booking #1" in complete.data
 
-    # Car 2 (unselected) should still remain in cart; car 1 removed
     with flask_client.session_transaction() as sess:
         remaining_ids = [i["car_id"] for i in sess.get("rental_cart", [])]
         assert remaining_ids == [2]
 
-    # 8. Cancel order #1 via POST /orders/1/cancel
     cancel_res = flask_client.post("/orders/1/cancel", follow_redirects=True)
     assert cancel_res.status_code == 200
     assert "Đã hủy đơn hàng #1".encode("utf-8") in cancel_res.data
@@ -729,7 +668,6 @@ def test_checkout_custom_pickup_and_return_options(flask_client):
     response = flask_client.post("/checkout", data={
         "pickup_location": address, "return_choice": "SAME_AS_PICKUP",
         "return_location": "Attacker-controlled value", "payment_method": "CASH", "receiving_method": "DELIVERY",
-        # No terms: do not create an order, but save valid locations to the cart.
     })
     assert response.status_code == 302
     with flask_client.session_transaction() as sess:
@@ -967,7 +905,7 @@ def test_showroom_pickup_is_locked_and_cannot_be_overridden_by_post(flask_client
         assert item["pickup_location"] == svc.SHOWROOM_LOCATION
         assert item["return_location"] == svc.SHOWROOM_LOCATION
 
-    # AJAX path must also ignore forged pickup addresses when mode is showroom.
+    # Validate pickup addresses server-side to reject forged locations.
     response = flask_client.post("/api/cart/dates", json={
         "apply_selected": True,
         "receiving_method": "PICKUP",
@@ -1051,9 +989,6 @@ def test_direct_booking_pickup_mode_forces_showroom_without_touching_cart(flask_
         assert not sess.get("rental_cart")
 
 
-# ===========================================================================
-# My Account / My Rentals (Shopee-inspired customer dashboard)
-# ===========================================================================
 def test_account_login_required_and_shows_real_profile(flask_client):
     assert "/login" in flask_client.get("/dashboard").headers["Location"]
     assert "/login" in flask_client.post("/account/profile", data={}).headers["Location"]
@@ -1186,9 +1121,6 @@ def test_account_static_copy_is_english_only():
 
 
 
-# ===========================================================================
-# Payment integration regression tests (demo only, no real gateway)
-# ===========================================================================
 def test_online_deposit_payment_persists_atomically(booking_db):
     raw, tracker = booking_db
     from datetime import timedelta
@@ -1373,7 +1305,7 @@ def test_payment_draft_separate_page_and_confirmation_recheck(flask_client, book
     assert b"Simulate Successful Payment" in page.data
     assert raw.execute("SELECT COUNT(*) FROM Orders").fetchone()[0] == 0
 
-    # Availability could change between Checkout and Payment.
+    # Recheck car availability at payment confirmation.
     raw.execute("UPDATE Cars SET status = 'maintenance' WHERE carID = 1")
     with flask_client.session_transaction() as sess:
         token = sess["pending_payment"]["csrf"]
@@ -1469,7 +1401,7 @@ def test_bank_vietqr_link_prefills_deposit_and_unique_reference(monkeypatch):
     assert query["addInfo"] == ["G12TEST123"]
     assert query["accountName"] == ["GROUP12 DEMO"]
 
-    # A malformed destination must never generate a QR image.
+    # Reject malformed recipient details when generating QR.
     monkeypatch.setenv("PAYMENT_BANK_ACCOUNT", "0000/attack")
     assert payment_qr.bank_transfer_qr(180000, "G12TEST123") is None
 
@@ -1549,9 +1481,6 @@ def test_bank_transfer_payment_page_shows_vietqr_when_configured(flask_client, b
 
 
 
-# ===========================================================================
-# Two-stage payments: 30% verified deposit + 70% remaining amount.
-# ===========================================================================
 def _customer_order_for_balance():
     from datetime import timedelta
     start = date.today() + timedelta(days=23)
@@ -1575,7 +1504,6 @@ def test_remaining_requires_verified_deposit_and_does_not_double_count(booking_d
     from business import payment_collection_service as col
     raw, tracker = booking_db
     order_id = svc.place_order(1, _customer_order_for_balance(), "PICKUP", "BANK_TRANSFER")
-    # Original bank deposit exists as Pending, so the customer cannot collect 70% yet.
     with pytest.raises(col.CollectionError, match="deposit must be verified"):
         col.request_remaining_payment(1, order_id, "CASH")
     assert raw.execute("SELECT COUNT(*) FROM Payments").fetchone()[0] == 1
@@ -1735,7 +1663,7 @@ def test_admin_payment_verification_rejects_customers_and_csrf(flask_client, boo
         "SELECT paymentStatus FROM Payments WHERE paymentID = ?", (payment_id,)
     ).fetchone()[0] == "Paid"
     assert svc.get_order_payment_details(1, order_id)["can_pay_remaining"]
-    # Repeated verification must never credit the same transaction twice.
+    # Prevent repeated verification of the same payment.
     flask_client.post(route, data={"csrf_token": token, "verified": "yes"})
     assert raw.execute(
         "SELECT COUNT(*) FROM Payments WHERE paymentStatus = 'Paid'"

@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="checkout-container" data-page="checkout" data-checkout-mode="{{ 'now' if direct_mode else 'cart' }}" data-showroom-location="{{ showroom_location }}">
-    <!-- 3-Step Progress Stepper (Figma: 1 Cart (done) -> 2 Checkout (active) -> 3 Payment) -->
+    
     <div class="checkout-stepper" aria-label="Checkout progress">
         <a href="{{ url_for('booking.cart') }}" class="step-item is-done">
             <span class="step-circle">
@@ -32,9 +32,9 @@
           class="checkout-grid">
         <input type="hidden" name="dates_modified" id="co-dates-modified" value="0">
 
-        <!-- Left Column: Rental Information + Payment Method + Security Banner -->
+        
         <div class="checkout-left">
-            <!-- Card 1: Rental Information -->
+            
             <section class="checkout-card">
                 <div class="checkout-card-header">
                     <svg viewBox="0 0 24 24" fill="none" width="22" height="22">
@@ -128,7 +128,7 @@
                     </div>
                 </div>
 
-                <!-- Receiving Method Selection (maps to Orders.receivingMethod & Orders.deliveryFee) -->
+                
                 <div class="receiving-toggle-row">
                     <span class="receiving-label">Hình thức nhận xe:</span>
                     <div class="receiving-pills">
@@ -149,7 +149,7 @@
                     </div>
                 </div>
 
-                <!-- Live Overlap / Date Error Banner -->
+                
                 <div class="item-error-banner" id="checkout-error-banner" hidden>
                     <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
                         <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.6"/>
@@ -159,7 +159,7 @@
                 </div>
             </section>
 
-            <!-- Payment options: wallet, bank transfer and cash -->
+            
             <section class="checkout-card">
                 <div class="checkout-card-header">
                     <svg viewBox="0 0 24 24" fill="none" width="22" height="22">
@@ -208,7 +208,7 @@
                     Demo e-wallet payment (MoMo / ZaloPay). Confirm the simulated deposit on the Payment page.
                 </div>
 
-                <!-- Terms and Conditions Checkbox -->
+                
                 <label class="terms-row">
                     <input type="checkbox" name="agree_terms" id="agree-terms" class="g12-checkbox-amber" checked required>
                     <span>
@@ -220,7 +220,7 @@
                 </label>
             </section>
 
-            <!-- Bottom Security Banner (Figma) -->
+            
             <div class="security-banner">
                 <div class="security-left">
                     <svg viewBox="0 0 24 24" fill="none" width="22" height="22">
@@ -237,7 +237,7 @@
             </div>
         </div>
 
-        <!-- Right Column: Order Summary Card (Figma) -->
+        
         <aside class="checkout-card checkout-summary-card">
             <div class="checkout-card-header">
                 <svg viewBox="0 0 24 24" fill="none" width="22" height="22">

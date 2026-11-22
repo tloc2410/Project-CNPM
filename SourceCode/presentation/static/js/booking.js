@@ -1,11 +1,4 @@
-/* ==========================================================================
-   Client-side interactivity for Rental Cart & Booking (Do Thu Thao)
-   - Instant AJAX overlap checking & fee recalculation
-   - Cart selection checkboxes, Select All, Remove Selected, Remove item
-   - Days stepper (- N +) synchronized with pickup/return date pickers
-   - Checkout payment method cards, receiving method toggle, live date sync
-   - Order cancellation confirmation
-   ========================================================================== */
+
 
 (function () {
     "use strict";
@@ -49,7 +42,7 @@
         return res.json();
     }
 
-    /* ---------------------- Header user menu ---------------------- */
+    
     const userTrigger = document.getElementById("user-menu-trigger");
     const userDropdown = document.getElementById("user-menu-dropdown");
     if (userTrigger && userDropdown) {
@@ -70,7 +63,7 @@
         });
     }
 
-    /* ---------------------- Cart page logic ---------------------- */
+    
     const cartRoot = document.querySelector('[data-page="cart"]');
     if (cartRoot) {
         const selectAllEl = document.getElementById("select-all-checkbox");
@@ -166,7 +159,6 @@
             applyCartSummary(data);
         }
 
-        // Date picker changes -> instant overlap check + price recalc
         cartRoot.querySelectorAll(".cart-date-input").forEach((input) => {
             input.addEventListener("change", () => {
                 const carId = Number(input.dataset.carId);
@@ -174,7 +166,6 @@
             });
         });
 
-        // Rental days stepper (- / +) -> adjusts return_date and syncs
         cartRoot.querySelectorAll(".stepper-btn").forEach((btn) => {
             btn.addEventListener("click", () => {
                 const carId = Number(btn.dataset.carId);
@@ -201,7 +192,6 @@
             });
         });
 
-        // Individual checkbox selection
         cartRoot.querySelectorAll(".item-checkbox").forEach((cb) => {
             cb.addEventListener("change", async () => {
                 const data = await postJson("/api/cart/select", {
@@ -212,7 +202,6 @@
             });
         });
 
-        // Select All checkbox
         if (selectAllEl) {
             selectAllEl.addEventListener("change", async () => {
                 const data = await postJson("/api/cart/select", {
@@ -222,7 +211,6 @@
             });
         }
 
-        // Remove single car via AJAX (fallback to normal POST if JS off)
         cartRoot.querySelectorAll(".remove-car-form").forEach((form) => {
             form.addEventListener("submit", async (e) => {
                 e.preventDefault();
@@ -239,7 +227,7 @@
         });
     }
 
-    /* ---------------------- Checkout page logic ---------------------- */
+    
     const checkoutRoot = document.querySelector('[data-page="checkout"]');
     if (checkoutRoot) {
         const directMode = checkoutRoot.dataset.checkoutMode === "now";
@@ -419,8 +407,6 @@
             radio.addEventListener("change", () => {
                 updateReceivingPills();
                 updatePickupMode();
-                // Updating location and method together also recalculates the
-                // delivery fee and prevents stale showroom/custom addresses.
                 if (pickupLocInput && pickupLocInput.value.trim()) {
                     syncCheckoutDates();
                 } else {
@@ -429,7 +415,6 @@
             });
         });
 
-        // Payment method selector: E-Wallet, Bank Transfer, Cash.
         checkoutRoot.querySelectorAll(".pay-card").forEach((card) => {
             const radio = card.querySelector('input[type="radio"]');
             card.addEventListener("click", () => {
@@ -446,7 +431,7 @@
         });
     }
 
-    /* ---------------------- Orders page confirmation ---------------------- */
+    
     document.querySelectorAll(".cancel-order-form").forEach((form) => {
         form.addEventListener("submit", (e) => {
             const orderId = form.dataset.orderId;

@@ -1,5 +1,4 @@
-/* Real dual-thumb price range for Figma vehicle filter.
-   Both sliders remain keyboard- and mouse-accessible. */
+/* Both price controls must remain keyboard accessible. */
 .g12-dual-range {
   position: relative;
   width: calc(100% - 24px);

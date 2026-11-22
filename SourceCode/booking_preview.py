@@ -1,17 +1,4 @@
-"""Standalone local preview server for module Rental Cart & Booking (Do Thu Thao).
-
-Allows immediate visual & interactive testing of:
-  - http://127.0.0.1:5000/cart
-  - http://127.0.0.1:5000/checkout
-  - http://127.0.0.1:5000/orders
-
-If a real MySQL connection is NOT configured via SourceCode/.env, this helper
-binds data.database.get_db_connection to a local transactional SQLite database
-mirroring Database/group12_car_rental.sql (seeded with Figma sample cars) and
-provides a convenience /preview-login route.
-
-Note: Production/team entry point remains SourceCode/run.py with MySQL.
-"""
+"""Standalone SQLite preview for booking UI; production uses run.py and MySQL."""
 
 import os
 import re
