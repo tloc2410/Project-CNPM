@@ -214,39 +214,21 @@
                     </label>
                 </div>
 
-                <!-- Card Details Sub-panel (shown for Credit/Debit Card; never persisted to DB) -->
+                <!-- Sandbox only: no payment credentials are requested or retained. -->
                 <div class="card-details-panel" id="card-details-panel">
-                    <div class="card-input-group card-num-group">
-                        <label for="card-number">Card Number</label>
-                        <div class="card-input-wrap">
-                            <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
-                                <rect x="2" y="4.5" width="16" height="11" rx="2" stroke="#6B7280" stroke-width="1.5"/>
-                                <path d="M2 8.5h16" stroke="#6B7280" stroke-width="1.5"/>
-                            </svg>
-                            <input type="text" id="card-number" placeholder="1234 5678 9012 3456" maxlength="19" autocomplete="off">
-                        </div>
-                    </div>
-
-                    <div class="card-input-group">
-                        <label for="card-expiry">Expiry Date</label>
-                        <div class="card-input-wrap">
-                            <svg viewBox="0 0 20 20" fill="none" width="15" height="15">
-                                <rect x="3" y="4" width="14" height="12.5" rx="2" stroke="#6B7280" stroke-width="1.5"/>
-                                <path d="M3 8h14" stroke="#6B7280" stroke-width="1.5"/>
-                            </svg>
-                            <input type="text" id="card-expiry" placeholder="MM / YY" maxlength="7" autocomplete="off">
-                        </div>
-                    </div>
-
-                    <div class="card-input-group">
-                        <label for="card-cvv">CVV</label>
-                        <div class="card-input-wrap">
-                            <svg viewBox="0 0 20 20" fill="none" width="15" height="15">
-                                <rect x="4" y="9" width="12" height="8" rx="1.8" stroke="#6B7280" stroke-width="1.5"/>
-                                <path d="M7 9V6.8a3 3 0 0 1 6 0V9" stroke="#6B7280" stroke-width="1.5"/>
-                            </svg>
-                            <input type="password" id="card-cvv" placeholder="123" maxlength="4" autocomplete="off">
-                        </div>
+                    <div class="card-input-group" style="grid-column: 1 / -1;">
+                        <strong>Secure demo payment</strong>
+                        <p style="margin: 7px 0; font-size: 13px; color: #64748b;">
+                            This is a class-project simulation. No real card charge takes place.
+                            Only the 30% rental deposit will be marked as paid in the demo.
+                            Never enter real card numbers, CVV or banking passwords.
+                        </p>
+                        <label for="demo-outcome">Test result</label>
+                        <select id="demo-outcome" name="demo_outcome" class="info-input-control"
+                                style="padding: 9px; border: 1px solid #ddd; border-radius: 7px;">
+                            <option value="success">Simulate successful deposit</option>
+                            <option value="declined">Simulate declined payment (no order created)</option>
+                        </select>
                     </div>
                 </div>
 
@@ -364,9 +346,12 @@
                     <rect x="2.5" y="5.5" width="19" height="13" rx="2.5" stroke="#111111" stroke-width="1.9"/>
                     <path d="M2.5 10h19" stroke="#111111" stroke-width="1.9"/>
                 </svg>
-                <span>Proceed to Payment →</span>
+                <span>Confirm Booking &amp; Demo Payment →</span>
             </button>
 
+            <p style="font-size: 12px; color: #64748b; margin: 10px 0;">
+                Online payments are simulations only; bank transfer and cash remain pending until verified.
+            </p>
             <a href="{{ url_for('booking.cart') }}" class="co-back-link">← Quay lại giỏ hàng</a>
         </aside>
     </form>
