@@ -136,11 +136,18 @@
                       <div class="g12-account-order-details">
                         <span>Pick-up Method: <strong>{{ 'Pick up at Showroom' if order.receivingMethod == 'PICKUP' else 'Home Delivery' if order.receivingMethod == 'DELIVERY' else order.receiving_label }}</strong></span>
                         <span>Payment: <strong>{{ order.payment_label }}</strong></span>
+                        <span>Paid: <strong>{{ order.paid_amount|vnd }}</strong></span>
+                        <span>Outstanding: <strong>{{ order.balance_due|vnd }}</strong></span>
+                        <span>Payment Status: <strong>{{ order.payment_status }}</strong></span>
                         <span>Delivery Fee: <strong>{{ 'Free' if (order.deliveryFee or 0) == 0 else order.deliveryFee|vnd }}</strong></span>
                       </div>
                       <div class="g12-account-order-summary">
                         <div><span>Total Amount</span><strong>{{ order.totalPrice|vnd }}</strong></div>
                         <div class="g12-account-order-actions">
+                          {% if order.can_pay_remaining or order.pending_balance_request %}
+                            <a class="g12-account-outline-btn" href="{{ url_for('booking.pay_remaining', order_id=order.oderID) }}">{{ 'Review Payment' if order.pending_balance_request else 'Pay Remaining Balance' }}</a>
+                          {% endif %}
+                          <a class="g12-account-outline-btn" href="{{ url_for('booking.payment_receipt', order_id=order.oderID) }}">Payment Details</a>
                           {% if order["items"] %}<a class="g12-account-outline-btn" href="{{ url_for('car_detail', car_id=order['items'][0].CarID) }}">Rent Again</a>{% endif %}
                           {% if order.can_cancel %}
                             <form method="POST" action="{{ url_for('booking.cancel_order', order_id=order.oderID) }}" class="g12-account-cancel-form">
@@ -150,7 +157,9 @@
                           <details class="g12-account-order-more"><summary>Order Details <span aria-hidden="true">⌄</span></summary>
                             <div class="g12-account-order-breakdown">
                               <span>Rental Order ID</span><strong>#{{ order.oderID }}</strong>
-                              <span>Estimated Deposit</span><strong>{{ order.deposit|vnd }}</strong>
+                              <span>Deposit</span><strong>{{ order.deposit|vnd }}</strong>
+                              <span>Verified Paid</span><strong>{{ order.paid_amount|vnd }}</strong>
+                              <span>Remaining Balance</span><strong>{{ order.balance_due|vnd }}</strong>
                               <span>Payment Method</span><strong>{{ order.payment_label }}</strong>
                               <span>Order Status</span><strong>{{ order.status }}</strong>
                             </div>
