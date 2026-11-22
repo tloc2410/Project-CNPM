@@ -1,6 +1,6 @@
 """Sandbox payment rules for Group12 Booking.
 
-No real card credentials, gateway charge, bank transfer or refund takes place.
+No real wallet credentials, gateway charge, bank transfer or refund takes place.
 The booking transaction owns the database connection and commits both order and
 payment records together. Integrate a certified gateway before accepting money.
 """
@@ -14,7 +14,7 @@ class PaymentError(ValueError):
     pass
 
 
-ONLINE_METHODS = frozenset(("CARD", "E_WALLET"))
+ONLINE_METHODS = frozenset(("E_WALLET",))
 OFFLINE_METHODS = frozenset(("BANK_TRANSFER", "CASH"))
 METHODS = ONLINE_METHODS | OFFLINE_METHODS
 
