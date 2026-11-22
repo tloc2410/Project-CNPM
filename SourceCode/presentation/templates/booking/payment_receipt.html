@@ -1,0 +1,51 @@
+{% extends "booking/base_booking.html" %}
+{% block title %}Payment Receipt - Group 12 Car Rental{% endblock %}
+{% block content %}
+<main style="max-width: 820px; margin: 36px auto; padding: 0 18px 50px;">
+  <section style="background:#fff; padding:32px; border:1px solid #e5e7eb; border-radius:16px; box-shadow:0 8px 28px #1520350b;">
+    <p style="color:#b45309; font-weight:700; letter-spacing:.12em;">GROUP 12 · DEMO PAYMENT</p>
+    <h1 style="margin:12px 0;">Booking #{{ order.oderID }}</h1>
+    <p>This is a school-project transaction record, not proof of a real bank or card payment.</p>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px; margin:22px 0;">
+      <div style="padding:18px; background:#f8fafc; border-radius:10px;">
+        <div>Order status</div><strong>{{ order.status }}</strong>
+      </div>
+      <div style="padding:18px; background:#f8fafc; border-radius:10px;">
+        <div>Payment status</div><strong>{{ order.payment_status }}</strong>
+      </div>
+      <div style="padding:18px; background:#f8fafc; border-radius:10px;">
+        <div>Method</div><strong>{{ order.payment_label }}</strong>
+      </div>
+    </div>
+    <table style="width:100%; border-collapse:collapse; text-align:left;">
+      <tbody>
+        <tr><th style="padding:12px 0;">Total rental amount</th><td style="text-align:right;">{{ order.totalPrice|vnd }}</td></tr>
+        <tr><th style="padding:12px 0;">Deposit required (30%)</th><td style="text-align:right;">{{ order.deposit|vnd }}</td></tr>
+        <tr><th style="padding:12px 0;">Payment recorded</th><td style="text-align:right;">{{ order.payment_amount|vnd }} ({{ order.payment_status }})</td></tr>
+        <tr><th style="padding:12px 0;">Remaining balance</th><td style="text-align:right;"><strong>{{ order.balance_due|vnd }}</strong></td></tr>
+      </tbody>
+    </table>
+    {% if order.payment %}
+      <p style="margin-top:18px;">Reference: <code>{{ order.payment.transactionCode }}</code></p>
+    {% endif %}
+    {% if order.paymentMethod == "BANK_TRANSFER" %}
+      <p style="margin-top:10px;">Awaiting manual deposit verification. Reference G12-{{ order.oderID }}. This demo does not supply real bank details or verify transfers automatically.</p>
+    {% elif order.paymentMethod == "CASH" %}
+      <p style="margin-top:10px;">Cash payment will be collected in person. No money was received online.</p>
+    {% elif order.payment_status == "Refunded" %}
+      <p style="margin-top:10px;">Demo refund status only. No bank refund was initiated.</p>
+    {% endif %}
+    <hr style="border:0; border-top:1px solid #e5e7eb; margin:22px 0;">
+    <h2 style="font-size:18px;">Rented vehicles</h2>
+    {% for item in order["items"] %}
+      <div style="padding:12px 0; border-bottom:1px solid #eee;">
+        <strong>{{ item.carName }}</strong> · {{ item.pickupDate|vn_date }} – {{ item.returnDate|vn_date }} ({{ item.rentalDays }} days)
+      </div>
+    {% endfor %}
+    <div style="display:flex; gap:14px; flex-wrap:wrap; margin-top:24px;">
+      <a href="{{ url_for('booking.my_orders') }}" class="btn-primary-sm">My Orders</a>
+      <a href="{{ url_for('dashboard') }}" class="btn-primary-sm">My Account</a>
+    </div>
+  </section>
+</main>
+{% endblock %}
