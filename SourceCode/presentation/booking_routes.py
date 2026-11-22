@@ -740,21 +740,6 @@ def pay_remaining(order_id):
             elif action == "cancel_pending":
                 collection_service.cancel_remaining_request(session["user_id"], order_id)
                 flash("Pending request cancelled. You may choose another method.", "success")
-            elif action in ("demo_success", "demo_failed"):
-                if not _demo_payment_enabled():
-                    abort(404)
-                order = svc.get_order_payment_details(session["user_id"], order_id)
-                payment = order.get("pending_balance_request")
-                if not payment:
-                    raise collection_service.CollectionError("No remaining payment is awaiting a demo result.")
-                outcome = "success" if action == "demo_success" else "failed"
-                collection_service.simulate_collection(
-                    session["user_id"], order_id, payment["paymentID"], outcome
-                )
-                if outcome == "success":
-                    flash("DEMO ONLY: Remaining balance marked paid. No money moved.", "success")
-                    return redirect(url_for("booking.payment_receipt", order_id=order_id))
-                flash("Demo payment failed. You can choose a method and retry.", "error")
             else:
                 abort(400)
         except collection_service.CollectionError as exc:
@@ -819,7 +804,8 @@ def admin_payments():
     pending = collection_service.list_pending_collections()
     return render_template(
         "booking/admin_payments.html", pending=pending,
-        csrf_token=_collection_csrf("admin_payment_csrf")
+        csrf_token=_collection_csrf("admin_payment_csrf"),
+        demo_mode=_demo_payment_enabled(),
     )
 
 
@@ -828,11 +814,20 @@ def admin_payments():
 def admin_confirm_payment(payment_id):
     _require_collection_csrf("admin_payment_csrf")
     if request.form.get("verified") != "yes":
-        flash("Verify the actual deposit in the bank / wallet / cash ledger first.", "error")
+        flash(
+            "Confirm that this is a simulated test payment." if _demo_payment_enabled()
+            else "Verify the actual deposit in the bank / wallet / cash ledger first.",
+            "error",
+        )
         return redirect(url_for("booking.admin_payments"))
     try:
-        order_id = collection_service.confirm_collection(payment_id)
-        flash(f"Payment #{payment_id} verified for booking #{order_id}.", "success")
+        demo_mode = _demo_payment_enabled()
+        order_id = collection_service.confirm_collection(payment_id, demo=demo_mode)
+        flash(
+            f"DEMO ONLY: Payment #{payment_id} marked Paid for booking #{order_id}. No money moved."
+            if demo_mode else f"Payment #{payment_id} verified for booking #{order_id}.",
+            "success",
+        )
     except collection_service.CollectionError as exc:
         flash(str(exc), "error")
     return redirect(url_for("booking.admin_payments"))

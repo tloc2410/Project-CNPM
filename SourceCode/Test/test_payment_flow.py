@@ -388,8 +388,9 @@ def test_demo_bank_deposit_without_admin_unlocks_remaining_payment(
     assert payment.endswith("-DEMO")
 
 
-def test_demo_remaining_failure_retry_and_paid_in_full(
-    flask_client, booking_db, monkeypatch
+@pytest.mark.parametrize("method", ["E_WALLET", "BANK_TRANSFER", "CASH"])
+def test_demo_remaining_requires_admin_confirmation(
+    flask_client, booking_db, monkeypatch, method
 ):
     monkeypatch.setenv("DEMO_PAYMENT_MODE", "1")
     raw, _ = booking_db
@@ -399,43 +400,107 @@ def test_demo_remaining_failure_retry_and_paid_in_full(
     assert flask_client.get(url).status_code == 200
     with flask_client.session_transaction() as sess:
         csrf = sess["collection_csrf"]
-    request1 = flask_client.post(url, data={
-        "csrf_token": csrf, "action": "request",
-        "payment_method": "BANK_TRANSFER",
-    })
-    assert request1.status_code == 302
-    page = flask_client.get(url).get_data(as_text=True)
-    assert "DEMO QR" in page and "Simulate Failed Payment" in page
-    failed = flask_client.post(url, data={
-        "csrf_token": csrf, "action": "demo_failed",
-    })
-    assert failed.status_code == 302
-    row = raw.execute(
-        "SELECT paymentStatus FROM Payments WHERE transactionCode LIKE 'BAL-%'"
-    ).fetchone()
-    assert row["paymentStatus"] == "Failed"
-    assert booking.get_order_payment_details(1, order_id)["can_pay_remaining"]
 
-    request2 = flask_client.post(url, data={
-        "csrf_token": csrf, "action": "request",
-        "payment_method": "E_WALLET",
+    created = flask_client.post(url, data={
+        "csrf_token": csrf, "action": "request", "payment_method": method
     })
-    assert request2.status_code == 302
-    completed = flask_client.post(url, data={
-        "csrf_token": csrf, "action": "demo_success",
+    assert created.status_code == 302
+    details = booking.get_order_payment_details(1, order_id)
+    assert details["paid_amount"] == 180000
+    assert details["pending_amount"] == 420000
+    assert details["balance_due"] == 420000
+    assert details["payment_status"] == "Partially Paid"
+    payment = details["pending_balance_request"]
+    assert payment["paymentMethod"] == method
+    assert payment["paymentStatus"] == "Pending"
+    payment_id = payment["paymentID"]
+
+    page = flask_client.get(url).get_data(as_text=True)
+    assert "Awaiting Admin Confirmation (Demo)" in page
+    assert "Simulate Successful Remaining Payment" not in page
+    assert "Simulate Failed Payment" not in page
+    assert "You cannot approve your own remaining payment" in page
+    for forged_action in ("demo_success", "demo_failed"):
+        denied = flask_client.post(url, data={
+            "csrf_token": csrf, "action": forged_action
+        })
+        assert denied.status_code == 400
+    with pytest.raises(collect.CollectionError, match="Admin confirmation"):
+        collect.simulate_collection(1, order_id, payment_id, "success")
+    assert raw.execute(
+        "SELECT paymentStatus FROM Payments WHERE paymentID=?", (payment_id,)
+    ).fetchone()[0] == "Pending"
+    assert flask_client.post(f"/admin/payments/{payment_id}/confirm", data={
+        "verified": "yes", "csrf_token": csrf
+    }).status_code == 403
+
+    _staff(raw, flask_client)
+    admin_page = flask_client.get("/admin/payments").get_data(as_text=True)
+    assert "Remaining balance" in admin_page
+    assert "420.000" in admin_page
+    assert "Confirm Demo Payment" in admin_page
+    assert "no real money is transferred" in admin_page
+    with flask_client.session_transaction() as sess:
+        admin_csrf = sess["admin_payment_csrf"]
+    missing_ack = flask_client.post(f"/admin/payments/{payment_id}/confirm", data={
+        "csrf_token": admin_csrf
     })
-    assert completed.status_code == 302
-    assert completed.headers["Location"].endswith(f"/orders/{order_id}/payment")
-    order = booking.get_order_payment_details(1, order_id)
-    assert order["paid_amount"] == 600000
-    assert order["balance_due"] == 0
-    assert order["payment_status"] == "Paid in Full"
-    assert [p["paymentStatus"] for p in order["payments"]].count("Paid") == 2
-    assert [p["paymentStatus"] for p in order["payments"]].count("Failed") == 1
-    flask_client.post(url, data={
-        "csrf_token": csrf, "action": "demo_success",
+    assert missing_ack.status_code == 302
+    assert raw.execute(
+        "SELECT paymentStatus FROM Payments WHERE paymentID=?", (payment_id,)
+    ).fetchone()[0] == "Pending"
+
+    approved = flask_client.post(f"/admin/payments/{payment_id}/confirm", data={
+        "csrf_token": admin_csrf, "verified": "yes"
     })
-    assert booking.get_order_payment_details(1, order_id)["paid_amount"] == 600000
+    assert approved.status_code == 302
+    paid_record = raw.execute(
+        "SELECT paymentStatus, transactionCode FROM Payments WHERE paymentID=?",
+        (payment_id,),
+    ).fetchone()
+    assert paid_record["paymentStatus"] == "Paid"
+    assert paid_record["transactionCode"].endswith("-DEMO")
+
+    duplicate = flask_client.post(f"/admin/payments/{payment_id}/confirm", data={
+        "csrf_token": admin_csrf, "verified": "yes"
+    })
+    assert duplicate.status_code == 302
+    _login_session(flask_client)
+    completed = booking.get_order_payment_details(1, order_id)
+    assert completed["paid_amount"] == 600000
+    assert completed["balance_due"] == 0
+    assert completed["payment_status"] == "Paid in Full"
+    assert [p["paymentStatus"] for p in completed["payments"]].count("Paid") == 2
+
+
+def test_customer_can_cancel_pending_balance_and_choose_another_method(
+    flask_client, booking_db, monkeypatch
+):
+    monkeypatch.setenv("DEMO_PAYMENT_MODE", "1")
+    raw, _ = booking_db
+    order_id = _order()
+    _login_session(flask_client)
+    url = f"/orders/{order_id}/pay-remaining"
+    flask_client.get(url)
+    with flask_client.session_transaction() as sess:
+        csrf = sess["collection_csrf"]
+    assert flask_client.post(url, data={
+        "csrf_token": csrf, "action": "request", "payment_method": "BANK_TRANSFER"
+    }).status_code == 302
+    assert flask_client.post(url, data={
+        "csrf_token": csrf, "action": "cancel_pending"
+    }).status_code == 302
+    assert raw.execute(
+        "SELECT paymentStatus FROM Payments WHERE paymentMethod='BANK_TRANSFER'"
+    ).fetchone()[0] == "Cancelled"
+    assert flask_client.post(url, data={
+        "csrf_token": csrf, "action": "request", "payment_method": "CASH"
+    }).status_code == 302
+    summary = booking.get_order_payment_details(1, order_id)
+    assert summary["pending_balance_request"]["paymentMethod"] == "CASH"
+    assert summary["pending_balance_request"]["paymentStatus"] == "Pending"
+    assert summary["paid_amount"] == 180000
+    assert summary["balance_due"] == 420000
 
 
 def test_demo_cash_payment_collected_at_pickup(flask_client, booking_db, monkeypatch):

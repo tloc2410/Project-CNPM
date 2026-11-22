@@ -130,8 +130,12 @@
   <p class="sub"><a href="{{ url_for('admin.dashboard') }}">← Admin Dashboard</a> · <a href="{{ url_for('admin.orders') }}">Manage Orders</a></p>
   <p class="sub">Confirm deposits, remaining balances and cash received for rental orders.</p>
   <div class="g12-admin-alert">
+    {% if demo_mode %}
+    <strong>STUDENT DEMO MODE:</strong> Confirm only test transactions. Clicking Confirm Demo Payment records simulated receipt; <strong>no real money is transferred</strong>.
+    {% else %}
     Check the actual receipt in the bank account, MoMo business ledger or cash register <strong>before</strong> confirming any payment.
     This page cannot check transfers automatically. A customer's screenshot or QR scan alone is not proof.
+    {% endif %}
   </div>
   <section class="g12-admin-panel">
     {% if pending %}
@@ -150,10 +154,10 @@
         <td><code style="overflow-wrap:anywhere;">{{ item.transactionCode }}</code></td>
         <td>
           <form method="POST" action="{{ url_for('booking.admin_confirm_payment', payment_id=item.paymentID) }}"
-                onsubmit="return confirm('Confirm that the full amount has ACTUALLY been received for payment #{{ item.paymentID }}?');">
+                onsubmit="return confirm('{% if demo_mode %}DEMO ONLY: Mark payment #{{ item.paymentID }} as Paid without moving money?{% else %}Confirm that the full amount has ACTUALLY been received for payment #{{ item.paymentID }}?{% endif %}');">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-            <label class="g12-admin-verify"><input type="checkbox" name="verified" value="yes" required><span>I verified the actual money received.</span></label>
-            <button type="submit" class="g12-admin-confirm">Confirm Received</button>
+            <label class="g12-admin-verify"><input type="checkbox" name="verified" value="yes" required><span>{{ 'I approve this simulated demo payment (no real funds received).' if demo_mode else 'I verified the actual money received.' }}</span></label>
+            <button type="submit" class="g12-admin-confirm">{{ 'Confirm Demo Payment' if demo_mode else 'Confirm Received' }}</button>
           </form>
         </td>
       </tr>
