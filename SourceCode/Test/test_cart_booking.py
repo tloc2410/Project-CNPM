@@ -1448,3 +1448,88 @@ def test_credit_debit_card_option_is_removed_and_rejected(flask_client, booking_
     with flask_client.session_transaction() as sess:
         assert "pending_payment" not in sess
     assert raw.execute("SELECT COUNT(*) FROM Orders").fetchone()[0] == 0
+
+
+
+def test_bank_vietqr_link_prefills_deposit_and_unique_reference(monkeypatch):
+    from business import payment_qr
+    from urllib.parse import urlparse, parse_qs
+
+    monkeypatch.delenv("PAYMENT_BANK_BIN", raising=False)
+    monkeypatch.delenv("PAYMENT_BANK_ACCOUNT", raising=False)
+    assert payment_qr.bank_transfer_qr(180000, "G12TEST123") is None
+
+    monkeypatch.setenv("PAYMENT_BANK_BIN", "970436")
+    monkeypatch.setenv("PAYMENT_BANK_ACCOUNT", "0000000000")  # dummy test account
+    monkeypatch.setenv("PAYMENT_BANK_HOLDER", "GROUP12 DEMO")
+    url = payment_qr.bank_transfer_qr(180000, "G12TEST123")
+    assert url.startswith("https://img.vietqr.io/image/970436-0000000000-compact2.png?")
+    query = parse_qs(urlparse(url).query)
+    assert query["amount"] == ["180000"]
+    assert query["addInfo"] == ["G12TEST123"]
+    assert query["accountName"] == ["GROUP12 DEMO"]
+
+    # A malformed destination must never generate a QR image.
+    monkeypatch.setenv("PAYMENT_BANK_ACCOUNT", "0000/attack")
+    assert payment_qr.bank_transfer_qr(180000, "G12TEST123") is None
+
+
+def test_momo_qr_requires_safe_filename_and_real_file(monkeypatch, flask_client, booking_db, tmp_path):
+    from datetime import timedelta
+    from business import payment_qr
+    import run as app_module
+
+    monkeypatch.setenv("MOMO_MERCHANT_QR_FILENAME", "../other.png")
+    assert payment_qr.momo_merchant_qr_filename() is None
+    monkeypatch.setenv("MOMO_MERCHANT_QR_FILENAME", "merchant.png")
+    assert payment_qr.momo_merchant_qr_filename() == "merchant.png"
+
+    _login_session(flask_client)
+    pickup = (date.today() + timedelta(days=60)).isoformat()
+    return_ = (date.today() + timedelta(days=61)).isoformat()
+    flask_client.post("/cart/add/1", data={"pickup_date": pickup, "return_date": return_})
+    flask_client.post("/checkout", data={
+        "pickup_date": pickup, "return_date": return_,
+        "payment_method": "E_WALLET", "receiving_method": "PICKUP",
+        "agree_terms": "on",
+    })
+    not_configured = flask_client.get("/payment").get_data(as_text=True)
+    assert "MoMo QR is not configured yet" in not_configured
+
+    qr_dir = tmp_path / "images" / "payments"
+    qr_dir.mkdir(parents=True)
+    (qr_dir / "merchant.png").write_bytes(b"mock image content")
+    monkeypatch.setattr(app_module.app, "static_folder", str(tmp_path))
+    configured = flask_client.get("/payment").get_data(as_text=True)
+    assert "/static/images/payments/merchant.png" in configured
+    assert "MoMo merchant QR" in configured
+    assert "Simulate Successful Payment" in configured
+
+
+def test_bank_transfer_payment_page_shows_vietqr_when_configured(flask_client, booking_db, monkeypatch):
+    from datetime import timedelta
+    monkeypatch.setenv("PAYMENT_BANK_BIN", "970436")
+    monkeypatch.setenv("PAYMENT_BANK_ACCOUNT", "0000000000")  # dummy test account
+    monkeypatch.setenv("PAYMENT_BANK_HOLDER", "GROUP12 DEMO")
+
+    _login_session(flask_client)
+    pickup = (date.today() + timedelta(days=62)).isoformat()
+    return_ = (date.today() + timedelta(days=63)).isoformat()
+    flask_client.post("/cart/add/1", data={"pickup_date": pickup, "return_date": return_})
+    response = flask_client.post("/checkout", data={
+        "pickup_date": pickup, "return_date": return_,
+        "payment_method": "BANK_TRANSFER", "receiving_method": "PICKUP",
+        "agree_terms": "on",
+    })
+    assert response.status_code == 302
+    assert response.headers["Location"].endswith("/payment")
+    page = flask_client.get("/payment")
+    text = page.get_data(as_text=True)
+    assert "Scan VietQR to transfer the deposit" in text
+    assert "img.vietqr.io/image/970436-0000000000-compact2.png" in text
+    assert "amount=180000" in text
+    assert "G12" in text
+    with flask_client.session_transaction() as sess:
+        assert sess["pending_payment"]["transfer_reference"].startswith("G12")
+    raw, _ = booking_db
+    assert raw.execute("SELECT COUNT(*) FROM Orders").fetchone()[0] == 0
