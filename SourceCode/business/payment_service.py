@@ -1,9 +1,4 @@
-"""Sandbox payment rules for Group12 Booking.
-
-No real wallet credentials, gateway charge, bank transfer or refund takes place.
-The booking transaction owns the database connection and commits both order and
-payment records together. Integrate a certified gateway before accepting money.
-"""
+"""Sandbox payment rules; no real charge, transfer or refund occurs."""
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
@@ -28,12 +23,7 @@ class PaymentPlan:
 
 
 def plan_payment(method, order_id, total, deposit, demo_outcome="success", transfer_reference=None):
-    """Prepare a payment row, without charging a real payment instrument.
-
-    Online demo methods mark ONLY the 30% booking deposit Paid. Bank transfers
-    await manual verification of the deposit; cash is due at pickup in full.
-    A simulated decline raises before COMMIT so the complete booking rolls back.
-    """
+    """Build a demo payment; decline raises so the booking transaction rolls back."""
     if method not in METHODS:
         raise PaymentError("Invalid payment method.")
     if method in ONLINE_METHODS:
