@@ -72,7 +72,14 @@
                             <span>Nhận xe: <strong>{{ order.receiving_label }}</strong></span>
                             <span>Thanh toán: <strong>{{ order.payment_label }}</strong></span>
                             <span>Payment status: <strong>{{ order.payment_status }}</strong></span>
+                            <span>Deposit: <strong>{{ order.deposit|vnd }}</strong></span>
+                            <span>Verified paid: <strong>{{ order.paid_amount|vnd }}</strong></span>
+                            <span>Pending verification: <strong>{{ order.pending_amount|vnd }}</strong></span>
                             <span>Remaining balance: <strong>{{ order.balance_due|vnd }}</strong></span>
+                            {% if order.can_pay_remaining or order.pending_balance_request %}
+                              <a href="{{ url_for('booking.pay_remaining', order_id=order.oderID) }}"
+                                 style="color:#b45309; font-weight:800;">{{ 'Review Remaining Payment' if order.pending_balance_request else 'Pay Remaining Balance' }}</a>
+                            {% endif %}
                             <a href="{{ url_for('booking.payment_receipt', order_id=order.oderID) }}"
                                style="color:#b45309; font-weight:700;">View Payment Receipt</a>
                             <span>Phí giao xe: <strong>{{ 'Miễn phí' if (order.deliveryFee or 0) == 0 else order.deliveryFee|vnd }}</strong></span>
