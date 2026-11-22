@@ -5,7 +5,7 @@
 1. **Cart / Book Now:** select cars and rental dates. Book Now does not insert cars into the saved cart.
 2. **Checkout:** choose pickup/return locations, receiving method and payment method. Click **Proceed to Payment**. This only saves a short-lived draft in the signed user session: **no order is written to MySQL yet**.
 3. **Payment** at `/payment`: see the chosen method, deposit amount and rental summary.
-   - **CARD** / **E_WALLET:** choose **Simulate Successful Payment** to approve a demo deposit (30%). The app then creates `Orders`, `Oderitem`, `Payments` in one MySQL transaction and redirects to the customer receipt. Choose **Simulate Failed Payment** to see a failure without creating an order.
+   - **E_WALLET:** choose **Simulate Successful Payment** to approve a demo deposit (30%). The app then creates `Orders`, `Oderitem`, `Payments` in one MySQL transaction and redirects to the customer receipt. Choose **Simulate Failed Payment** to see a failure without creating an order.
    - **BANK_TRANSFER:** a request may be confirmed with payment **Pending**. No bank integration, automatic validation or real transfer is supported.
    - **CASH:** a request may be confirmed with payment **Pending** until cash is collected offline.
    - These offline methods create pending rental requests, **not proof of completed payment**. Genuine payment-success-only bookings for bank transfers require verified provider callbacks, and cash needs staff confirmation.
@@ -32,4 +32,4 @@ Test: register/login, Book Now, Checkout with the chosen payment method, proceed
 py -m pytest Test/test_cart_booking.py -v
 ```
 
-**Safety:** All card/e-wallet payments and refund statuses are mock transactions. Never enter real card/CVV or bank credentials. Production requires a PSP hosted checkout + verified webhooks, idempotency, reconciliation, real refunds, admin confirmation for offline methods, and production-grade security controls.
+**Safety:** All e-wallet payments and refund statuses are mock transactions. Never enter real wallet or bank credentials. The Credit / Debit Card method has been removed from checkout and the payment backend. Production requires a PSP hosted checkout + verified webhooks, idempotency, reconciliation, real refunds, admin confirmation for offline methods, and production-grade security controls.
