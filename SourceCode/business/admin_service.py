@@ -32,7 +32,7 @@ def validate_vehicle(form):
     status = str(form.get("status") or "available").strip().lower()
     if status == "under maintenance":
         status = "maintenance"
-    description = str(form.get("description") or "").strip()
+    description = str(form.get("description") or "").strip() if "description" in form else None
     try:
         seats = int(form.get("seats"))
         type_id = int(form.get("type_id"))
@@ -45,7 +45,7 @@ def validate_vehicle(form):
         raise AdminError("Seats, vehicle type and price must be positive and valid.")
     if status not in CAR_STATUSES:
         raise AdminError("Invalid vehicle status.")
-    if len(description) > 2000:
+    if description is not None and len(description) > 2000:
         raise AdminError("Vehicle description is too long.")
     return {
         "name": name, "license_plate": code, "seats": seats,

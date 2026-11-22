@@ -280,6 +280,8 @@
                 </select>
                 <button type="submit" class="btn-act btn-main">Add Vehicle</button>
               </div>
+              <input type="text" name="description" class="ctrl-input" maxlength="2000"
+                     placeholder="Vehicle description (optional)" style="width:100%;">
             </form>
           </div>
         </section>
@@ -340,8 +342,9 @@
                           data-plate="{{ v.license_plate }}"
                           data-seats="{{ v.seats }}"
                           data-type-id="{{ v.type_id }}"
-                          data-price="{{ "{:,.0f}".format(v.daily_price|float)|replace(",", ".") }}đ"
+                          data-price="{{ v.daily_price }}"
                           data-status="{{ v.status }}"
+                          data-description="{{ v.description or '' }}"
                         >Edit</button>
                         <form action="/admin/vehicles/{{ v.id }}/delete" method="post">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
@@ -406,6 +409,11 @@
           <label for="fName">Vehicle Name</label>
           <input type="text" id="fName" name="name" class="ctrl-input" required>
         </div>
+        <div class="modal-grp">
+          <label for="fDescription">Description</label>
+          <textarea id="fDescription" name="description" class="ctrl-input" maxlength="2000" rows="3"
+                    style="width:100%;resize:vertical;"></textarea>
+        </div>
         <div class="form-flex" style="margin-bottom: 11px;">
           <div class="modal-grp" style="flex: 1; margin-bottom: 0;">
             <label for="fPlate">Code / Plate</label>
@@ -468,11 +476,12 @@
       btn.addEventListener("click", function () {
         editForm.action = `/admin/vehicles/${this.dataset.id}/edit`;
         document.getElementById("fName").value = this.dataset.name || "";
+        document.getElementById("fDescription").value = this.dataset.description || "";
         document.getElementById("fPlate").value = this.dataset.plate || "";
         document.getElementById("fSeats").value = this.dataset.seats || 4;
         document.getElementById("fType").value = this.dataset.typeId || "";
         document.getElementById("fPrice").value = this.dataset.price || "";
-        document.getElementById("fStatus").value = this.dataset.status || "Available";
+        document.getElementById("fStatus").value = this.dataset.status || "available";
         editBox.classList.add("show");
       });
     });

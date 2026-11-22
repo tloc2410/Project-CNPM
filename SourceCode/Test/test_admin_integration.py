@@ -61,6 +61,8 @@ def test_admin_dashboard_and_reports_use_real_database(flask_client, booking_db)
     assert "Toyota Vios" in vehicles
     assert "DH00123" not in vehicles
     assert "Revenue Over the Last 7 Days" not in vehicles
+    assert 'data-price="600000' in vehicles
+    assert 'id="fDescription"' in vehicles
     orders = flask_client.get("/admin/orders").get_data(as_text=True)
     assert "Toyota Vios" in orders
     assert "Do Thu Thao" in orders
@@ -89,7 +91,7 @@ def test_admin_vehicle_and_type_crud_persists_sql(flask_client, booking_db):
     created = flask_client.post("/admin/vehicles/add", data={
         "csrf_token": csrf, "name": "Test Coupe", "license_plate": "COUPE-9",
         "seats": "2", "type_id": str(type_id), "daily_price": "900000",
-        "status": "available",
+        "status": "available", "description": "Sport coupe",
     })
     assert created.status_code == 302
     row = raw.execute("SELECT carID, status FROM Cars WHERE code='COUPE-9'").fetchone()
@@ -106,11 +108,12 @@ def test_admin_vehicle_and_type_crud_persists_sql(flask_client, booking_db):
         "csrf_token": csrf, "status": "maintenance"
     })
     assert status.status_code == 302
-    row = raw.execute("SELECT name, pricePerDay, status FROM Cars WHERE carID=?",
+    row = raw.execute("SELECT name, pricePerDay, status, description FROM Cars WHERE carID=?",
                       (car_id,)).fetchone()
     assert row["name"] == "Test Coupe Updated"
     assert row["pricePerDay"] == 950000
     assert row["status"] == "maintenance"
+    assert row["description"] == "Sport coupe"
     assert flask_client.post(f"/admin/vehicles/{car_id}/delete",
                              data={"csrf_token": csrf}).status_code == 302
     assert raw.execute("SELECT COUNT(*) FROM Cars WHERE carID=?",

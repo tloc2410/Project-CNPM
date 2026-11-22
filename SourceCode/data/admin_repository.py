@@ -61,7 +61,7 @@ def insert_vehicle(data):
 def edit_vehicle(vehicle_id, data):
     return _execute(
         """UPDATE Cars SET TypeID=%s, code=%s, name=%s,
-                 description=%s, numberOfSeats=%s, pricePerDay=%s, status=%s
+                 description=COALESCE(%s, description), numberOfSeats=%s, pricePerDay=%s, status=%s
            WHERE carID=%s""",
         (data["type_id"], data["license_plate"], data["name"],
          data.get("description", ""), data["seats"],
