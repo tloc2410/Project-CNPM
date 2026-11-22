@@ -374,6 +374,7 @@ def place_order(
     today=None,
     now=None,
     demo_outcome="success",
+    transfer_reference=None,
 ):
     """Create Orders + Oderitem + Payments in ONE atomic database transaction.
 
@@ -461,7 +462,8 @@ def place_order(
         # Record the payment in the SAME transaction. No independent commit:
         # a declined demo or DB failure rolls back the entire rental order.
         plan = payment_service.plan_payment(
-            payment_method, order_id, totals["total"], totals["deposit"], demo_outcome
+            payment_method, order_id, totals["total"], totals["deposit"],
+            demo_outcome, transfer_reference=transfer_reference,
         )
         payment_repository.insert_payment(
             cursor, order_id, plan.amount, payment_method, plan.status,
