@@ -214,22 +214,12 @@
                     </label>
                 </div>
 
-                <!-- Sandbox only: no payment credentials are requested or retained. -->
+                <!-- Payment is completed on its own page (step 3). -->
                 <div class="card-details-panel" id="card-details-panel">
-                    <div class="card-input-group" style="grid-column: 1 / -1;">
-                        <strong>Secure demo payment</strong>
-                        <p style="margin: 7px 0; font-size: 13px; color: #64748b;">
-                            This is a class-project simulation. No real card charge takes place.
-                            Only the 30% rental deposit will be marked as paid in the demo.
-                            Never enter real card numbers, CVV or banking passwords.
-                        </p>
-                        <label for="demo-outcome">Test result</label>
-                        <select id="demo-outcome" name="demo_outcome" class="info-input-control"
-                                style="padding: 9px; border: 1px solid #ddd; border-radius: 7px;">
-                            <option value="success">Simulate successful deposit</option>
-                            <option value="declined">Simulate declined payment (no order created)</option>
-                        </select>
-                    </div>
+                    <p style="font-size:13px; color:#64748b; line-height:1.6;">
+                        Continue to Payment to review the selected method and confirm a secure demo deposit.
+                        No real card data is entered or processed by this project.
+                    </p>
                 </div>
 
                 <!-- Alternative Payment Hint (for E-Wallet / Bank Transfer / Cash) -->
@@ -346,7 +336,7 @@
                     <rect x="2.5" y="5.5" width="19" height="13" rx="2.5" stroke="#111111" stroke-width="1.9"/>
                     <path d="M2.5 10h19" stroke="#111111" stroke-width="1.9"/>
                 </svg>
-                <span>Proceed to Payment (Demo) →</span>
+                <span>Proceed to Payment →</span>
             </button>
 
             <p style="font-size: 12px; color: #64748b; margin: 10px 0;">
