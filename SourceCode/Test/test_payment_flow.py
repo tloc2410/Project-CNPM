@@ -1,9 +1,4 @@
-"""20 essential Payment regression tests for Group12 Car Rental.
-
-Only this Payment test file is shortened. Tests for Authentication, Vehicle
-and Booking are untouched. Uses existing read-only SQLite/Flask fixtures.
-Payments and QR confirmations are simulated, never actual bank settlements.
-"""
+"""Payment regression tests with SQLite/Flask fixtures; no real money moves."""
 import re
 from datetime import date, timedelta
 from decimal import Decimal

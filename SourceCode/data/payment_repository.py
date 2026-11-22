@@ -48,7 +48,7 @@ def update_payment_status(cursor, payment_id, status):
 
 
 def list_pending_collections(cursor):
-    """Review queue for staff: deposit, remaining-balance and cash requests."""
+    """List Pending collections for staff review."""
     cursor.execute(
         """
         SELECT p.paymentID, p.oderID, p.amount, p.paymentMethod, p.paymentStatus,
