@@ -1,27 +1,35 @@
-# Group12 Booking + Payment integration (sandbox only)
+# Group12: Checkout → Payment → Booking result (demo only)
 
-## What works
+## Three-step user journey
 
-- Cart Checkout and Book Now continue using the current Booking implementation.
-- The Booking service recomputes authoritative prices using MySQL, checks vehicle availability and rental date overlaps, and locks cars before creating the order.
-- One database transaction inserts **Orders**, **Oderitem** and **Payments**. If any insert fails, every row rolls back. A simulated card/e-wallet decline also rolls back the entire booking and preserves cart items.
-- Payment methods match the Booking form values: `CARD`, `E_WALLET`, `BANK_TRANSFER`, `CASH`.
-- Card / wallet: **sandbox simulation**, marks 30% deposit as `Paid` in the project database. Choose the simulated decline option to verify failure. **No real funds move.**
-- Bank transfer: 30% deposit recorded as `Pending`, awaiting manual verification. The app does not provide bank details or automatically verify a transfer.
-- Cash: full booking price recorded as `Pending`; payable to the rental operator offline.
-- The customer may view payment status and order-specific receipt at `/orders/<order_id>/payment`. Access is restricted to the account that owns the order.
-- Cancel a pending/confirmed booking: `Pending` payment changes to `Cancelled`. Simulated `Paid` changes to `Refunded` in the DB only: **no actual refund takes place**.
-- Payment amounts and remaining balances are displayed on My Orders and the receipt.
+1. **Cart / Book Now:** select cars and rental dates. Book Now does not insert cars into the saved cart.
+2. **Checkout:** choose pickup/return locations, receiving method and payment method. Click **Proceed to Payment**. This only saves a short-lived draft in the signed user session: **no order is written to MySQL yet**.
+3. **Payment** at `/payment`: see the chosen method, deposit amount and rental summary.
+   - **CARD** / **E_WALLET:** choose **Simulate Successful Payment** to approve a demo deposit (30%). The app then creates `Orders`, `Oderitem`, `Payments` in one MySQL transaction and redirects to the customer receipt. Choose **Simulate Failed Payment** to see a failure without creating an order.
+   - **BANK_TRANSFER:** a request may be confirmed with payment **Pending**. No bank integration, automatic validation or real transfer is supported.
+   - **CASH:** a request may be confirmed with payment **Pending** until cash is collected offline.
+   - These offline methods create pending rental requests, **not proof of completed payment**. Genuine payment-success-only bookings for bank transfers require verified provider callbacks, and cash needs staff confirmation.
+4. **Success:** a receipt is viewable at `/orders/<id>/payment` only by the booking customer. My Orders shows payment status and remaining balance.
 
-## Setup on Windows
+Pending checkout drafts expire after 15 minutes. Payment POST requires a per-draft CSRF token. The backend validates current vehicle status, dates, collision with active rentals and prices again before saving. A successful checkout removes only the purchased items from the cart; a failed attempt leaves the cart alone.
 
-1. Checkout `feature/vehicle-figma`; run `git pull`.
-2. In `SourceCode`, run `py -m pip install -r requirements.txt pytest`.
-3. Copy `.env.example` to `.env`; configure MySQL 8.4 at port 3307 and your local credentials.
-4. Import `Database/group12_car_rental.sql` into MySQL once if not created, then optionally run `Database/booking_setup.sql` to add demonstration vehicles.
-5. Run `py run.py`. Sign in, choose a vehicle, add to cart or Book Now, proceed through Checkout, select a demo payment method, then view My Orders and Payment Receipt.
-6. Run `py -m pytest Test/test_cart_booking.py -v` from the `SourceCode` folder to verify integration with transactional SQLite, including rollback and access protection.
+## Run on Windows
 
-## Not a production payment gateway
+```powershell
+git fetch origin
+git switch feature/vehicle-figma
+git pull origin feature/vehicle-figma
+cd SourceCode
+py -m pip install -r requirements.txt pytest
+py run.py
+```
 
-This work does NOT collect or validate card numbers, CVVs or bank details and does NOT integrate a card processor, MoMo, ZaloPay or a bank. UI choices are for functional demonstration only. Never enter real credentials. Before production: integrate a payment service provider's hosted checkout, verified server-side webhooks, idempotency keys, reconciliation, authenticated admin verification for offline bank transfers, real refunds, CSRF protection on writes, and secure logging.
+Set up `SourceCode/.env` from `.env.example`. Use your local MySQL database on port 3307. Database schema includes `Payments`, `Orders` and `Oderitem`.
+
+Test: register/login, Book Now, Checkout with the chosen payment method, proceed to Payment, simulate failure (no order), then retry and simulate success (order + receipt). For tests:
+
+```powershell
+py -m pytest Test/test_cart_booking.py -v
+```
+
+**Safety:** All card/e-wallet payments and refund statuses are mock transactions. Never enter real card/CVV or bank credentials. Production requires a PSP hosted checkout + verified webhooks, idempotency, reconciliation, real refunds, admin confirmation for offline methods, and production-grade security controls.
