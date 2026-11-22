@@ -336,7 +336,7 @@ def test_overlap_detection_blocks_conflicts_and_allows_free_ranges(booking_db):
 
     # First customer books Toyota Vios (carID=1) for 2026-12-10 -> 2026-12-15
     cart1 = [{"car_id": 1, "pickup_date": "2026-12-10", "return_date": "2026-12-15", "selected": True}]
-    order_id = svc.place_order(1, cart1, "PICKUP", "CARD", today=today)
+    order_id = svc.place_order(1, cart1, "PICKUP", "E_WALLET", today=today)
     assert order_id > 0
 
     # Overlapping cases MUST be blocked
@@ -418,7 +418,7 @@ def test_place_order_mid_transaction_error_triggers_full_rollback(booking_db, mo
     ]
 
     with pytest.raises(svc.BookingError, match="ROLLBACK"):
-        svc.place_order(1, cart, receiving_method="PICKUP", payment_method="CARD", today=today)
+        svc.place_order(1, cart, receiving_method="PICKUP", payment_method="E_WALLET", today=today)
 
     assert tracker["commits"] == 0
     assert tracker["rollbacks"] == 1
@@ -570,7 +570,7 @@ def test_full_web_booking_flow_cart_to_checkout_to_cancel(flask_client, booking_
             "pickup_date": "2026-12-10",
             "return_date": "2026-12-13",
             "receiving_method": "PICKUP",
-            "payment_method": "CARD",
+            "payment_method": "E_WALLET",
         },
         follow_redirects=True,
     )
@@ -585,7 +585,7 @@ def test_full_web_booking_flow_cart_to_checkout_to_cancel(flask_client, booking_
             "pickup_location": "Tan Son Nhat Airport",
             "return_location": "Tan Son Nhat Airport",
             "receiving_method": "PICKUP",
-            "payment_method": "CARD",
+            "payment_method": "E_WALLET",
             "agree_terms": "on",
         },
         follow_redirects=True,
@@ -1076,7 +1076,7 @@ def test_account_orders_filter_search_and_rebook_link(flask_client, booking_db):
     _login_session(flask_client)
     orders = [
         (101, 1, "2026-11-21 09:00:00", "PENDING", "PICKUP", 0, 180000, 600000, "CASH"),
-        (102, 1, "2026-11-20 08:00:00", "COMPLETED", "DELIVERY", 0, 390000, 1300000, "CARD"),
+        (102, 1, "2026-11-20 08:00:00", "COMPLETED", "DELIVERY", 0, 390000, 1300000, "E_WALLET"),
         (103, 2, "2026-11-19 09:00:00", "CANCELLED", "PICKUP", 0, 180000, 600000, "CASH"),
     ]
     raw.executemany(
@@ -1197,13 +1197,13 @@ def test_online_deposit_payment_persists_atomically(booking_db):
     end = start + timedelta(days=2)
     cart = [{"car_id": 1, "pickup_date": start.isoformat(),
              "return_date": end.isoformat(), "selected": True}]
-    order_id = svc.place_order(1, cart, "PICKUP", "CARD")
+    order_id = svc.place_order(1, cart, "PICKUP", "E_WALLET")
     row = raw.execute(
         "SELECT amount, paymentMethod, paymentStatus, transactionCode FROM Payments WHERE oderID = ?",
         (order_id,),
     ).fetchone()
     assert row["paymentStatus"] == "Paid"
-    assert row["paymentMethod"] == "CARD"
+    assert row["paymentMethod"] == "E_WALLET"
     assert row["amount"] == 360000
     assert row["transactionCode"].startswith("DEMO-")
     assert payment_service.balance_due(1200000, row["paymentStatus"], row["amount"]) == 840000
@@ -1217,7 +1217,7 @@ def test_declined_demo_payment_rolls_back_order_and_items(booking_db):
     cart = [{"car_id": 1, "pickup_date": start.isoformat(),
              "return_date": end.isoformat(), "selected": True}]
     with pytest.raises(svc.BookingError, match="declined"):
-        svc.place_order(1, cart, "PICKUP", "CARD", demo_outcome="declined")
+        svc.place_order(1, cart, "PICKUP", "E_WALLET", demo_outcome="declined")
     for table in ("Orders", "Oderitem", "Payments"):
         assert raw.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0] == 0
     assert tracker["rollbacks"] > 0
@@ -1264,7 +1264,7 @@ def test_payment_receipt_is_customer_scoped(flask_client, booking_db):
     end = start + timedelta(days=1)
     cart = [{"car_id": 1, "pickup_date": start.isoformat(),
              "return_date": end.isoformat(), "selected": True}]
-    order_id = svc.place_order(1, cart, "PICKUP", "CARD")
+    order_id = svc.place_order(1, cart, "PICKUP", "E_WALLET")
     _login_session(flask_client, user_id=1)
     good = flask_client.get(f"/orders/{order_id}/payment")
     assert good.status_code == 200
@@ -1283,7 +1283,7 @@ def test_demo_checkout_payment_decline_preserves_cart(flask_client, booking_db):
     flask_client.post("/cart/add/1", data={"pickup_date": start, "return_date": end})
     response = flask_client.post("/checkout", data={
         "pickup_date": start, "return_date": end,
-        "receiving_method": "PICKUP", "payment_method": "CARD",
+        "receiving_method": "PICKUP", "payment_method": "E_WALLET",
         "agree_terms": "on",
     })
     assert response.status_code == 302
@@ -1316,7 +1316,7 @@ def test_payment_insert_failure_rolls_back_booking(booking_db, monkeypatch):
 
     monkeypatch.setattr(payment_repository, "insert_payment", fail_payment)
     with pytest.raises(svc.BookingError, match="ROLLBACK"):
-        svc.place_order(1, cart, "PICKUP", "CARD")
+        svc.place_order(1, cart, "PICKUP", "E_WALLET")
     for table in ("Orders", "Oderitem", "Payments"):
         assert raw.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0] == 0
     assert tracker["rollbacks"] > 0
@@ -1363,13 +1363,13 @@ def test_payment_draft_separate_page_and_confirmation_recheck(flask_client, book
     })
     begin = flask_client.post("/checkout", data={
         "pickup_date": pickup, "return_date": return_,
-        "payment_method": "CARD",
+        "payment_method": "E_WALLET",
         "receiving_method": "PICKUP", "agree_terms": "on",
     })
     assert begin.status_code == 302
     page = flask_client.get("/payment")
     assert page.status_code == 200
-    assert b"Credit / Debit Card" in page.data
+    assert b"E-Wallet" in page.data
     assert b"Simulate Successful Payment" in page.data
     assert raw.execute("SELECT COUNT(*) FROM Orders").fetchone()[0] == 0
 
@@ -1395,7 +1395,7 @@ def test_payment_csrf_prevents_payment_replay(flask_client, booking_db):
     })
     flask_client.post("/checkout", data={
         "pickup_date": pickup, "return_date": return_,
-        "payment_method": "CARD", "receiving_method": "PICKUP",
+        "payment_method": "E_WALLET", "receiving_method": "PICKUP",
         "agree_terms": "on",
     })
     with flask_client.session_transaction() as sess:
@@ -1409,3 +1409,42 @@ def test_payment_csrf_prevents_payment_replay(flask_client, booking_db):
     })
     assert replay.status_code == 302
     assert raw.execute("SELECT COUNT(*) FROM Orders").fetchone()[0] == 1
+
+
+def test_credit_debit_card_option_is_removed_and_rejected(flask_client, booking_db):
+    """No credit/debit card option in Checkout, and forged CARD input is rejected."""
+    from datetime import timedelta
+    raw, _ = booking_db
+    _login_session(flask_client)
+    pickup = (date.today() + timedelta(days=54)).isoformat()
+    return_ = (date.today() + timedelta(days=55)).isoformat()
+    cart_item = {
+        "car_id": 1, "pickup_date": pickup, "return_date": return_,
+        "selected": True,
+    }
+
+    with pytest.raises(svc.BookingError, match="Phương thức thanh toán"):
+        svc.place_order(1, [cart_item], "PICKUP", "CARD")
+    flask_client.post("/cart/add/1", data={
+        "pickup_date": pickup, "return_date": return_,
+    })
+    checkout_page = flask_client.get("/checkout")
+    html = checkout_page.get_data(as_text=True)
+    assert checkout_page.status_code == 200
+    assert 'value="CARD"' not in html
+    assert "Credit / Debit" not in html
+    assert html.count('name="payment_method"') == 3
+    for supported in ("E_WALLET", "BANK_TRANSFER", "CASH"):
+        assert f'value="{supported}"' in html
+
+    forged = flask_client.post("/checkout", data={
+        "pickup_date": pickup, "return_date": return_,
+        "receiving_method": "PICKUP",
+        "payment_method": "CARD",
+        "agree_terms": "on",
+    })
+    assert forged.status_code == 302
+    assert forged.headers["Location"].startswith("/checkout")
+    with flask_client.session_transaction() as sess:
+        assert "pending_payment" not in sess
+    assert raw.execute("SELECT COUNT(*) FROM Orders").fetchone()[0] == 0
