@@ -575,7 +575,7 @@ def test_full_web_booking_flow_cart_to_checkout_to_cancel(flask_client):
     )
     assert "Điều khoản".encode("utf-8") in co_no_terms.data
 
-    # 7. Submit Checkout with terms agreed -> creates order #1, redirects to /orders
+    # 7. Checkout stages an unpaid draft. The separate Payment step creates the order.
     co_ok = flask_client.post(
         "/checkout",
         data={
@@ -590,8 +590,21 @@ def test_full_web_booking_flow_cart_to_checkout_to_cancel(flask_client):
         follow_redirects=True,
     )
     assert co_ok.status_code == 200
-    assert b"#1" in co_ok.data
+    assert b"Complete Your Payment" in co_ok.data
     assert b"Toyota Vios" in co_ok.data
+    with flask_client.session_transaction() as sess:
+        assert len(sess["rental_cart"]) == 2
+        assert sess.get("pending_payment")
+    assert flask_client.get("/orders").status_code == 200
+    assert raw.execute("SELECT COUNT(*) FROM Orders").fetchone()[0] == 0
+
+    with flask_client.session_transaction() as sess:
+        csrf = sess["pending_payment"]["csrf"]
+    complete = flask_client.post("/payment", data={
+        "payment_csrf": csrf, "payment_action": "confirm",
+    }, follow_redirects=True)
+    assert complete.status_code == 200
+    assert b"Booking #1" in complete.data
 
     # Car 2 (unselected) should still remain in cart; car 1 removed
     with flask_client.session_transaction() as sess:
@@ -798,7 +811,16 @@ def test_book_now_never_adds_to_cart_and_only_orders_one_vehicle(flask_client, b
         "agree_terms": "on",
     })
     assert placed.status_code == 302
-    assert placed.headers["Location"].endswith("/orders")
+    assert placed.headers["Location"].endswith("/payment")
+    assert raw.execute("SELECT COUNT(*) FROM Orders").fetchone()[0] == 0
+    with flask_client.session_transaction() as sess:
+        assert sess["direct_booking"]["car_id"] == 2
+        csrf = sess["pending_payment"]["csrf"]
+    approved = flask_client.post("/payment", data={
+        "payment_csrf": csrf, "payment_action": "confirm",
+    })
+    assert approved.status_code == 302
+    assert approved.headers["Location"].endswith("/orders/1/payment")
     assert [row[0] for row in raw.execute("SELECT CarID FROM Oderitem")] == [2]
     with flask_client.session_transaction() as sess:
         assert sess["rental_cart"] == original_cart
@@ -1261,9 +1283,18 @@ def test_demo_checkout_payment_decline_preserves_cart(flask_client, booking_db):
     response = flask_client.post("/checkout", data={
         "pickup_date": start, "return_date": end,
         "receiving_method": "PICKUP", "payment_method": "CARD",
-        "demo_outcome": "declined", "agree_terms": "on",
+        "agree_terms": "on",
     })
     assert response.status_code == 302
+    assert response.headers["Location"].endswith("/payment")
+    with flask_client.session_transaction() as sess:
+        assert len(sess.get("rental_cart", [])) == 1
+        token = sess["pending_payment"]["csrf"]
+    response = flask_client.post("/payment", data={
+        "payment_csrf": token, "payment_action": "declined",
+    })
+    assert response.status_code == 200
+    assert b"No order was placed" in response.data
     with flask_client.session_transaction() as sess:
         assert len(sess.get("rental_cart", [])) == 1
     assert raw.execute("SELECT COUNT(*) FROM Orders").fetchone()[0] == 0
@@ -1288,3 +1319,92 @@ def test_payment_insert_failure_rolls_back_booking(booking_db, monkeypatch):
     for table in ("Orders", "Oderitem", "Payments"):
         assert raw.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0] == 0
     assert tracker["rollbacks"] > 0
+
+
+
+def test_payment_requires_checkout_login_csrf_and_expiry(flask_client, booking_db):
+    from datetime import timedelta
+    import time as time_module
+    raw, _ = booking_db
+    assert "/login" in flask_client.get("/payment").headers["Location"]
+    _login_session(flask_client)
+    assert flask_client.get("/payment").status_code == 302
+    pickup = (date.today() + timedelta(days=48)).isoformat()
+    return_ = (date.today() + timedelta(days=49)).isoformat()
+    flask_client.post("/cart/add/1", data={
+        "pickup_date": pickup, "return_date": return_
+    })
+    begin = flask_client.post("/checkout", data={
+        "pickup_date": pickup, "return_date": return_,
+        "payment_method": "E_WALLET",
+        "receiving_method": "PICKUP", "agree_terms": "on",
+    })
+    assert begin.status_code == 302
+    assert begin.headers["Location"].endswith("/payment")
+    assert flask_client.post("/payment", data={
+        "payment_csrf": "forged", "payment_action": "confirm",
+    }).status_code == 400
+    assert raw.execute("SELECT COUNT(*) FROM Orders").fetchone()[0] == 0
+    with flask_client.session_transaction() as sess:
+        sess["pending_payment"]["created_at"] = int(time_module.time()) - 3600
+    assert flask_client.get("/payment").status_code == 302
+    assert raw.execute("SELECT COUNT(*) FROM Orders").fetchone()[0] == 0
+
+
+def test_payment_draft_separate_page_and_confirmation_recheck(flask_client, booking_db):
+    from datetime import timedelta
+    raw, _ = booking_db
+    _login_session(flask_client)
+    pickup = (date.today() + timedelta(days=50)).isoformat()
+    return_ = (date.today() + timedelta(days=51)).isoformat()
+    flask_client.post("/cart/add/1", data={
+        "pickup_date": pickup, "return_date": return_
+    })
+    begin = flask_client.post("/checkout", data={
+        "pickup_date": pickup, "return_date": return_,
+        "payment_method": "CARD",
+        "receiving_method": "PICKUP", "agree_terms": "on",
+    })
+    assert begin.status_code == 302
+    page = flask_client.get("/payment")
+    assert page.status_code == 200
+    assert b"Credit / Debit Card" in page.data
+    assert b"Simulate Successful Payment" in page.data
+    assert raw.execute("SELECT COUNT(*) FROM Orders").fetchone()[0] == 0
+
+    # Availability could change between Checkout and Payment.
+    raw.execute("UPDATE Cars SET status = 'maintenance' WHERE carID = 1")
+    with flask_client.session_transaction() as sess:
+        token = sess["pending_payment"]["csrf"]
+    payment = flask_client.post("/payment", data={
+        "payment_csrf": token, "payment_action": "confirm",
+    })
+    assert payment.status_code == 302
+    assert raw.execute("SELECT COUNT(*) FROM Orders").fetchone()[0] == 0
+
+
+def test_payment_csrf_prevents_payment_replay(flask_client, booking_db):
+    from datetime import timedelta
+    raw, _ = booking_db
+    _login_session(flask_client)
+    pickup = (date.today() + timedelta(days=52)).isoformat()
+    return_ = (date.today() + timedelta(days=53)).isoformat()
+    flask_client.post("/cart/add/1", data={
+        "pickup_date": pickup, "return_date": return_
+    })
+    flask_client.post("/checkout", data={
+        "pickup_date": pickup, "return_date": return_,
+        "payment_method": "CARD", "receiving_method": "PICKUP",
+        "agree_terms": "on",
+    })
+    with flask_client.session_transaction() as sess:
+        token = sess["pending_payment"]["csrf"]
+    first = flask_client.post("/payment", data={
+        "payment_csrf": token, "payment_action": "confirm",
+    })
+    assert first.status_code == 302
+    replay = flask_client.post("/payment", data={
+        "payment_csrf": token, "payment_action": "confirm",
+    })
+    assert replay.status_code == 302
+    assert raw.execute("SELECT COUNT(*) FROM Orders").fetchone()[0] == 1
