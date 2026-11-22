@@ -73,3 +73,24 @@ def mark_payment_paid(cursor, payment_id, paid_at):
         (paid_at, payment_id),
     )
     return cursor.rowcount == 1
+
+
+
+def mark_demo_payment_paid(cursor, payment_id, paid_at, demo_reference):
+    """Mark a pending record as simulated Paid without pretending a real transfer."""
+    cursor.execute(
+        """UPDATE Payments
+           SET paymentStatus = 'Paid', paidAt = %s, transactionCode = %s
+           WHERE paymentID = %s AND paymentStatus = 'Pending'""",
+        (paid_at, demo_reference, payment_id),
+    )
+    return cursor.rowcount == 1
+
+
+def mark_demo_payment_failed(cursor, payment_id):
+    cursor.execute(
+        """UPDATE Payments SET paymentStatus = 'Failed'
+           WHERE paymentID = %s AND paymentStatus = 'Pending'""",
+        (payment_id,),
+    )
+    return cursor.rowcount == 1
