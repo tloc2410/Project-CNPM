@@ -42,7 +42,7 @@
           {% for pay in order.payments %}
           <tr style="border-top:1px solid #e5e7eb;">
             <td style="padding:12px;">
-              <strong>{{ 'Remaining balance' if pay.transactionCode.startswith('BAL-') else 'Deposit / initial payment' }}</strong>
+              <strong>{{ 'Remaining balance' if (pay.transactionCode or '').startswith('BAL-') else 'Deposit / initial payment' }}</strong>
               <div style="overflow-wrap:anywhere;color:#64748b;">{{ pay.transactionCode }}</div>
             </td>
             <td style="padding:12px;">{{ 'E-Wallet' if pay.paymentMethod == 'E_WALLET' else 'Bank Transfer' if pay.paymentMethod == 'BANK_TRANSFER' else 'Cash' }}</td>
