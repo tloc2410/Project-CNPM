@@ -15,6 +15,8 @@ from decimal import Decimal, ROUND_HALF_UP
 
 from data import booking_repository as repo
 from data import database
+from data import payment_repository
+from business import payment_service
 
 ORDER_STATUS_PENDING = "PENDING"
 ORDER_STATUS_CANCELLED = "CANCELLED"
@@ -372,8 +374,9 @@ def place_order(
     payment_method="CARD",
     today=None,
     now=None,
+    demo_outcome="success",
 ):
-    """Create Orders + Oderitem inside ONE atomic database transaction.
+    """Create Orders + Oderitem + Payments in ONE atomic database transaction.
 
     - Locks requested car rows (SELECT ... FOR UPDATE).
     - Re-verifies car availability and checks overlapping active orders.
@@ -456,8 +459,20 @@ def place_order(
                 return_date=r_date,
             )
 
+        # Record the payment in the SAME transaction. No independent commit:
+        # a declined demo or DB failure rolls back the entire rental order.
+        plan = payment_service.plan_payment(
+            payment_method, order_id, totals["total"], totals["deposit"], demo_outcome
+        )
+        payment_repository.insert_payment(
+            cursor, order_id, plan.amount, payment_method, plan.status,
+            plan.transaction_code, plan.paid_at,
+        )
         conn.commit()
         return order_id
+    except payment_service.PaymentError as exc:
+        conn.rollback()
+        raise BookingError(str(exc)) from exc
     except BookingError:
         conn.rollback()
         raise
@@ -487,6 +502,18 @@ def cancel_order(user_id, order_id):
             raise BookingError("Đơn hàng này không thể hủy ở trạng thái hiện tại.")
 
         repo.update_order_status(cursor, order_id, ORDER_STATUS_CANCELLED)
+        payment = payment_repository.latest_payment_for_update(cursor, order_id)
+        if payment:
+            previous = str(payment.get("paymentStatus") or "")
+            if previous == "Paid":
+                # Sandbox-only: status update, not a real gateway refund.
+                payment_repository.update_payment_status(
+                    cursor, payment["paymentID"], "Refunded"
+                )
+            elif previous == "Pending":
+                payment_repository.update_payment_status(
+                    cursor, payment["paymentID"], "Cancelled"
+                )
         conn.commit()
         return True
     except BookingError:
@@ -506,7 +533,12 @@ def get_user_orders(user_id):
     cursor = conn.cursor(dictionary=True)
     try:
         orders = repo.list_orders_by_user(cursor, user_id)
-        items = repo.list_items_by_order_ids(cursor, [o["oderID"] for o in orders])
+        order_ids = [o["oderID"] for o in orders]
+        items = repo.list_items_by_order_ids(cursor, order_ids)
+        payments = payment_repository.list_payments_for_orders(cursor, order_ids)
+        latest = {}
+        for row in payments:
+            latest.setdefault(row["oderID"], row)
         for order in orders:
             order_items = [i for i in items if i["OderID"] == order["oderID"]]
             for oi in order_items:
@@ -514,6 +546,16 @@ def get_user_orders(user_id):
                     oi.get("unitPrice") or 0, oi.get("rentalDays") or 0
                 )
             order["items"] = order_items
+            order["payment"] = latest.get(order["oderID"])
+            order["payment_status"] = (
+                order["payment"]["paymentStatus"] if order["payment"] else "Not recorded"
+            )
+            order["payment_amount"] = (
+                order["payment"]["amount"] if order["payment"] else Decimal("0")
+            )
+            order["balance_due"] = payment_service.balance_due(
+                order["totalPrice"], order["payment_status"], order["payment_amount"]
+            )
             order["can_cancel"] = (order["status"] or "").upper() in CANCELLABLE_STATUSES
             order["payment_label"] = PAYMENT_METHOD_LABELS.get(
                 order.get("paymentMethod"), order.get("paymentMethod") or ""
@@ -522,6 +564,39 @@ def get_user_orders(user_id):
                 order.get("receivingMethod"), order.get("receivingMethod") or ""
             )
         return orders
+    finally:
+        cursor.close()
+        conn.close()
+
+
+
+def get_order_payment_details(user_id, order_id):
+    """Return only the signed-in customer's order and payment receipt."""
+    if not user_id:
+        raise BookingError("Please sign in to view a payment.")
+    conn = database.get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        orders = repo.list_orders_by_user(cursor, user_id)
+        order = next((o for o in orders if o["oderID"] == order_id), None)
+        if not order:
+            raise BookingError("Order not found.")
+        order["items"] = repo.list_items_by_order_ids(cursor, [order_id])
+        payments = payment_repository.list_payments_for_orders(cursor, [order_id])
+        order["payment"] = payments[0] if payments else None
+        order["payment_status"] = (
+            order["payment"]["paymentStatus"] if order["payment"] else "Not recorded"
+        )
+        order["payment_amount"] = (
+            order["payment"]["amount"] if order["payment"] else Decimal("0")
+        )
+        order["balance_due"] = payment_service.balance_due(
+            order["totalPrice"], order["payment_status"], order["payment_amount"]
+        )
+        order["payment_label"] = PAYMENT_METHOD_LABELS.get(
+            order["paymentMethod"], order["paymentMethod"]
+        )
+        return order
     finally:
         cursor.close()
         conn.close()
