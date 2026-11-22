@@ -115,7 +115,7 @@
       <h2>Rental Payment Summary</h2>
       <div class="g12-balance-row"><span>Total rental</span><strong>{{ order.totalPrice|vnd }}</strong></div>
       <div class="g12-balance-row"><span>Deposit (30%)</span><strong>{{ order.deposit|vnd }}</strong></div>
-      <div class="g12-balance-row"><span>Verified paid</span><strong style="color:#15803d;">{{ order.paid_amount|vnd }}</strong></div>
+      <div class="g12-balance-row"><span>{{ "Simulated paid" if demo_mode else "Verified paid" }}</span><strong style="color:#15803d;">{{ order.paid_amount|vnd }}</strong></div>
       <div class="g12-balance-row"><span>Pending verification</span><strong>{{ order.pending_amount|vnd }}</strong></div>
       <div class="g12-balance-row"><strong>Outstanding</strong><strong>{{ order.balance_due|vnd }}</strong></div>
       <p class="g12-balance-hint">Deposit and remaining payments are recorded separately. {{ 'DEMO ONLY: Paid means simulated payment in this mode.' if demo_mode else 'Pending amounts do not count as money received.' }}</p>
