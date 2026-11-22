@@ -1126,10 +1126,10 @@ a {
     font-weight: 600;
 }
 
-/* Payment Method 4 Cards */
+/* Payment Method: E-Wallet, Bank Transfer, Cash */
 .payment-options-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 12px;
     margin-bottom: 18px;
 }
@@ -1190,53 +1190,6 @@ a {
     display: inline-flex;
 }
 
-/* Card Details Panel */
-.card-details-panel {
-    background: #F1F2F6;
-    border-radius: 12px;
-    padding: 16px;
-    display: grid;
-    grid-template-columns: 1.7fr 1fr 0.8fr;
-    gap: 12px;
-    margin-bottom: 16px;
-}
-
-.card-details-panel[hidden] {
-    display: none;
-}
-
-.card-input-group label {
-    display: block;
-    font-size: 12.5px;
-    font-weight: 600;
-    color: #374151;
-    margin-bottom: 6px;
-}
-
-.card-input-wrap {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: #FFFFFF;
-    border: 1px solid #DCE2EA;
-    border-radius: 10px;
-    padding: 9px 12px;
-}
-
-.card-input-wrap input {
-    width: 100%;
-    border: none;
-    outline: none;
-    font-family: inherit;
-    font-size: 13.5px;
-    color: #111827;
-    background: transparent;
-}
-
-.card-input-wrap input::placeholder {
-    color: #9AA0AC;
-}
-
 .alt-payment-note {
     background: #F8FAFC;
     border: 1px dashed #CBD5E1;
@@ -1294,45 +1247,6 @@ a {
     gap: 12px;
 }
 
-.brand-visa {
-    font-size: 16px;
-    font-weight: 900;
-    font-style: italic;
-    color: #1A3FA0;
-    letter-spacing: -0.5px;
-}
-
-.brand-mc {
-    display: inline-flex;
-    align-items: center;
-}
-
-.mc-red, .mc-orange {
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    display: inline-block;
-}
-
-.mc-red {
-    background: #EB001B;
-}
-
-.mc-orange {
-    background: #F79E1B;
-    margin-left: -7px;
-    opacity: 0.9;
-}
-
-.brand-jcb {
-    background: #1D6BB5;
-    color: #FFFFFF;
-    font-size: 10px;
-    font-weight: 800;
-    padding: 3px 6px;
-    border-radius: 4px;
-}
-
 .brand-momo {
     background: #B0006D;
     color: #FFFFFF;
@@ -1343,6 +1257,16 @@ a {
     border-radius: 4px;
     text-align: center;
 }
+.payment-brand-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    border-radius: 5px;
+    padding: 4px 7px;
+}
+
 
 /* Checkout Right Summary */
 .co-cars-list {
@@ -1669,8 +1593,7 @@ a {
     }
 
     .rental-info-grid,
-    .payment-options-grid,
-    .card-details-panel {
+    .payment-options-grid {
         grid-template-columns: 1fr;
     }
 }
