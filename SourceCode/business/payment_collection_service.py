@@ -1,9 +1,4 @@
-"""Two-stage rental collections: 30% deposit and remaining balance.
-
-Customer QR scans and payment requests are never proof of money received.
-Only a verified administrator may mark Pending collections as Paid.
-All mutable actions lock the order row and use one database transaction.
-"""
+"""Two-stage collections: Pending requests never prove funds were received."""
 from datetime import datetime
 from decimal import Decimal
 from secrets import token_hex
@@ -18,7 +13,7 @@ ZERO = Decimal("0")
 
 
 class CollectionError(ValueError):
-    """Safe business rule explanation for forms."""
+    """Expected payment-rule error."""
 
 
 def _money(value):
@@ -26,11 +21,7 @@ def _money(value):
 
 
 def payment_overview(order, payments):
-    """Total only verified Paid rows; Pending is never counted as received.
-
-    The schema permits multiple Payments per rental order. This works with both
-    old single-payment orders and newly created deposit+balance records.
-    """
+    """Summarize all payment rows, counting only Paid amounts as received."""
     total = _money(order.get("totalPrice"))
     deposit = _money(order.get("deposit"))
     paid = sum((_money(p["amount"]) for p in payments
@@ -84,11 +75,7 @@ def _read_customer_order(cursor, user_id, order_id, lock=False):
 
 
 def request_remaining_payment(user_id, order_id, method):
-    """Submit a request for the exact outstanding amount (Pending, not Paid).
-
-    Multiple tabs/requests cannot create duplicate outstanding collections:
-    transaction lock on Orders serializes changes with admin confirmation.
-    """
+    """Create a Pending balance request under a lock to prevent duplicates."""
     if method not in SUPPORTED_BALANCE_METHODS:
         raise CollectionError("Please select a valid remaining payment method.")
     conn = database.get_db_connection()
@@ -121,7 +108,7 @@ def request_remaining_payment(user_id, order_id, method):
 
 
 def cancel_remaining_request(user_id, order_id):
-    """Let the owner cancel an unverified remaining request and choose again."""
+    """Cancel the owner's unverified balance request."""
     conn = database.get_db_connection()
     cursor = conn.cursor(dictionary=True)
     try:
@@ -167,7 +154,7 @@ def is_active_admin(user_id):
 
 
 def list_pending_collections():
-    """Admin-only caller: pending deposit, full cash or remaining payments."""
+    """List outstanding payment requests for the Admin screen."""
     conn = database.get_db_connection()
     cursor = conn.cursor(dictionary=True)
     try:
@@ -178,17 +165,12 @@ def list_pending_collections():
 
 
 def confirm_collection(payment_id):
-    """Record an ADMIN-verified received payment exactly once.
-
-    Caller must already have verified Admin authorization. This does NOT query
-    MoMo/bank; staff must independently verify actual receipt first.
-    """
+    """Mark a staff-verified payment Paid; the caller must authorize Admin."""
     conn = database.get_db_connection()
     cursor = conn.cursor(dictionary=True)
     try:
         conn.start_transaction()
-        # Read the order id first, then lock order before locking payment row.
-        # Consistent lock ordering prevents races with balance-request creation.
+        # Lock orders before payments to avoid concurrent double collection.
         cursor.execute(
             "SELECT oderID FROM Payments WHERE paymentID = %s", (payment_id,)
         )
@@ -215,8 +197,7 @@ def confirm_collection(payment_id):
 
         if not payment_repo.mark_payment_paid(cursor, payment_id, datetime.now()):
             raise CollectionError("This payment was already processed.")
-        # Once staff verifies the required deposit, the reservation can move
-        # from pending to confirmed. Do not overwrite Renting/Completed states.
+        # Confirm pending bookings only after verifying the deposit.
         verified_total = overview["paid_amount"] + _money(payment["amount"])
         if (str(order.get("status") or "").upper() in ("PENDING", "NEW")
                 and verified_total >= _money(order.get("deposit"))):
