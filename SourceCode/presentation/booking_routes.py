@@ -8,11 +8,13 @@ Integrates cleanly with the Account/Auth session created in SourceCode/run.py:
 
 from datetime import datetime
 from functools import wraps
+import os
 import secrets
 import time
 
 from flask import (
     Blueprint,
+    current_app,
     flash,
     jsonify,
     redirect,
@@ -23,6 +25,7 @@ from flask import (
 )
 
 from business import booking_service as svc
+from business import payment_qr
 
 booking_bp = Blueprint("booking", __name__)
 
@@ -550,6 +553,7 @@ def checkout():
             "direct_mode": direct_mode,
             "created_at": int(time.time()),
             "csrf": secrets.token_urlsafe(32),
+            "transfer_reference": "G12" + secrets.token_hex(6).upper(),
         }
         session.modified = True
         return redirect(url_for("booking.payment_page"))
@@ -645,6 +649,35 @@ def payment_page():
                 flash(f"Demo payment confirmed. Booking #{order_id} was created.", "success")
                 return redirect(url_for("booking.payment_receipt", order_id=order_id))
 
+    # Only display a real recipient QR if the project owner configured one.
+    # QR display by itself is NOT payment verification.
+    qr_image = None
+    qr_kind = None
+    bank_details = None
+    if draft["payment_method"] == "BANK_TRANSFER":
+        qr_image = payment_qr.bank_transfer_qr(
+            summary["deposit"], draft["transfer_reference"]
+        )
+        if qr_image:
+            qr_kind = "BANK_TRANSFER"
+            bank_details = {
+                "bank": os.getenv("PAYMENT_BANK_BIN", "").strip(),
+                "account": os.getenv("PAYMENT_BANK_ACCOUNT", "").strip(),
+                "holder": os.getenv("PAYMENT_BANK_HOLDER", "").strip(),
+            }
+    elif draft["payment_method"] == "E_WALLET":
+        qr_file = payment_qr.momo_merchant_qr_filename()
+        if qr_file:
+            relative_file = os.path.join("images", "payments", qr_file)
+            absolute_file = os.path.join(
+                current_app.static_folder, relative_file
+            )
+            if os.path.isfile(absolute_file):
+                qr_image = url_for(
+                    "static", filename="images/payments/" + qr_file
+                )
+                qr_kind = "MOMO_STATIC"
+
     method_labels = svc.PAYMENT_METHOD_LABELS
     return render_template(
         "booking/payment.html",
@@ -652,6 +685,9 @@ def payment_page():
         summary=summary,
         payment_method_label=method_labels[draft["payment_method"]],
         payment_error=payment_error,
+        qr_image=qr_image,
+        qr_kind=qr_kind,
+        bank_details=bank_details,
         direct_mode=draft["direct_mode"],
     )
 
