@@ -254,7 +254,14 @@ def test_admin_header_displays_signed_in_full_name_on_every_page(flask_client, b
 
 
 
-def test_admin_payment_verification_stays_in_admin_layout(flask_client, booking_db):
+@pytest.mark.parametrize(
+    "demo_mode,button_label",
+    [("1", "Confirm Demo Payment"), ("0", "Confirm Received")],
+)
+def test_admin_payment_verification_stays_in_admin_layout(
+    flask_client, booking_db, monkeypatch, demo_mode, button_label
+):
+    monkeypatch.setenv("DEMO_PAYMENT_MODE", demo_mode)
     raw, _ = booking_db
     _order(method="BANK_TRANSFER")
     _admin(flask_client, raw)
@@ -268,8 +275,13 @@ def test_admin_payment_verification_stays_in_admin_layout(flask_client, booking_
     assert '<div class="topbar-title">Payment Verification</div>' in html
     assert '<div class="profile-name">Admin Demo</div>' in html
     assert '<div class="profile-avatar">A</div>' in html
-    assert "Confirm Received" in html
+    assert button_label in html
     assert "Bank Transfer" in html
+    if demo_mode == "1":
+        assert "STUDENT DEMO MODE:" in html
+        assert "I approve this simulated demo payment" in html
+    else:
+        assert "I verified the actual money received." in html
     assert "booking/admin_payments" not in html
     assert 'class="g12-header"' not in html
     assert 'class="g12-nav"' not in html
