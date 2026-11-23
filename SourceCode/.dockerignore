@@ -1,0 +1,18 @@
+# Keep local secrets and caches out of the Docker build context.
+.env
+.env.*
+!.env.example
+.flask_dev_secret
+.git/
+.venv/
+venv/
+__pycache__/
+.pytest_cache/
+*.py[cod]
+*.sqlite*
+*.db
+*.log
+Test/
+tests/
+test_db.py
+booking_preview.py
